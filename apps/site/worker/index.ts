@@ -1,11 +1,11 @@
 /*
  * wilm.ai on Cloudflare. The site itself is static files (`next build` writes
  * them to out/) served straight from Cloudflare; this Worker only answers
- * "/", which sends the visitor to /en or /fi, and /api/* (see run_worker_first
- * in wrangler.jsonc): /api/stats, the live numbers in the page (npm downloads
- * and GitHub stars), and /api/badge/downloads, the same download count as a
- * shields.io badge for the GitHub README. A daily cron job fetches the numbers
- * and keeps them in KV.
+ * "/", which sends the visitor to /en or /fi, and two addresses under /api/
+ * (run_worker_first in wrangler.jsonc): /api/stats, the live numbers in the
+ * page (npm downloads and GitHub stars), and /api/badge/downloads, the same
+ * download count as a shields.io badge for the GitHub README. A daily cron job
+ * fetches the numbers and keeps them in KV.
  */
 
 import { githubStars } from "../lib/github-stars";

@@ -17,7 +17,7 @@ pnpm --filter @wilm-ai/site dev        # Next.js dev server; open /en or /fi
 pnpm --filter @wilm-ai/site preview    # the real build on Cloudflare's runtime (wrangler dev)
 ```
 
-`dev` doesn't apply `_headers`, `_redirects`, the `/` redirect or `/api/*` (the counters keep the numbers from the build); `preview` does. Before the first daily job has run, `/api/stats` fetches the numbers itself; to run the job by hand, start `wrangler dev --test-scheduled` and open `/cdn-cgi/handler/scheduled`.
+`dev` doesn't apply `_headers`, `_redirects`, the `/` redirect, `/api/stats` or `/api/badge/downloads` (the counters keep the numbers from the build); `preview` does. Before the first daily job has run, `/api/stats` fetches the numbers itself; to run the job by hand, start `wrangler dev --test-scheduled` and open `/cdn-cgi/handler/scheduled`.
 
 GitHub limits anonymous API requests per IP address, and Cloudflare's addresses are shared. If the star count stops updating, give the Worker a GitHub token (a fine-grained token with public read-only access and no permissions): `pnpm --filter @wilm-ai/site exec wrangler secret put GITHUB_TOKEN`.
 
