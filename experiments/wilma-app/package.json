@@ -20,7 +20,8 @@
     "test:release": "tsx --test evals/home-release.test.ts evals/updates.test.ts",
     "test:ai": "tsx --test evals/local-ai.test.ts evals/local-setup.test.ts evals/local-runtime.test.ts evals/ai-budget.test.ts evals/note-exams.test.ts evals/note-kinds.test.ts evals/openai-blocked.test.ts evals/account-storage.test.ts",
     "replay": "tsx evals/replay.ts",
-    "calibrate": "tsx evals/calibrate.ts"
+    "calibrate": "tsx evals/calibrate.ts",
+    "home:feed": "tsx scripts/home-feed.ts"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",

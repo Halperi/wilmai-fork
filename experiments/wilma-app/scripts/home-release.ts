@@ -11,6 +11,13 @@ export function assetName(version: string, platform: string, arch: string, suffi
   return `WilmAI-Home-${version}-beta-${platform}-${arch}.${suffix}`;
 }
 
+/** One feed for every platform in the release: each platform's own entry, the same version and notes. */
+export function releaseFeeds(input: { version: string; notes: string; date: string; platforms: { platform: string; signature: string; archive: string }[] }) {
+  if (!input.platforms.length) throw new Error("A feed needs at least one platform.");
+  const feeds = input.platforms.map((p) => releaseFeed({ ...input, ...p }));
+  return { ...feeds[0], platforms: Object.assign({}, ...feeds.map((f) => f.platforms)) as Record<string, { signature: string; url: string }> };
+}
+
 export function releaseFeed(input: { version: string; platform: string; signature: string; archive: string; notes: string; date: string }) {
   const expected = `https://github.com/aikarjal/wilmai/releases/download/home-v${input.version}/WilmAI-Home-${input.version}-beta-`;
   if (!input.archive.startsWith(expected)) throw new Error("Update archive must be an immutable asset for this Home version.");

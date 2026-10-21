@@ -170,7 +170,7 @@ const en: HomeCopy = {
       "On Windows, notifications and local AI aren't there yet.",
       "To check Wilma and notify you, the app needs to be running and the computer awake. Closing the window keeps it in the menu bar, or on Windows in the taskbar's notification area.",
       "AI can misread things, dates especially. Check anything important in the message itself.",
-      "When there's a new version, the app tells you, and you download it from this page."
+      "New versions arrive in the app, and you choose when to install them."
     ],
     feedback: "Found a bug? When you report it, please leave out messages, children's names and logins.",
     link: "Report a problem on GitHub"
@@ -353,7 +353,7 @@ const fi: HomeCopy = {
       "Windowsissa ilmoituksia ja paikallista tekoälyä ei vielä ole.",
       "Jotta sovellus voi tarkistaa Wilmaa ja ilmoittaa, sen pitää olla käynnissä ja tietokoneen hereillä. Kun suljet ikkunan, sovellus jää valikkoriville, Windowsissa tehtäväpalkin ilmoitusalueelle.",
       "Tekoäly voi lukea asioita väärin, varsinkin päivämääriä. Tarkista tärkeät asiat itse viestistä.",
-      "Kun uusi versio on saatavilla, sovellus kertoo siitä, ja lataat sen tältä sivulta."
+      "Uudet versiot tulevat sovellukseen, ja päätät itse, milloin asennat ne."
     ],
     feedback: "Löysitkö virheen? Jätä ilmoituksesta pois viestit, lasten nimet ja tunnukset.",
     link: "Kerro ongelmasta GitHubissa"
