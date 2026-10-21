@@ -9,15 +9,31 @@
 [![npm version](https://img.shields.io/npm/v/%40wilm-ai%2Fwilma-cli?label=wilma-cli&color=1b2b34)](https://www.npmjs.com/package/@wilm-ai/wilma-cli)
 [![MIT license](https://img.shields.io/badge/license-MIT-ffd84d)](LICENSE)
 
-**[wilm.ai](https://wilm.ai)** (English and Finnish) · [Set up](#add-wilmai-to-your-assistant) · [Changelog](CHANGELOG.md)
+**[wilm.ai](https://wilm.ai)** (English and Finnish) · [Set up](#add-wilmai-to-your-assistant) · [WilmAI Home, the desktop app](#wilmai-home-the-desktop-app) · [Changelog](CHANGELOG.md)
 
 > **You:** What do the kids have at school tomorrow?
 >
 > **Your assistant:** Kiia has crafts 8:30–11:00, then geography and math; her English exam is on Thursday (units 7–9). Eino starts at 9:15 with swimming, so pack a swimsuit and towel. There's also a new message from the class teacher about Friday's trip: the permission form is due Wednesday.
 
-WilmAI connects Wilma, the system Finnish schools use for schedules, homework, exams, grades and messages, to the AI assistant or agent you already use. It's an MCP server, a command-line tool and two agent skills, free and open source.
+WilmAI connects Wilma, the system Finnish schools use for schedules, homework, exams, grades and messages, to the AI assistant or agent you already use. It's an MCP server, a command-line tool and two agent skills, free and open source. There's also [WilmAI Home](#wilmai-home-the-desktop-app), a desktop app of its own for students and parents.
 
 > **Disclaimer:** This is an independent open-source project by a parent, not affiliated with, endorsed by, or connected to Visma or the official Wilma service.
+
+## WilmAI Home, the desktop app
+
+**Wilma, rethought with AI built in.** WilmAI Home is a desktop app for students and parents, in beta: messages, timetables, homework, exams and grades for every child in one app, a notification when something new needs you, and optional AI that reads each new message and picks out what needs you and by when.
+
+**[Download for Mac or Windows](https://wilm.ai/en/home#download)** · [What it does](https://wilm.ai/en/home) · [Releases](https://github.com/aikarjal/wilmai/releases?q=home-v)
+
+- **Reads and writes.** Reply to teachers, write new messages, sign up for parents' evenings and report absences, without opening Wilma. Pin the messages you keep coming back to.
+- **For a student too.** Sign in with a student's own Wilma account and choose "A student": the app then reads things from the student's side.
+- **AI is optional.** No AI (the default), OpenAI with your own API key (usually tens of cents a month; the app stops at a monthly limit you set), or local AI on an Apple Silicon Mac with 16 GB of memory, where nothing goes to an AI service.
+- **Stays on your computer.** No WilmAI server and no tracking. Your Wilma password goes only to your school's Wilma; the app keeps it (scrambled) only if you turn on staying signed in.
+- **Updates itself.** New versions arrive in the app, signed with the project's update key; you choose when to install them.
+
+Mac (Apple Silicon, macOS 13.3 or later) and Windows 10 or 11. The installers aren't signed by Apple or Microsoft yet, so the first start needs one extra step: on a Mac, System Settings → Privacy & Security → Open Anyway (the install window has a link); on Windows, More info → Run anyway. On Windows, notifications and local AI aren't there yet.
+
+The source is in [`experiments/wilma-app`](experiments/wilma-app) (Tauri, React and Rust), with its own README for building and the eval suite that measures how well the AI reads school messages.
 
 ## What you get
 
@@ -80,6 +96,7 @@ Or give an agent a routine: "Every weekday at 7, post a school briefing for both
 - `packages/wilma-cli` – CLI (`wilma`), browser login (`wilma login`), and MCP server (`wilma mcp`)
 - `skills/` – Agent skills (`wilma`, `wilma-triage`); also the plugin root for Claude Code and Codex
 - `apps/site` – wilm.ai (Next.js, built as static files and served by Cloudflare Workers)
+- `experiments/wilma-app` – WilmAI Home, the desktop app (Tauri), and its eval suite
 
 ## Logging in
 

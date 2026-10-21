@@ -1,12 +1,22 @@
-# WilmAI Home (experiment)
+# WilmAI Home
 
-A faster, calmer Wilma for parents, as a light desktop app: one page for every
-child, sorted by what needs you. Wilma's data, the session and the optional
-Jev key stay on the computer. There is no WilmAI server.
+**Wilma, rethought with AI built in.** A desktop app for students and parents,
+in beta, for Apple Silicon Macs and Windows:
+[download](https://wilm.ai/en/home#download) ·
+[wilm.ai/home](https://wilm.ai/en/home) ·
+[releases](https://github.com/aikarjal/wilmai/releases?q=home-v).
 
-This is a personal experiment on the `experiment/wilma-app` branch. The
-earlier Electron and Chrome-extension version is kept on
-`experiment/wilma-app-electron`.
+Messages, timetables, homework, exams and grades for every child in one app,
+a notification when something new needs you, and optional AI (OpenAI with your
+own key, or local AI on a Mac) that reads each new message and picks out what
+needs you and by when. It also replies to teachers, writes new messages, signs
+up for parents' evenings and reports absences. Wilma's data, the session and
+any keys stay on the computer; there is no WilmAI server.
+
+This README is the developer's notebook: how to run and build it, how it works,
+and what has been verified. Releasing is in
+[docs/local-releases.md](docs/local-releases.md), the eval suite in
+[evals/README.md](evals/README.md).
 
 ## Try it
 
@@ -21,26 +31,22 @@ while developing:
 pnpm app                 # on a Mac, with local AI (src-tauri/tauri.macos.conf.json)
 ```
 
-As a real app in /Applications, built from this checkout (signed ad hoc, so
-open it the first time with right-click → Open). Run it again to update; it
-quits the app and reopens it. Settings shows which build is running.
+As a real app in /Applications, built from this checkout and signed ad hoc. Run
+it again to update; it quits the app and reopens it. Settings shows which build
+is running. The first start of a downloaded or ad hoc build goes through System
+Settings → Privacy & Security → Open Anyway (right-click → Open no longer gets
+past it on macOS 15 and later).
 
 ```bash
 pnpm install:app
 ```
 
-The first release is **0.1.0 Beta**: one download, for Apple Silicon Macs, with
-local AI included as an option. Windows and Linux builds aren't offered yet (they
-build without local AI and haven't been tried). See
-[local release preparation](docs/local-releases.md) for signing on this MacBook,
-1Password key custody, the update feed and download counts. Nothing has been
-published yet.
-
-Earlier builds kept the Jev key in the keychain, and an ad hoc signature
-changes with every build, so macOS asked for the password after each update.
-The first start of this build asks one last time: it moves the key into the
-app's own storage and doesn't look in the keychain again (the old keychain
-item "ai.wilm.home" can be deleted in Keychain Access).
+Releases (0.1.x Beta) are a Mac download for Apple Silicon with local AI
+included as an option, and a Windows installer (no notifications or local AI
+there yet). Neither is signed by Apple or Microsoft yet; both are signed for
+updates, so new versions install inside the app. See
+[local release preparation](docs/local-releases.md) for building and signing on
+this Mac, the update feed and download counts.
 
 In a browser, for quick UI work (a local bridge stands in for the desktop app):
 
@@ -609,9 +615,8 @@ each the first time you actually need it.
 - **Open discussions' quick reply** works for real (7 Oct), but there's no
   anonymised fixture of the form yet.
 
-## Releasing the experiment (later)
+## Releasing
 
-`pnpm build:app` makes a `.app` and `.dmg`. A public release needs an Apple
-Developer ID (signing and notarization, otherwise macOS warns), a Windows
-build on CI (tauri-action), and Tauri's signed updater. Replies follow
-jmccrosky/wilma-mcp (MIT); credit it if this ships.
+See [docs/local-releases.md](docs/local-releases.md). Still to come: Apple's
+Developer ID (signing and notarization, so macOS doesn't stop the first start)
+and a Windows signing service. Replies follow jmccrosky/wilma-mcp (MIT).
