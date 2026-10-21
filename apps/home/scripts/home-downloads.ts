@@ -1,18 +1,27 @@
 /**
  * How many people get and use WilmAI Home, from counts that exist anyway; nothing in the app tracks anyone:
- * - GitHub's download count for each installer in the release;
+ * - GitHub's download counts for every Home release: the installers, and the Mac update archive, which only an
+ *   installed app downloads when it updates itself (on Windows, the app updates with the installer);
  * - on wilm.ai (Cloudflare's request analytics, read with the `cf` CLI): Home page views, and the update checks
  *   every installed app makes (at start, then every 6 hours), so about four a day for each app that's running.
  *   These are counts per day; no address or anything else about a person is read.
  */
 import { execFileSync } from "node:child_process";
-import { version } from "../package.json";
 
-const release = JSON.parse(execFileSync("gh", ["api", `repos/aikarjal/wilmai/releases/tags/home-v${version}`], { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] })) as { assets: { name: string; download_count: number }[] };
-const installers = release.assets.filter((asset) => asset.name.startsWith(`WilmAI-Home-${version}-beta-`) && /\.(dmg|exe|AppImage|deb)$/.test(asset.name));
-console.table(installers.map((asset) => ({ installer: asset.name, downloads: asset.download_count })));
-for (const platform of ["macos", "windows", "linux"]) console.log(`${platform}: ${installers.filter((asset) => asset.name.includes(`-beta-${platform}-`)).reduce((sum, asset) => sum + asset.download_count, 0)} installer downloads`);
-console.log("Counts include repeated downloads; GitHub does not identify individual downloaders.\n");
+type Release = { tag_name: string; assets: { name: string; download_count: number }[] };
+const pages = JSON.parse(execFileSync("gh", ["api", "--paginate", "--slurp", "repos/aikarjal/wilmai/releases?per_page=100"], { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] })) as Release[][];
+const releases = pages.flat().filter((release) => release.tag_name.startsWith("home-v")).reverse();
+const count = (release: Release, file: RegExp) => release.assets.filter((asset) => file.test(asset.name)).reduce((sum, asset) => sum + asset.download_count, 0);
+const rows = releases.map((release) => ({
+  release: release.tag_name.slice("home-v".length),
+  "Mac installer": count(release, /-macos-[^.]+\.dmg$/),
+  "Windows installer": count(release, /-windows-[^.]+\.exe$/),
+  "Mac updates": count(release, /-macos-[^.]+\.app\.tar\.gz$/),
+}));
+const total = (column: Exclude<keyof (typeof rows)[number], "release">) => rows.reduce((sum, row) => sum + row[column], 0);
+console.log("Downloads from GitHub, per Home release:");
+console.table([...rows, { release: "all", "Mac installer": total("Mac installer"), "Windows installer": total("Windows installer"), "Mac updates": total("Mac updates") }]);
+console.log("Repeated downloads count again, and GitHub doesn't say who downloaded. Windows installer downloads include the apps that updated themselves; a replaced file's count starts again from zero.\n");
 
 // wilm.ai's account on Cloudflare (apps/site/wrangler.jsonc).
 const ACCOUNT = "055d00c523a88d6e0c0f4056c9fc1d75";

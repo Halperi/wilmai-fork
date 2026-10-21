@@ -231,8 +231,11 @@ label stays until the app leaves beta.
 pnpm release:downloads
 ```
 
-Prints GitHub's download counts for the installers, per platform (update
-archives aren't counted), then, from Cloudflare's request analytics for
+Prints GitHub's download counts for every Home release: the Mac and Windows
+installers, and the Mac update archive, which only an installed app downloads
+when it updates itself (a Windows app updates with the installer, so those
+counts include updates). Replacing a file in a release starts its count from
+zero. Then, from Cloudflare's request analytics for
 wilm.ai (read with the `cf` CLI), per day: Home page views and the update
 checks of installed apps. A running app checks at start and every 6 hours, so
 about four checks a day are one app in use. Released apps check as
