@@ -1,8 +1,8 @@
 # WilmAI
 
-<img src="assets/wilmai_mascot.png" alt="WilmAI mascot" width="150" align="right">
+<img src="apps/site/public/og-en.png" alt="WilmAI: Wilma access for your AI assistant. Asked what the kids have at school tomorrow, the assistant answers: Kiia has an English exam on Thursday, units 7 to 9; Eino has swimming, so pack a towel." width="100%">
 
-**Wilma access for your AI assistant or agent.** Ask Claude, ChatGPT, OpenClaw, Grok Bot or Codex about school in plain words, or let your agent post one briefing for the whole family every morning.
+**Wilma access for your AI assistant or agent.** Ask Claude, ChatGPT, OpenClaw, Grok Bot, Meta Muse or Codex about school in plain words, or let your agent post one briefing for the whole family every morning.
 
 [![npm downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fwilm.ai%2Fapi%2Fbadge%2Fdownloads&label=downloads)](https://www.npmjs.com/package/@wilm-ai/wilma-cli)
 [![GitHub stars](https://img.shields.io/github/stars/aikarjal/wilmai?label=stars&color=17545b&style=flat)](https://github.com/aikarjal/wilmai/stargazers)
@@ -18,22 +18,6 @@
 WilmAI connects Wilma, the system Finnish schools use for schedules, homework, exams, grades and messages, to the AI assistant or agent you already use. It's an MCP server, a command-line tool and two agent skills, free and open source. There's also [WilmAI Home](#wilmai-home-the-desktop-app), a desktop app of its own for students and parents.
 
 > **Disclaimer:** This is an independent open-source project by a parent, not affiliated with, endorsed by, or connected to Visma or the official Wilma service.
-
-## WilmAI Home, the desktop app
-
-**Wilma, rethought with AI built in.** WilmAI Home is a desktop app for students and parents, in beta: messages, timetables, homework, exams and grades for every child in one app, a notification when something new needs you, and optional AI that reads each new message and picks out what needs you and by when.
-
-**[Download for Mac or Windows](https://wilm.ai/en/home#download)** · [What it does](https://wilm.ai/en/home) · [Releases](https://github.com/aikarjal/wilmai/releases?q=home-v)
-
-- **Reads and writes.** Reply to teachers, write new messages, sign up for parents' evenings and report absences, without opening Wilma. Pin the messages you keep coming back to.
-- **For a student too.** Sign in with a student's own Wilma account and choose "A student": the app then reads things from the student's side.
-- **AI is optional.** No AI (the default), OpenAI with your own API key (usually tens of cents a month; the app stops at a monthly limit you set), or local AI on an Apple Silicon Mac with 16 GB of memory, where nothing goes to an AI service.
-- **Stays on your computer.** No WilmAI server and no tracking. Your Wilma password goes only to your school's Wilma; the app keeps it (scrambled) only if you turn on staying signed in.
-- **Updates itself.** New versions arrive in the app, signed with the project's update key; you choose when to install them.
-
-Mac (Apple Silicon, macOS 13.3 or later) and Windows 10 or 11. The installers aren't signed by Apple or Microsoft yet, so the first start needs one extra step: on a Mac, System Settings → Privacy & Security → Open Anyway (the install window has a link); on Windows, More info → Run anyway. On Windows, notifications and local AI aren't there yet.
-
-The source is in [`apps/home`](apps/home) (Tauri, React and Rust), with its own README for building and the eval suite that measures how well the AI reads school messages.
 
 ## What you get
 
@@ -65,17 +49,20 @@ Then ask about school. The first time, a login page opens in your browser: pick 
 
 Step-by-step guides for parents, in English and Finnish: **[wilm.ai](https://wilm.ai/en#quickstart)**.
 
+<a href="https://wilm.ai/en#quickstart"><img src="assets/readme-assistants.png" alt="The assistant picker on wilm.ai: Claude Desktop, ChatGPT Desktop, Grok Bot, Meta Muse and OpenClaw, and for the terminal Claude Code, Codex and Terminal, with the Claude Desktop guide open: download one file, open it, ask Claude about school." width="100%"></a>
+
 | Assistant | How | Guide |
 |---|---|---|
 | **Claude Desktop** (Mac, Windows) | Download [`wilmai.mcpb`](https://wilm.ai/get/claude) and open it; Claude asks whether to install it | [wilm.ai#claude](https://wilm.ai/en#claude) |
 | **ChatGPT desktop app** (Mac, Windows) | In Work mode (not Chat), send ChatGPT one message and it installs the plugin itself; or add the MCP server `npx -y @wilm-ai/wilma-cli@2 mcp` yourself | [wilm.ai#chatgpt](https://wilm.ai/en#chatgpt) |
 | **Grok Bot** | Send one message; the bot installs the CLI and skill itself | [wilm.ai#grok](https://wilm.ai/en#grok) |
+| **Meta Muse** (not in Finland yet) | Send one message; Muse installs the CLI and skill itself, and asks you to save your Wilma login in its vault | [wilm.ai#muse](https://wilm.ai/en#muse) |
 | **OpenClaw** | Send one message and OpenClaw installs the CLI and the [`wilma`](https://clawhub.ai/aikarjal/skills/wilma) skill; a second one starts a daily briefing with [`wilma-triage`](https://clawhub.ai/aikarjal/skills/wilma-triage) | [wilm.ai#openclaw](https://wilm.ai/en#openclaw) |
 | **Claude Code** | `claude mcp add --scope user wilma -- npx -y @wilm-ai/wilma-cli@2 mcp` | [wilm.ai#claude-code](https://wilm.ai/en#claude-code) |
 | **Codex** | `codex plugin marketplace add aikarjal/wilmai`, then `codex plugin add wilma@wilmai` | [wilm.ai#codex](https://wilm.ai/en#codex) |
 | **Terminal** | `npm i -g @wilm-ai/wilma-cli`, then `wilma login` | [wilm.ai#cli](https://wilm.ai/en#cli) |
 
-Not supported: Claude and ChatGPT on the web and in the phone apps. Your login stays on your own devices and WilmAI runs no server in between; for updates on your phone, use an agent with its own computer, such as OpenClaw or Grok Bot. Not yet available in Finland: Meta Muse, Instinct, and OpenAI dots on consumer plans.
+Not supported: Claude and ChatGPT on the web and in the phone apps. Your login stays on your own devices and WilmAI runs no server in between; for updates on your phone, use an agent with its own computer, such as OpenClaw or Grok Bot. Not yet available in Finland: Meta Muse (US and Canada so far), Instinct, and OpenAI dots on consumer plans.
 
 ## What you can ask
 
@@ -180,6 +167,24 @@ node packages/wilma-cli/dist/index.js
 ```
 
 Working on WilmAI or releasing it: [DEVELOPING.md](DEVELOPING.md). Tests: [TESTING.md](TESTING.md).
+
+## WilmAI Home, the desktop app
+
+**Wilma, rethought with AI built in.** WilmAI Home is a desktop app for students and parents, in beta: messages, timetables, homework, exams and grades for every child in one app, a notification when something new needs you, and optional AI that reads each new message and picks out what needs you and by when.
+
+**[Download for Mac or Windows](https://wilm.ai/en/home#download)** · [What it does](https://wilm.ai/en/home) · [Releases](https://github.com/aikarjal/wilmai/releases?q=home-v)
+
+<img src="apps/site/public/home-today-en.png" alt="WilmAI Home's Today with a made-up sample family: each child's school day, what needs you, and this week's exams and events." width="100%">
+
+- **Reads and writes.** Reply to teachers, write new messages, sign up for parents' evenings and report absences, without opening Wilma. Pin the messages you keep coming back to.
+- **For a student too.** Sign in with a student's own Wilma account and choose "A student": the app then reads things from the student's side.
+- **AI is optional.** No AI (the default), OpenAI with your own API key (usually tens of cents a month; the app stops at a monthly limit you set), or local AI on an Apple Silicon Mac with 16 GB of memory, where nothing goes to an AI service.
+- **Stays on your computer.** No WilmAI server and no tracking. Your Wilma password goes only to your school's Wilma; the app keeps it (scrambled) only if you turn on staying signed in.
+- **Updates itself.** New versions arrive in the app, signed with the project's update key; you choose when to install them.
+
+Mac (Apple Silicon, macOS 13.3 or later) and Windows 10 or 11. The installers aren't signed by Apple or Microsoft yet, so the first start needs one extra step: on a Mac, System Settings → Privacy & Security → Open Anyway (the install window has a link); on Windows, More info → Run anyway. On Windows, notifications and local AI aren't there yet.
+
+The source is in [`apps/home`](apps/home) (Tauri, React and Rust), with its own README for building and the eval suite that measures how well the AI reads school messages.
 
 ## Troubleshooting
 
