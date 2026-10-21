@@ -8,7 +8,7 @@ export default function HomeCard({ lang }: { lang: Lang }) {
   return (
     <section className="section home-card" aria-labelledby="home-card-title">
       <a className="home-card-shot" href={`/${lang}/home`} tabIndex={-1} aria-hidden="true">
-        <Image src={`/home-today-${lang}.png`} alt="" width={1305} height={870} />
+        <Image src={`/home-today-${lang}.png`} alt="" width={1305} height={1134} />
       </a>
       <div className="home-card-copy">
         <p className="eyebrow">{t.eyebrow}</p>

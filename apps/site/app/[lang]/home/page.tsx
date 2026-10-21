@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     alternates: { canonical: `/${lang}/home`, languages: { en: "/en/home", fi: "/fi/home", "x-default": "/en/home" } },
-    openGraph: { title, description, url: `/${lang}/home`, images: [{ url: `/home-today-${lang}.png`, width: 2610, height: 1740, alt: homeCopy[lang].hero.sample }] },
+    openGraph: { title, description, url: `/${lang}/home`, images: [{ url: `/home-today-${lang}.png`, width: 2610, height: 2268, alt: homeCopy[lang].hero.sample }] },
     twitter: { title, description, images: [`/home-today-${lang}.png`] }
   };
 }
@@ -53,7 +53,7 @@ export default async function WilmAIHomePage({ params }: Props) {
         <p className="home-requirements">{t.hero.requirements}</p>
         <figure className="home-preview">
           {/* The app in its light theme with the sample family; how to retake it is in the site's README. */}
-          <Image src={`/home-today-${lang}.png`} alt={t.hero.sample} width={1305} height={870} priority />
+          <Image src={`/home-today-${lang}.png`} alt={t.hero.sample} width={1305} height={1134} priority />
           <figcaption>{t.hero.sample}</figcaption>
         </figure>
       </section>
