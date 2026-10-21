@@ -2,7 +2,32 @@
 
 <img src="apps/site/public/og-en.png" alt="WilmAI: Wilma access for your AI assistant. Asked what the kids have at school tomorrow, the assistant answers: Kiia has an English exam on Thursday, units 7 to 9; Eino has swimming, so pack a towel." width="100%">
 
-**Wilma access for your AI assistant or agent.** Ask Claude, ChatGPT, OpenClaw, Grok Bot, Meta Muse or Codex about school in plain words, or let your agent post one briefing for the whole family every morning.
+**Wilma, Finland's school system, with AI.** Two ways to use it, both free and open source:
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+<a href="#add-wilmai-to-your-assistant"><img src="assets/readme-assistants-tiles.png" alt="The assistants WilmAI works with: Claude Desktop, ChatGPT Desktop, Grok Bot, Meta Muse, OpenClaw, Claude Code, Codex and the terminal." width="100%"></a>
+
+**For your AI assistant or agent**<br>
+An MCP server, a CLI and agent skills. Ask Claude, ChatGPT, Codex, OpenClaw, Grok Bot or Meta Muse about school in plain words, or let your agent post one briefing for the whole family every morning.
+
+**[Set up your assistant →](#add-wilmai-to-your-assistant)**
+
+</td>
+<td width="50%" valign="top">
+
+<a href="https://wilm.ai/en/home"><img src="assets/readme-home-top.png" alt="WilmAI Home's Today with a made-up sample family: each child's school day, today and tomorrow." width="100%"></a>
+
+**WilmAI Home, the desktop app**<br>
+Wilma rethought with AI built in, for students and parents: every child's school in one app, and a notification when something needs you. Beta, for Mac and Windows.
+
+**[Download WilmAI Home →](https://wilm.ai/en/home#download)** · [More](#wilmai-home-the-desktop-app)
+
+</td>
+</tr>
+</table>
 
 [![npm downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fwilm.ai%2Fapi%2Fbadge%2Fdownloads&label=downloads)](https://www.npmjs.com/package/@wilm-ai/wilma-cli)
 [![GitHub stars](https://img.shields.io/github/stars/aikarjal/wilmai?label=stars&color=17545b&style=flat)](https://github.com/aikarjal/wilmai/stargazers)
