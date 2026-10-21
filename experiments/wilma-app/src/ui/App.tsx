@@ -23,7 +23,7 @@ import { Grades } from "./Grades";
 import { Notes } from "./Notes";
 import { Homework } from "./Homework";
 import { CommandMenu } from "./CommandMenu";
-import { UpdateDot } from "./Update";
+import { UpdateDot, VersionLine } from "./Update";
 import { Toaster } from "./Toast";
 import { Shortcuts } from "./Shortcuts";
 
@@ -328,6 +328,7 @@ function Shell() {
               <Icon name="sidebar" />
             </button>
           </div>
+          <VersionLine />
         </nav>
         <div className="main">
           <header className="topbar">

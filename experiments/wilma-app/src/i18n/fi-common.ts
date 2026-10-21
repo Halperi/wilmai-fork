@@ -77,6 +77,9 @@ export const FI_COMMON: Record<string, string> = {
 
   // A student's own login (Settings → Who uses this account)
   "Who uses this account": "Kuka käyttää tätä tiliä",
+  // The menu corner: the version and whether it is the newest
+  "Update available": "Päivitys saatavilla",
+  "Up to date": "Ajan tasalla",
   "A parent": "Huoltaja",
   "A student": "Oppilas",
   "Wilma says this is a student's own login.": "Wilman mukaan tämä on oppilaan oma tunnus.",

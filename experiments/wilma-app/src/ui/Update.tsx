@@ -4,6 +4,7 @@ import { updateSettings, useApp } from "../data/store";
 import { checkForUpdate, downloadUpdate, installUpdate } from "../data/updates";
 import { APP_VERSION } from "../data/edition";
 import { t } from "../i18n";
+import { go } from "./shared";
 
 export function UpdateDot() {
   const update = useApp((s) => s.update);
@@ -60,6 +61,25 @@ function UpdateDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** The menu's corner: this version, and whether it's the newest; it opens the Updates card in Settings. */
+export function VersionLine() {
+  const update = useApp((s) => s.update);
+  const state = update.available ? t("Update available") : update.checkedAt && !update.error ? t("Up to date") : null;
+  return (
+    <button
+      type="button"
+      className={`nav-version${update.available ? " has-update" : ""}`}
+      onClick={() => {
+        go("settings");
+        setTimeout(() => document.getElementById("updates")?.scrollIntoView({ block: "start" }), 50);
+      }}
+    >
+      WilmAI Home {update.current ?? APP_VERSION}
+      {state ? <span> · {state}</span> : null}
+    </button>
+  );
+}
+
 /** Settings: the version, automatic checks on or off, and checking now. */
 export function UpdatesCard({ compact = false }: { compact?: boolean }) {
   const update = useApp((s) => s.update);
@@ -72,7 +92,7 @@ export function UpdatesCard({ compact = false }: { compact?: boolean }) {
     setChecking(false);
   };
   return (
-    <section className={compact ? "updates-compact" : "card"}>
+    <section className={compact ? "updates-compact" : "card"} id={compact ? undefined : "updates"}>
       {compact ? <p className="help-line">WilmAI Home {update.current ?? APP_VERSION} Beta</p> : <h2>{t("Updates")}</h2>}
       {!compact ? <label className="switch">
         <input type="checkbox" checked={on} onChange={(e) => updateSettings({ updateChecks: e.target.checked })} />
