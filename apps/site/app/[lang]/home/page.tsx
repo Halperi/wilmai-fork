@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { Footer, TopBar } from "../../../components/SiteChrome";
 import { KeyVisual } from "../../../components/KeyVisual";
+import { FirstStartVisual } from "../../../components/FirstStartVisual";
 import { GITHUB_URL, githubStars } from "../../../lib/github-stars";
 import { homeCopy, homeRelease, macDownload, windowsDownload } from "../../../lib/home";
 import { dictionaries, isLang, type Lang } from "../../../lib/i18n";
@@ -184,6 +185,10 @@ export default async function WilmAIHomePage({ params }: Props) {
         <p>{t.get.includes}</p>
         <p>{t.get.macNote}</p>
         <p>{t.get.windowsNote}</p>
+        <div className="first-starts">
+          <FirstStartVisual kind="mac" title={t.get.firstMac} />
+          <FirstStartVisual kind="windows" title={t.get.firstWindows} />
+        </div>
         {macDownload && windowsDownload ? null : <p className="home-download-note">{t.get.pending}</p>}
         <p className="home-download-note">
           {t.get.others} <a href={`/${lang}#quickstart`}>{t.get.cliLink}</a>

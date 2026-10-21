@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  html, body { margin: 0; width: 660px; height: 560px; overflow: hidden; }
+  body { background: #fbfaf5; font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif; color: #1b2b34; position: relative; }
+  .grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(46,130,158,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(46,130,158,.07) 1px, transparent 1px); background-size: 22px 22px; }
+  h1 { position: absolute; top: 30px; left: 0; right: 0; margin: 0; text-align: center; font: 700 19px -apple-system, sans-serif; letter-spacing: -0.01em; }
+  h1 span { display: block; margin-top: 4px; font-weight: 500; font-size: 14px; color: #52616c; }
+  /* Icons: the app at (170, 165), Applications at (490, 165), the Privacy & Security link at (545, 420); the labels are Finder's own. */
+  .arrow { position: absolute; left: 254px; top: 147px; width: 152px; height: 36px; }
+  .note { position: absolute; left: 30px; width: 400px; top: 278px; padding: 12px 14px 14px; background: #fff3b8; border-radius: 10px; font-size: 11.5px; line-height: 1.45; color: #1b2b34; }
+  .note p { margin: 0; }
+  .note p + p { margin-top: 8px; }
+  .note b { font-weight: 700; }
+  .note .fi { color: #52616c; }
+  .pointer { position: absolute; left: 463px; top: 405px; width: 24px; height: 30px; }
+  /* What Privacy & Security shows after the first blocked start, the button to choose marked */
+  .look { margin-top: 12px; font-size: 10.5px; font-weight: 700; color: #17545b; text-transform: uppercase; letter-spacing: 0.04em; }
+  .row { margin-top: 6px; display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: #f5f5f4; border: 1px solid rgba(0,0,0,.08); border-radius: 9px; font: 12px -apple-system, sans-serif; color: #1d1d1f; }
+  .row .msg { flex: 1; line-height: 1.35; }
+  .row .btn { flex: none; padding: 4px 10px; background: #e3e3e1; border-radius: 6px; font-size: 12px; outline: 3px solid #ffd84d; outline-offset: 2px; box-shadow: 0 0 0 6px rgba(255,216,77,.35); }
+</style></head><body>
+  <div class="grid"></div>
+  <h1>Drag WilmAI Home to Applications<span>Vedä WilmAI Home Ohjelmat-kansioon</span></h1>
+  <svg class="arrow" viewBox="0 0 136 36" fill="none" stroke="#2e9e93" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 20 C 40 10, 90 10, 124 18" /><path d="M110 7 L126 18 L110 29" />
+  </svg>
+  <div class="note">
+    <p><b>The first time:</b> if macOS stops the app, choose Done. Then open <b>Privacy &amp; Security</b> on the right and choose <b>Open Anyway</b>.</p>
+    <p class="fi"><b>Ensimmäisellä kerralla:</b> jos macOS pysäyttää sovelluksen, valitse Valmis. Avaa sitten oikealla oleva <b>Privacy &amp; Security</b> (Tietosuoja ja turvallisuus) ja valitse <b>Avaa silti</b>.</p>
+    <div class="look">Look for this · Etsi tämä</div>
+    <div class="row"><span class="msg">“WilmAI Home.app” was blocked to protect your Mac.</span><span class="btn">Open Anyway</span></div>
+  </div>
+  <svg class="pointer" viewBox="0 0 36 30" fill="none" stroke="#2e9e93" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15 H31" /><path d="M22 6 L33 15 L22 24" /></svg>
+</body></html>

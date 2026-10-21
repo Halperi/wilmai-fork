@@ -1699,6 +1699,96 @@ main {
   text-overflow: ellipsis;
 }
 
+/* The first start on an unsigned installer, beside the download notes */
+.first-starts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  width: 100%;
+  max-width: 620px;
+  text-align: left;
+}
+
+@media (max-width: 640px) {
+  .first-starts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.first-start {
+  margin: 0;
+}
+
+.first-start figcaption {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.first-start .key-visual {
+  transform: none;
+}
+
+.fs-mac-row span:first-child {
+  flex: 1;
+  font-size: 11.5px;
+}
+
+.fs-win {
+  background: #0b5cad;
+  border-color: #0b5cad;
+  color: #fff;
+}
+
+.fs-win-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 12px 10px;
+  font-size: 11.5px;
+}
+
+.fs-win-body b {
+  font-size: 14px;
+}
+
+.fs-win-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: underline;
+  font-weight: 700;
+}
+
+.fs-win-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.fs-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--marker);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.fs-win-foot .fs-step {
+  margin-right: auto;
+}
+
 .kv-tile.kv-on {
   border: 2px solid var(--ink);
   box-shadow: 2px 2px 0 var(--marker);

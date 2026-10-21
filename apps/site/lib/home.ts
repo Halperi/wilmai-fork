@@ -50,6 +50,9 @@ export interface HomeCopy {
     windowsDetail: string;
     /** Windows warns about an unsigned installer: what to click, and what a school computer may do. */
     windowsNote: string;
+    /** Captions of the first-start sketches (components/FirstStartVisual.tsx). */
+    firstMac: string;
+    firstWindows: string;
     pending: string;
     others: string;
     cliLink: string;
@@ -225,7 +228,9 @@ const en: HomeCopy = {
     macNote: "The Mac app isn't signed by Apple yet, so macOS stops it the first time: choose Done, then open System Settings → Privacy & Security and choose Open Anyway for WilmAI Home. After that it opens normally.",
     windows: "Windows",
     windowsDetail: "Windows 10 or 11 · 64-bit",
-    windowsNote: "The Windows installer isn't signed yet, so Windows warns before the first start: choose More info, then Run anyway. It installs for you only, with no administrator rights, but a school computer's settings may still block it.",
+    windowsNote: "The Windows installer isn't signed yet, so your browser may say the file isn't commonly downloaded (choose Keep), and Windows warns before the first start: choose More info, then Run anyway. It installs for you only, with no administrator rights, but a school computer's settings may still block it.",
+    firstMac: "On a Mac, the first time",
+    firstWindows: "On Windows, the first time",
     pending: "The first downloads are on their way. They'll be here when they're ready.",
     others: "No Linux version yet.",
     cliLink: "WilmAI for AI assistants works there →"
@@ -408,7 +413,9 @@ const fi: HomeCopy = {
     macNote: "Mac-sovellusta ei ole vielä allekirjoitettu Applen kautta, joten macOS pysäyttää sen ensimmäisellä kerralla: valitse Valmis, avaa sitten Järjestelmäasetukset → Tietosuoja ja turvallisuus ja valitse WilmAI Homen kohdalla Avaa silti. Sen jälkeen sovellus aukeaa normaalisti.",
     windows: "Windows",
     windowsDetail: "Windows 10 tai 11 · 64-bittinen",
-    windowsNote: "Windows-asennusohjelmaa ei ole vielä allekirjoitettu, joten Windows varoittaa ennen ensimmäistä käynnistystä: valitse Lisätietoja ja sitten Suorita silti. Se asentuu vain sinulle eikä tarvitse ylläpitäjän oikeuksia, mutta koulun tietokoneen asetukset voivat silti estää sen.",
+    windowsNote: "Windows-asennusohjelmaa ei ole vielä allekirjoitettu, joten selain voi sanoa, ettei tiedostoa ladata usein (valitse Säilytä), ja Windows varoittaa ennen ensimmäistä käynnistystä: valitse Lisätietoja ja sitten Suorita silti. Se asentuu vain sinulle eikä tarvitse ylläpitäjän oikeuksia, mutta koulun tietokoneen asetukset voivat silti estää sen.",
+    firstMac: "Macilla ensimmäisellä kerralla",
+    firstWindows: "Windowsissa ensimmäisellä kerralla",
     pending: "Ensimmäiset lataukset ovat tulossa. Ne ilmestyvät tähän, kun ne ovat valmiita.",
     others: "Linux-versiota ei vielä ole.",
     cliLink: "Tekoälyavustajien WilmAI toimii siinäkin →"

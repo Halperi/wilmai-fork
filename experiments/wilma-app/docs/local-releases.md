@@ -135,6 +135,16 @@ Package the Windows installer in the container (above), name the assets with
 `…-windows-x64.exe`), and sign the Windows installer for updates: the bundler's
 own signing step comes after the makensis that fails here.
 
+Finish the Mac DMG: `sh scripts/finish-dmg.sh "<Tauri's .dmg>" WilmAI-Home-<v>-beta-macos-arm64.dmg`.
+It adds the background (`desktop-assets/dmg/background.tiff`: drag to
+Applications, and the first-start steps with a sketch of Open Anyway), a link
+to System Settings' Privacy & Security (Finder won't open a `.webloc` to
+System Settings; the old `Security.prefPane` still opens the pane), keeps
+`.background` and `.VolumeIcon.icns` hidden (Finder drops the volume icon while
+it writes the layout, so the script puts it back) and lays the window out. To
+change the background, edit `desktop-assets/dmg/background.html`, screenshot
+it at 660×560 at 1× and 2×, and combine them with `tiffutil -cathidpicheck`.
+
 ```sh
 env -u TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PATH=~/.tauri/wilmai-home.key pnpm tauri signer sign WilmAI-Home-<v>-beta-windows-x64.exe
 pnpm home:feed darwin-aarch64=<…>.app.tar.gz.sig windows-x86_64=<…>.exe.sig    # writes apps/site/public/app/latest.json
