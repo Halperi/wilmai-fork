@@ -1,16 +1,16 @@
 {
-  "version": "0.1.0",
-  "notes": "The first beta of WilmAI Home, a desktop app for students and parents: messages, timetables, homework, exams and grades in one place, a notification when something new needs you, and optional AI that picks out what matters.",
-  "pub_date": "2026-10-21T22:17:35.621Z",
+  "version": "0.1.1",
+  "notes": "A message you wrote to a teacher no longer shows up as needing you. · Opettajalle itse kirjoittamasi viesti ei enää näy sinua odottavana.",
+  "pub_date": "2026-10-21T23:18:05.669Z",
   "url": "https://wilm.ai/app",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQmV1Tzd4bFkvbTJhVCtjTVNydFhuMmRUWkNnU1dUcTRMYmNDMzZZUHNWZUJXSCszU1BjbFgwajlqNnVRNGEyd2RjTkQzUmNYMjEwK3VsL2tUTTJVZGdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjIwOTc4CWZpbGU6V2lsbUFJIEhvbWUuYXBwLnRhci5negl2ZXJzaW9uOjAuMS4wCnRWU1FLQnZYUFBIajdPZFQ5MFZzeUpoSTh0SDZBMVVydU9zejBRMUcza0lHamVFald1eTNmMHFtL2IwYlhlYnZKZ3FxWEhFU2NsRVJ4VE9zUENyQ0RRPT0K",
-      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.0/WilmAI-Home-0.1.0-beta-macos-arm64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQlNpdzhsSm1pZzZaTmJ4N2dvWUNKS2U0MStnRTloRFowa21NaThpeTJWaWNwQVpHVDJJbTlXU0Fsck9zVkJBOHlyeVhiZDlwYUtjZWRQWHBaaWhPRlEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjI0NTg4CWZpbGU6V2lsbUFJIEhvbWUuYXBwLnRhci5negl2ZXJzaW9uOjAuMS4xCndSVDlKVkluWmpZVFFCaTUvbDE4L2JZbTBtUk04MU91U2lwQmtTNC9GTDczQVI0ZXM4L0ZEUVErLzFDTitydFdwRTROVTFKcmpqYk1GMTZNYzBFZUN3PT0K",
+      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.1/WilmAI-Home-0.1.1-beta-macos-arm64.app.tar.gz"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQlRJNU1SejNNcFpZb2h1bjFwdHh5SlV3Wks0Y09VS1hQK2Y2ekx1TUJqd0MrRW80QnBXelFvSlA0QWdtQXFhVzVpV1RXV2Y2cXNlMndrTUV4UHZFMFFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjIxMDM1CWZpbGU6V2lsbUFJLUhvbWUtMC4xLjAtYmV0YS13aW5kb3dzLXg2NC5leGUKTWxFOGhQSG16eUQ1Ry80emJVc3YrY0tlQ0pmTFNJQWlWVlMyZzgxaFVxeDVUYlFCc05CODk1YzRjcVdoQ2VnTlRjZkJMT21WU3Z3djZHYXc0VE9tQXc9PQo=",
-      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.0/WilmAI-Home-0.1.0-beta-windows-x64.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQldsV0R4dmhOVGt5clY0a29va29hU2dOa0hLaUVYbXY0VC9mV3ZDbGVuMk9yRHpPelI0dkVQMXREN29abzhBT3lhTXBKVERYbng1L3lJRzRNYlBlVnd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjI0NjQ3CWZpbGU6V2lsbUFJLUhvbWUtMC4xLjEtYmV0YS13aW5kb3dzLXg2NC5leGUKblNPZnJMK1prbHVlbXJnZnFkemlWSlh3bWxuU1NLUjJ3Wk1lVTdtdVlqNExRUDZ2L2g3bHpQTW80UCsybzhDM1VCR3Z3dk5IVlhZMW12U1Bsc3NyRGc9PQo=",
+      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.1/WilmAI-Home-0.1.1-beta-windows-x64.exe"
     }
   }
 }
