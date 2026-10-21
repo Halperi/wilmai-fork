@@ -73,7 +73,7 @@ quote grounding and calendar validation remain in use.
 
 ## Evaluating without leaving model downloads behind
 
-Run from `experiments/wilma-app`:
+Run from `apps/home`:
 
 ```sh
 pnpm test:ai

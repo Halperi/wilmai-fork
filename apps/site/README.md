@@ -14,7 +14,7 @@ static files and served by Cloudflare Workers.
   assistants.
 - `public/home-today-en.png`, `public/home-today-fi.png` — the app's Today in its light theme with the
   made-up sample family, never real children's data. To retake them: run the app in a browser
-  (`pnpm dev` in `experiments/wilma-app`) and open it in a fresh browser profile with the light colour
+  (`pnpm dev` in `apps/home`) and open it in a fresh browser profile with the light colour
   scheme, the language's locale, Helsinki's time zone and 2× pixels, with the clock frozen on a school-day
   morning (Playwright's `page.clock.setFixedTime`, e.g. a Wednesday at 09:40): the sample family is built
   around today, so a weekend shows no school. Choose the sample family, then No AI in Settings (so the
@@ -30,7 +30,7 @@ static files and served by Cloudflare Workers.
 Home's update feed is one JSON file, `/app/latest.json`, added only after a signed build and an
 upgrade from one version to the next are verified. `/home` and `/app` (the app's link to its
 page) go to `/en/home` or `/fi/home` like `/` does. See
-`experiments/wilma-app/docs/local-releases.md` for the Mac release process.
+`apps/home/docs/local-releases.md` for the Mac release process.
 
 ## Run locally
 

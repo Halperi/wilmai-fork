@@ -1,5 +1,7 @@
 packages:
   - "packages/*"
   - "apps/*"
+  # WilmAI Home installs on its own (apps/home/pnpm-lock.yaml): Tauri, React and the desktop build stay out of the workspace and CI.
+  - "!apps/home"
 
 linkWorkspacePackages: true

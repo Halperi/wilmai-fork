@@ -33,7 +33,7 @@ WilmAI connects Wilma, the system Finnish schools use for schedules, homework, e
 
 Mac (Apple Silicon, macOS 13.3 or later) and Windows 10 or 11. The installers aren't signed by Apple or Microsoft yet, so the first start needs one extra step: on a Mac, System Settings → Privacy & Security → Open Anyway (the install window has a link); on Windows, More info → Run anyway. On Windows, notifications and local AI aren't there yet.
 
-The source is in [`experiments/wilma-app`](experiments/wilma-app) (Tauri, React and Rust), with its own README for building and the eval suite that measures how well the AI reads school messages.
+The source is in [`apps/home`](apps/home) (Tauri, React and Rust), with its own README for building and the eval suite that measures how well the AI reads school messages.
 
 ## What you get
 
@@ -96,7 +96,7 @@ Or give an agent a routine: "Every weekday at 7, post a school briefing for both
 - `packages/wilma-cli` – CLI (`wilma`), browser login (`wilma login`), and MCP server (`wilma mcp`)
 - `skills/` – Agent skills (`wilma`, `wilma-triage`); also the plugin root for Claude Code and Codex
 - `apps/site` – wilm.ai (Next.js, built as static files and served by Cloudflare Workers)
-- `experiments/wilma-app` – WilmAI Home, the desktop app (Tauri), and its eval suite
+- `apps/home` – WilmAI Home, the desktop app (Tauri), and its eval suite
 
 ## Logging in
 
