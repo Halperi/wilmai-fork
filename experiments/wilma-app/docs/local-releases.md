@@ -222,9 +222,16 @@ pnpm release:downloads
 ```
 
 Prints GitHub's download counts for the installers, per platform (update
-archives aren't counted). Repeated downloads count again, so these aren't
-unique users, and GitHub doesn't say who downloaded. The app itself has no
-tracking or analytics.
+archives aren't counted), then, from Cloudflare's request analytics for
+wilm.ai (read with the `cf` CLI), per day: Home page views and the update
+checks of installed apps. A running app checks at start and every 6 hours, so
+about four checks a day are one app in use. Released apps check as
+`tauri-plugin-updater/…`, older and development builds as `WilmAI-Home/…`.
+
+These are counts that exist anyway. Repeated downloads count again, so they
+aren't unique users; GitHub doesn't say who downloaded, and the script reads no
+addresses or anything else about a person. The app itself has no tracking or
+analytics.
 
 References: [Tauri updater](https://v2.tauri.app/plugin/updater/),
 [Mac signing](https://v2.tauri.app/distribute/sign/macos/),
