@@ -329,6 +329,22 @@ export function pupilName(snap: Snapshot, number: string): string {
   return child ? (cls ? `${child.first} (${cls})` : child.first) : "the pupil";
 }
 
+/**
+ * Written by this family: Wilma names a guardian with their child, "Karjalainen Antti (Kiia Karjalainen, 7G)", so a
+ * sender naming one of the children is this parent or the other guardian; on a pupil's own login, the pupil writes as
+ * themself. Another family's parent names their own child, so their messages still count as anyone else's.
+ */
+export function writtenByFamily(sender: string | null | undefined, children: Pick<Child, "name">[]): boolean {
+  if (!sender) return false;
+  const words = (s: string) => s.toLocaleLowerCase("fi").split(/\s+/).filter(Boolean).sort().join(" ");
+  const named = sender.split("(")[0];
+  const about = /\(([^,)]+)[,)]/.exec(sender)?.[1] ?? "";
+  return children.some((c) => {
+    const name = words(c.name);
+    return name !== "" && (words(about) === name || words(named) === name);
+  });
+}
+
 export function firstName(name: string): string {
   return name.trim().split(/\s+/)[0] ?? name;
 }

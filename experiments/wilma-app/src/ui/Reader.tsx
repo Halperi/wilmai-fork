@@ -502,7 +502,7 @@ function JevCard({ item }: { item: FeedItem }) {
     ) : null;
   const foot = [
     triage.preliminary ? t("Read from the subject only; it's read again once the message is opened.") : null,
-    isNeedsYou(item) || triage.needsAction < NEEDS_YOU ? null : t("Not counted as needing you: it's from outside the school, or its dates have passed."),
+    isNeedsYou(item) || triage.needsAction < NEEDS_YOU ? null : item.own ? t("Not counted as needing you: your family wrote it.") : t("Not counted as needing you: it's from outside the school, or its dates have passed."),
     t("The AI saw this item with your children's first names and classes, nothing else. It keeps only the school's own words and says how sure it is of each."),
   ];
   return (

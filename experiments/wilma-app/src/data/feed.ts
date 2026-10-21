@@ -8,7 +8,7 @@
 import type { LessonNote } from "@wilma-client/src/core";
 import { addDays, dateOf, daysBetween, today } from "./dates";
 import type { AppState } from "./store";
-import { LUNA_THRESHOLDS, viewerOf, type Child, type JevAnswer, type JevRecord, type LunaEvent, type LunaRecord, type Snapshot } from "./model";
+import { LUNA_THRESHOLDS, viewerOf, writtenByFamily, type Child, type JevAnswer, type JevRecord, type LunaEvent, type LunaRecord, type Snapshot } from "./model";
 import { TRIAGE_PUPIL_QS, TRIAGE_QS, type Kind, type Scope } from "../jev/questions";
 import { awaitingAnswer, slotState, type Invitation as Invite, type InvitationSlot as InviteSlot } from "@wilma-client/src/core";
 import { clock, deadlineDay, shortDate } from "./dates";
@@ -77,6 +77,8 @@ export interface FeedItem {
   eventDate: string | null;
   /** Something the parent has to do that code knows for certain from Wilma's own data (no model needed). */
   task: { label: string; reason: string } | null;
+  /** A message this family wrote (model.ts writtenByFamily): never a step for them, whatever the reading says. */
+  own?: boolean;
   tone: "praise" | "neutral" | "concern" | null;
   replyCount: number;
   note?: NoteGroup;
@@ -266,6 +268,8 @@ export function buildFeed(state: Pick<AppState, "snapshot" | "local" | "jev" | "
           chosen: inviteData?.slots.find((slot) => slot.selected || slot.selectedByOther) ?? null,
         }
       : undefined;
+    // Written by this family: its dates still count (the calendar), but it's never a step for them.
+    const own = writtenByFamily(m.sender, snap.children);
     const openUntil = inviteData?.slots
       .filter((slot) => slotState(slot) === "open" && slot.enrollEnd)
       .map((slot) => slot.enrollEnd!)
@@ -289,10 +293,11 @@ export function buildFeed(state: Pick<AppState, "snapshot" | "local" | "jev" | "
       upcoming: [...new Set([...inviteDates, ...upcomingOf(state.luna[key])])].sort(),
       dated: Boolean(state.luna[key]?.events.length) || inviteDates.length > 0,
       triage,
-      actionLine: triage?.detail?.actionLine ?? null,
-      deadline: triage?.detail?.deadline ?? null,
+      actionLine: own ? null : triage?.detail?.actionLine ?? null,
+      deadline: own ? null : triage?.detail?.deadline ?? null,
       eventDate: triage?.detail?.eventDate ?? null,
       task: invite?.awaiting && !student ? { label: t("Sign up"), reason: signUpReason(openUntil) } : null,
+      own,
       invite,
       tone: triage && triage.praise >= 0.6 && triage.aboutChild >= 0.5 ? "praise" : null,
       replyCount: m.replyCount,
@@ -392,7 +397,7 @@ export function priority(item: FeedItem): number {
  * (not the city or an association), and not already over.
  */
 export function isNeedsYou(i: FeedItem): boolean {
-  if (i.done) return false;
+  if (i.done || i.own) return false;
   if (i.task) return true;
   // An invitation's state is known exactly (signed up, closed, open): that wins over the model's reading.
   if (i.invite?.data) return false;

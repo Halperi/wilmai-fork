@@ -135,6 +135,7 @@ export const FI_INBOX: Record<string, string> = {
     "Tarkistettu uudelleen, koska ensimmäinen vastaus oli epävarma ({first}): odottaa sinua {confirm}.",
   "How soon (worked out from the date): {level}": "Kuinka pian (laskettu päivämäärästä): {level}",
   "Read from the subject only; it's read again once the message is opened.": "Luettu vain otsikosta; luetaan uudelleen, kun viesti avataan.",
+  "Not counted as needing you: your family wrote it.": "Ei lasketa sinua odottavaksi: perheesi kirjoitti sen.",
   "Not counted as needing you: it's from outside the school, or its dates have passed.":
     "Ei lasketa sinua odottavaksi: se tulee koulun ulkopuolelta, tai sen päivät ovat jo menneet.",
 
