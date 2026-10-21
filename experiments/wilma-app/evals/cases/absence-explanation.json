@@ -1,0 +1,47 @@
+{
+  "id": "absence-explanation",
+  "added": "2026-10-08",
+  "why": "A teacher asks the guardian to explain an absence ('Selvittäisittekö … mahdollisimman pian?'): a step with no date.",
+  "tags": [
+    "step",
+    "polite"
+  ],
+  "today": "2026-10-06",
+  "pupils": [
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 4101,
+      "sent": "2026-10-05T15:40",
+      "from": "Matematiikan opettaja",
+      "subject": "Poissaolo matematiikan tunnilta",
+      "pupils": [
+        0
+      ],
+      "text": "Hei,\nVeeti ei ollut tänään paikalla matematiikan tunnilla klo 12.15. Merkintä näkyy Wilmassa selvittämättömänä poissaolona. Selvittäisittekö poissaolon Wilmassa mahdollisimman pian?\nTerveisin\nMatematiikan opettaja"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 4101,
+        "needs_action": true,
+        "scope": [
+          "pupil"
+        ]
+      }
+    ],
+    "action": [
+      {
+        "item": 4101,
+        "quote": "Selvittäisittekö",
+        "deadline": null
+      }
+    ]
+  }
+}

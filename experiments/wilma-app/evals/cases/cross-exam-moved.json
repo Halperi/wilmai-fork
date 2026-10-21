@@ -1,0 +1,62 @@
+{
+  "id": "cross-exam-moved",
+  "added": "2026-10-09",
+  "why": "An exam in one message, moved in a later one ('koe pidetään vasta tiistaina 20.10.'): the new day only.",
+  "tags": [
+    "cross-item",
+    "trap",
+    "time"
+  ],
+  "today": "2026-10-09",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 7201,
+      "sent": "2026-10-02T12:00",
+      "from": "Kemian opettaja",
+      "subject": "Kemian koe",
+      "pupils": [
+        0
+      ],
+      "text": "Hei 9C!\nKemian koe on torstaina 15.10. klo 10.15. Koealueena kirjan luvut 4–6.\nTerveisin\nKemian opettaja"
+    },
+    {
+      "type": "message",
+      "id": 7202,
+      "sent": "2026-10-08T14:00",
+      "from": "Kemian opettaja",
+      "subject": "Muutos kemian kokeeseen",
+      "pupils": [
+        0
+      ],
+      "text": "Hei!\nJoudun siirtämään ensi viikon kemian koetta: koe pidetään vasta tiistaina 20.10. klo 10.15. Koealue pysyy samana.\nTerveisin\nKemian opettaja"
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-20",
+          "start": "10:15",
+          "kind": "exam",
+          "pupil": 0,
+          "sure": true
+        }
+      ],
+      "not": [
+        {
+          "date": "2026-10-15",
+          "kind": "exam",
+          "suggestions": false,
+          "note": "moved in the later message"
+        }
+      ]
+    }
+  }
+}

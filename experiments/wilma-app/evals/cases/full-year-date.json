@@ -1,0 +1,55 @@
+{
+  "id": "full-year-date",
+  "added": "2026-10-08",
+  "why": "A date with its year ('17.11.2026') and an info evening needing no sign-up: in the calendar, no step.",
+  "tags": [
+    "full-year",
+    "time",
+    "no-step"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 3601,
+      "sent": "2026-10-06T13:00",
+      "from": "Opinto-ohjaaja Esimerkki",
+      "subject": "Yhteishaun info huoltajille",
+      "pupils": [
+        0
+      ],
+      "text": "Hyvät 9. luokkalaisten huoltajat,\nyhteishaun infotilaisuus huoltajille pidetään tiistaina 17.11.2026 klo 18.00–19.30 Teamsissa. Linkki lähetetään viikkoa ennen. Tilaisuuteen ei tarvitse ilmoittautua.\nIllassa käydään läpi yhteishaun aikataulu, toisen asteen vaihtoehdot ja hakulomakkeen täyttäminen.\nTerveisin\nOpinto-ohjaaja"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 3601,
+        "needs_action": false
+      }
+    ],
+    "action": [
+      {
+        "item": 3601,
+        "none": true
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-11-17",
+          "start": "18:00",
+          "kind": "event",
+          "pupil": 0,
+          "sure": true
+        }
+      ]
+    }
+  }
+}

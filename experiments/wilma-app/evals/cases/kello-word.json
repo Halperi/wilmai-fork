@@ -1,0 +1,55 @@
+{
+  "id": "kello-word",
+  "added": "2026-10-08",
+  "why": "The time written out ('kello 8.15'), and an optional photo order that isn't a step.",
+  "tags": [
+    "time",
+    "no-step",
+    "optional"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 3701,
+      "published": "2026-10-05T10:00",
+      "from": "Koulusihteeri Esimerkki",
+      "title": "Koulukuvaus",
+      "pupils": [
+        0
+      ],
+      "text": "Koulukuvaus 9C-luokalle on keskiviikkona 14.10. kello 8.15 alkaen liikuntasalin lämpiössä. Ryhmäkuvan jälkeen otetaan yksilökuvat. Kuvat voi tilata kuvaamon verkkokaupasta kuvauksen jälkeen; tilaaminen on vapaaehtoista."
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 3701,
+        "needs_action": false
+      }
+    ],
+    "action": [
+      {
+        "item": 3701,
+        "none": true
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-14",
+          "start": "08:15",
+          "kind": "event",
+          "pupil": 0,
+          "sure": true
+        }
+      ]
+    }
+  }
+}

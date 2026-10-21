@@ -1,0 +1,66 @@
+{
+  "id": "two-grades-one-bulletin",
+  "added": "2026-10-08",
+  "why": "One bulletin, two grades' events: the 7th graders' trip is Veeti's, the 9th graders' visit is Aino's.",
+  "tags": [
+    "whose"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 4701,
+      "published": "2026-10-06T09:00",
+      "from": "Rehtori Esimerkki",
+      "title": "Tulevia retkiä ja vierailuja",
+      "pupils": [
+        0,
+        1
+      ],
+      "text": "7. luokat: tutustumisretki Nuuksion kansallispuistoon tiistaina 20.10. klo 8.30–14.00. Retkellä tarvitaan maastoon sopivat kengät.\n9. luokat: vierailu ammattiopiston avoimien ovien päivään keskiviikkona 21.10. klo 9.30–12.00. Lähtö koululta klo 9.00.\nMolemmat retket ovat koulupäivän aikana, ja lounas syödään koululla."
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-20",
+          "kind": "trip",
+          "pupil": 1,
+          "sure": true
+        },
+        {
+          "date": "2026-10-21",
+          "kind": [
+            "trip",
+            "event"
+          ],
+          "pupil": 0,
+          "sure": true
+        }
+      ],
+      "not": [
+        {
+          "date": "2026-10-20",
+          "pupil": 0,
+          "note": "the 7th graders' trip"
+        },
+        {
+          "date": "2026-10-21",
+          "pupil": 1,
+          "note": "the 9th graders' visit"
+        }
+      ]
+    }
+  }
+}

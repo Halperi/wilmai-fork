@@ -1,6 +1,7 @@
 // The site is built as static files (out/) and served by Cloudflare Workers:
 // see wrangler.jsonc. Headers and redirects live in public/_headers and
-// public/_redirects; the "/" language redirect is in worker/index.ts.
+// public/_redirects; the language redirects for /, /home and /app are in
+// worker/index.ts.
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

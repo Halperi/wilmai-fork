@@ -1,0 +1,70 @@
+{
+  "id": "newsletter-buried-step",
+  "added": "2026-10-08",
+  "why": "A class's weekly letter: last week's news, next week's dates, and one required step in the middle ('Palauttakaa retkilupa … maanantaihin 12.10. mennessä').",
+  "tags": [
+    "newsletter",
+    "long",
+    "step",
+    "deadline",
+    "time"
+  ],
+  "today": "2026-10-09",
+  "pupils": [
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 6401,
+      "published": "2026-10-09T14:00",
+      "from": "Luokanvalvoja Esimerkki",
+      "title": "7G:n viikkokirje, viikko 41",
+      "pupils": [
+        0
+      ],
+      "text": "Hei kaikki!\n\nTällä viikolla\nKävimme tiistaina kirjastossa, ja jokainen lainasi itselleen romaanin. Matematiikassa aloitimme murtoluvut.\n\nEnsi viikolla\nMaanantaina 12.10. on kuvauspäivä, ja 7G:n kuvaus alkaa klo 10.15. Torstaina 15.10. lähdemme biologian tunnilla metsäretkelle lähimetsään. Säänmukaiset vaatteet!\n\nMuistettavaa\nPalauttakaa retkilupa allekirjoitettuna luokanvalvojalle maanantaihin 12.10. mennessä. Ilman lupaa oppilas ei voi lähteä retkelle.\n\nMukavaa viikonloppua!\nLuokanvalvoja"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 6401,
+        "needs_action": true
+      }
+    ],
+    "action": [
+      {
+        "item": 6401,
+        "quote": "retkilupa",
+        "deadline": "2026-10-12"
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-12",
+          "start": "10:15",
+          "kind": "event",
+          "pupil": 0
+        },
+        {
+          "date": "2026-10-15",
+          "kind": [
+            "trip",
+            "event"
+          ],
+          "pupil": 0,
+          "sure": true
+        },
+        {
+          "date": "2026-10-12",
+          "kind": "deadline"
+        }
+      ]
+    }
+  }
+}

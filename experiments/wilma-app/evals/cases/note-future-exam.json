@@ -1,0 +1,48 @@
+{
+  "id": "note-future-exam",
+  "added": "2026-10-08",
+  "why": "A teacher's note on today's lesson names a coming exam ('Kokeeseen ti 20.10. tulevat…'): neutral, and the exam is in the calendar.",
+  "tags": [
+    "note",
+    "tone"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "note",
+      "id": 5801,
+      "pupil": 0,
+      "date": "2026-10-08",
+      "start": "10:15",
+      "end": "11:00",
+      "subject": "Historia",
+      "kind": "Tiedoksi",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Kokeeseen ti 20.10. tulevat kirjan kappaleet 3–5 ja vihkomuistiinpanot."
+    }
+  ],
+  "expect": {
+    "tone": [
+      {
+        "item": 5801,
+        "tone": "neutral"
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-20",
+          "kind": "exam",
+          "pupil": 0,
+          "sure": true
+        }
+      ]
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import { parseWilmaTimestamp } from "./dates.js";
 import { htmlToText } from "./html-text.js";
+import { parseInvitation } from "./invitations.js";
 import type { Message, MessageFolder, MessageReply } from "../types.js";
 
 export function parseMessagesList(data: unknown, folder: MessageFolder): Message[] {
@@ -90,6 +91,9 @@ export function parseMessageDetailJson(data: unknown, messageId: number): Messag
     content: htmlToText(str(m["ContentHtml"])),
     recipients,
     replies,
+    discussion: m["AllowCollatedReply"] === true,
+    canReply: typeof m["AllowReply"] === "boolean" ? m["AllowReply"] : null,
+    invitation: m["IsEvent"] ? parseInvitation(m["EventData"]) : null,
     fetchedAt: new Date(),
   };
 }

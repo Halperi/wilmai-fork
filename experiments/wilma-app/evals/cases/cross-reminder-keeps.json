@@ -1,0 +1,60 @@
+{
+  "id": "cross-reminder-keeps",
+  "added": "2026-10-09",
+  "why": "A trip, and the day before a reminder ('Muistutus: huomenna on Suomenlinnan-retki!'): still on, and once.",
+  "tags": [
+    "cross-item",
+    "duplicate"
+  ],
+  "today": "2026-10-14",
+  "pupils": [
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 7501,
+      "sent": "2026-10-05T12:00",
+      "from": "Luokanvalvoja Esimerkki",
+      "subject": "Retki Suomenlinnaan",
+      "pupils": [
+        0
+      ],
+      "text": "Hei 7G:n huoltajat!\nLähdemme retkelle Suomenlinnaan torstaina 15.10. Kokoonnumme koululla klo 8.15 ja palaamme noin klo 14.\nTerveisin\nLuokanvalvoja"
+    },
+    {
+      "type": "message",
+      "id": 7502,
+      "sent": "2026-10-14T12:00",
+      "from": "Luokanvalvoja Esimerkki",
+      "subject": "Muistutus huomisesta",
+      "pupils": [
+        0
+      ],
+      "text": "Muistutus: huomenna on Suomenlinnan-retki! Muistakaa eväät, juomapullo ja lämmin takki, sillä merellä tuulee.\nTerveisin\nLuokanvalvoja"
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-15",
+          "kind": "trip",
+          "pupil": 0,
+          "sure": true
+        }
+      ],
+      "atMost": [
+        {
+          "date": "2026-10-15",
+          "max": 1,
+          "kind": "trip",
+          "note": "the trip once"
+        }
+      ]
+    }
+  }
+}

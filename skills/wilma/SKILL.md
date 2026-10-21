@@ -59,6 +59,7 @@ Both cover **every child by default**; pass `student` / `--student <number|name>
 | `wilma_account` | `wilma students`, `wilma accounts` |
 | `wilma_find_school` | `wilma find-school <city>` |
 | `wilma_login` | `wilma login` |
+| `wilma_logout` | `wilma logout` |
 
 Dates are `YYYY-MM-DD`, `today`, `yesterday` or `tomorrow`.
 
@@ -75,6 +76,8 @@ The user logs in once; the login is saved on their computer.
 - **Children on different Wilmas** (e.g. a city school and a private school): the user adds each login on the login page ("Add another Wilma") or with another `wilma login`. All saved logins are used together; children then carry a `wilma` field naming their Wilma. `wilma accounts` lists the logins.
 
 Commands continue the last Wilma session instead of logging in each time (each login would log the parent out of Wilma in their own browser), so running several commands in a row is fine.
+
+If the user wants to use Wilma in their browser, or asks you to log out, run `wilma logout` or call `wilma_logout` (wilma-cli 2.2+). It ends WilmAI's Wilma session and keeps the saved login. Don't run other Wilma commands after that unless the user asks: the next one logs in again, and that logs them out of Wilma in the browser.
 
 ## Install
 ```bash

@@ -18,6 +18,12 @@ Opens a one-time login page in your browser: pick your school's Wilma and log in
 
 Without a browser: `wilma login --tenant <url|city> --username <name>` with the password in `WILMA_PASSWORD` or piped via `--password-stdin`. Or set `WILMA_TENANT`, `WILMA_USERNAME`, `WILMA_PASSWORD` (and `WILMA_TOTP_SECRET`) and skip the saved login.
 
+## Log out
+```bash
+wilma logout                  # every saved login; `wilma logout 2` for one (numbers from `wilma accounts`)
+```
+Wilma allows one session per account: when WilmAI logs in, Wilma logs you out in your browser, and the other way round. `wilma logout` ends WilmAI's session, as Wilma's own Log out does, so you can use Wilma in the browser. The logins stay saved, and the next command logs in again. `wilma config clear` deletes the logins as well.
+
 ## Use it
 ```bash
 wilma summary                 # the daily briefing for every child — start here
@@ -53,7 +59,7 @@ Running `wilma` without arguments in a terminal opens an interactive menu.
 ```bash
 wilma mcp
 ```
-Starts a stdio MCP server with read-only Wilma tools (`wilma_summary`, `wilma_schedule`, `wilma_read_news`, …) that return the same data as the commands. Add it to any MCP client as `npx -y @wilm-ai/wilma-cli@2 mcp`. Setup guides for Claude, ChatGPT, Grok Bot and OpenClaw: https://wilm.ai
+Starts a stdio MCP server with read-only Wilma tools (`wilma_summary`, `wilma_schedule`, `wilma_read_news`, …) that return the same data as the commands, plus `wilma_logout`, which ends WilmAI's Wilma session like `wilma logout`. Add it to any MCP client as `npx -y @wilm-ai/wilma-cli@2 mcp`. Setup guides for Claude, ChatGPT, Grok Bot and OpenClaw: https://wilm.ai
 
 ## Bulletin attachments
 `wilma news <id>` lists every link in a bulletin (`resources`). Any resource can be downloaded with `wilma news <id> download <resource> [--output <directory>]` (the resource id also accepts a bare number, e.g. `1` for `resource-1`). Wilma-hosted files download through the session; external links are fetched without your Wilma login, and only from public websites. The result's `status` says what happened: `downloaded` (use the returned `path`) or `not_a_file` when the link answered with a web page (for example a sharing link that needs signing in — open it in a browser instead). `--output` defaults to the current directory; existing files are never overwritten.
@@ -62,7 +68,7 @@ Starts a stdio MCP server with read-only Wilma tools (`wilma_summary`, `wilma_sc
 Children at schools on different Wilmas need one login per Wilma. Run `wilma login` again (or press "Add another Wilma" on the login page); commands then cover every child, and each child carries the `wilma` it belongs to.
 ```bash
 wilma accounts                     # saved logins, numbered
-wilma accounts remove <number>     # or the Wilma name or username
+wilma accounts remove <number>     # or the Wilma name or username; also ends that login's Wilma session
 ```
 
 ## Find your Wilma
@@ -86,7 +92,7 @@ If your Wilma account has MFA/TOTP enabled:
 **Without a saved login:** set `WILMA_TOTP_SECRET` along with the other `WILMA_*` variables. `--totp-secret <key>` also works, but a key on the command line ends up in shell history and is visible to other programs on the computer.
 
 ## Config
-Logins are saved in `~/.config/wilmai/config.json` (or `$XDG_CONFIG_HOME/wilmai/config.json`; override with `WILMAI_CONFIG_PATH`) and the current Wilma sessions in `wilmai-sessions.json` next to it, both readable only by you. `wilma config clear` deletes both.
+Logins are saved in `~/.config/wilmai/config.json` (or `$XDG_CONFIG_HOME/wilmai/config.json`; override with `WILMAI_CONFIG_PATH`) and the current Wilma sessions in `wilmai-sessions.json` next to it, both readable only by you. `wilma logout` ends the sessions and deletes them, keeping the logins; `wilma config clear` deletes both.
 
 ## Troubleshooting: TLS errors on a managed laptop
 

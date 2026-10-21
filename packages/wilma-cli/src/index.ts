@@ -25,12 +25,14 @@ import {
   WilmaAiError,
   adoptSession,
   flushSessions,
+  forgetSession,
+  logoutSession,
   useSessionStore,
   type FetchedAttachment,
   type StudentRef,
 } from "./agent-data.js";
-import { createAccess } from "./access.js";
-import { parseCliArgs, type ParsedCommand } from "./cli-args.js";
+import { createAccess, logoutAccounts } from "./access.js";
+import { parseCliArgs, type Flags, type ParsedCommand } from "./cli-args.js";
 import { commandHelp, generalHelp } from "./cli-help.js";
 import { compactText, formatText, messageLine, newsLine } from "./cli-output.js";
 import { ENV_VARS, isMfaFailure, mfaCallbackFor, resolveAccounts, saveLogin, verifyLoginSession } from "./credentials.js";
@@ -151,6 +153,9 @@ async function runCommand(argv: string[]) {
       return;
     case "accounts":
       await handleAccounts(action, args, out);
+      return;
+    case "logout":
+      await handleLogout(args.join(" "), flags, out);
       return;
     case "find-school":
       await handleFindSchool(args.join(" "), out);
@@ -730,25 +735,19 @@ const HEADLESS_LOGIN_HELP = [
 async function handleAccounts(action: string | null, args: string[], out: Output) {
   const config = await loadConfig();
   if (action === "remove") {
-    const target = args.join(" ").trim().toLowerCase();
-    if (!target) throw new WilmaAiError("invalid_argument", "Which login? Use the number from `wilma accounts`, the Wilma name or the username.");
-    const byNumber = /^\d+$/.test(target) ? config.profiles[Number(target) - 1] : undefined;
-    const matches = byNumber
-      ? [byNumber]
-      : config.profiles.filter((p) => [p.tenantName ?? "", p.tenantUrl, p.username].some((v) => v.toLowerCase() === target));
-    if (matches.length !== 1) {
-      throw new WilmaAiError(
-        matches.length ? "ambiguous_account" : "unknown_account",
-        matches.length ? `"${target}" matches several logins; use its number.` : `No saved login matches "${target}".`
-      );
-    }
-    const removed = matches[0];
+    const removed = findSavedLogin(config.profiles, args.join(" "));
     config.profiles = config.profiles.filter((p) => p.id !== removed.id);
     if (config.lastProfileId === removed.id) config.lastProfileId = config.profiles[0]?.id ?? null;
     await saveConfig(config);
-    await clearSessions();
-    const result = { status: "removed", wilma: removed.tenantName ?? removed.tenantUrl, username: removed.username };
-    out.data(result, () => `Removed ${removed.username} @ ${result.wilma}.`);
+    const session = await endRemovedSession(removed);
+    const result = { status: "removed", wilma: removed.tenantName ?? removed.tenantUrl, username: removed.username, ...session };
+    out.data(result, () =>
+      session.session === "ended"
+        ? `Removed ${removed.username} @ ${result.wilma} and ended its Wilma session.`
+        : session.session === "not_ended"
+          ? `Removed ${removed.username} @ ${result.wilma}. Its Wilma session couldn't be ended (${session.message}); Wilma ends it when it expires.`
+          : `Removed ${removed.username} @ ${result.wilma}.`
+    );
     return;
   }
   const accounts = config.profiles.map((p, i) => ({
@@ -766,6 +765,74 @@ async function handleAccounts(action: string | null, args: string[], out: Output
           "Add another with `wilma login`; remove one with `wilma accounts remove <number>`.",
         ].join("\n")
       : "No saved Wilma logins. Run `wilma login`."
+  );
+}
+
+/**
+ * End a removed login's Wilma session and forget it; the other logins keep
+ * theirs. The login is removed even when Wilma can't be reached: its saved
+ * session is forgotten anyway, and Wilma ends the session when it expires.
+ */
+async function endRemovedSession(
+  removed: StoredProfile
+): Promise<{ session: "ended" | "none" } | { session: "not_ended"; message: string }> {
+  const password = revealSecret(removed.passwordObfuscated);
+  if (!password) return { session: "none" };
+  const profile = { baseUrl: removed.tenantUrl, username: removed.username, password };
+  try {
+    return { session: (await logoutSession(profile)) ? "ended" : "none" };
+  } catch (err) {
+    await forgetSession(profile);
+    return { session: "not_ended", message: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/** A saved login by its number in `wilma accounts`, its Wilma's name or address, or its username. */
+function findSavedLogin(profiles: StoredProfile[], rawTarget: string): StoredProfile {
+  const target = rawTarget.trim().toLowerCase();
+  if (!target) throw new WilmaAiError("invalid_argument", "Which login? Use the number from `wilma accounts`, the Wilma name or the username.");
+  const byNumber = /^\d+$/.test(target) ? profiles[Number(target) - 1] : undefined;
+  const matches = byNumber
+    ? [byNumber]
+    : profiles.filter((p) => [p.tenantName ?? "", p.tenantUrl, p.username].some((v) => v.toLowerCase() === target));
+  if (matches.length !== 1) {
+    throw new WilmaAiError(
+      matches.length ? "ambiguous_account" : "unknown_account",
+      matches.length ? `"${target}" matches several logins; use its number.` : `No saved login matches "${target}".`
+    );
+  }
+  return matches[0];
+}
+
+/**
+ * End WilmAI's Wilma sessions so the parent can use Wilma in the browser:
+ * every login commands use, or one saved login. The logins stay saved.
+ */
+async function handleLogout(target: string, flags: Flags, out: Output) {
+  if (flags.student) {
+    throw new WilmaAiError(
+      "invalid_argument",
+      "A Wilma session belongs to a login, not to one child. Use `wilma logout <number>` with the number from `wilma accounts`, or no number for every login."
+    );
+  }
+  const config = await loadConfig();
+  // The logins commands use (the environment's, or every saved one); a picked
+  // login is one of the saved ones, numbered as in `wilma accounts`.
+  let accounts = await resolveAccounts(config, target ? {} : process.env);
+  if (target) {
+    const login = findSavedLogin(config.profiles, target);
+    const account = (p: StoredProfile) => `${normalizeTenantUrl(p.tenantUrl)}|${p.username.toLowerCase()}`;
+    accounts = accounts.filter((a) => a.stored && account(a.stored) === account(login));
+  }
+  const result = await logoutAccounts(accounts);
+  out.data(result, () =>
+    result.logins.length
+      ? [
+          ...result.logins.map((l) => `${l.session === "ended" ? "Logged out" : "No open session"}: ${l.username} @ ${l.wilma}`),
+          "",
+          "The logins stay saved. The next wilma command logs in again, and that ends your Wilma session in the browser.",
+        ].join("\n")
+      : result.hint
   );
 }
 

@@ -1,0 +1,60 @@
+{
+  "id": "association-offer",
+  "added": "2026-10-08",
+  "why": "A sports club's free trial passed on by the school: an offer from outside, no step, not the family's calendar.",
+  "tags": [
+    "trap",
+    "optional",
+    "no-step"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 5001,
+      "published": "2026-10-07T13:00",
+      "from": "Esimerkkikaupungin Salibandyseura",
+      "title": "Ilmainen salibandyn kokeilutreeni",
+      "pupils": [
+        0,
+        1
+      ],
+      "text": "Esimerkkikaupungin Salibandyseura järjestää 7.–9.-luokkalaisille ilmaisen kokeilutreenin lauantaina 17.10. klo 12.00–13.30 Esimerkin liikuntahallissa. Mukaan sisäpelikengät ja juomapullo. Mailoja voi lainata paikan päällä.\nTervetuloa kokeilemaan, ennakkoilmoittautumista ei tarvita!"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 5001,
+        "needs_action": false,
+        "scope": [
+          "wider"
+        ]
+      }
+    ],
+    "action": [
+      {
+        "item": 5001,
+        "none": true
+      }
+    ],
+    "calendar": {
+      "not": [
+        {
+          "date": "2026-10-17",
+          "note": "an outside offer"
+        }
+      ]
+    }
+  }
+}

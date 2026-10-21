@@ -1,0 +1,70 @@
+{
+  "id": "note-tones",
+  "added": "2026-10-08",
+  "why": "A pre-approved absence is neutral, not a concern; praise is praise; a missed homework is a concern.",
+  "tags": [
+    "note",
+    "tone"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "note",
+      "id": 1301,
+      "pupil": 0,
+      "date": "2026-10-05",
+      "start": "08:15",
+      "end": "09:45",
+      "subject": "Biologia",
+      "kind": "Ennalta anottu vapaa",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Perheen matka, tehtävät Classroomissa."
+    },
+    {
+      "type": "note",
+      "id": 1302,
+      "pupil": 0,
+      "date": "2026-10-06",
+      "start": "10:00",
+      "end": "11:30",
+      "subject": "Englanti",
+      "kind": "Positiivinen palaute",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Erinomainen esitelmä – selkeä ja rohkea esitys!"
+    },
+    {
+      "type": "note",
+      "id": 1303,
+      "pupil": 0,
+      "date": "2026-10-07",
+      "start": "09:00",
+      "end": "09:45",
+      "subject": "Matematiikka",
+      "kind": "Kotitehtävä tekemättä",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Kirjan sivu 34 jäi tekemättä."
+    }
+  ],
+  "expect": {
+    "tone": [
+      {
+        "item": 1301,
+        "tone": "neutral"
+      },
+      {
+        "item": 1302,
+        "tone": "praise"
+      },
+      {
+        "item": 1303,
+        "tone": "concern"
+      }
+    ]
+  }
+}

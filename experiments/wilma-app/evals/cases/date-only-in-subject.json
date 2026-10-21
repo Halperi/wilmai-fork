@@ -1,0 +1,53 @@
+{
+  "id": "date-only-in-subject",
+  "added": "2026-10-08",
+  "why": "The date is only in the subject ('Retki Suomenlinnaan to 15.10.'); the text has the times.",
+  "tags": [
+    "subject-date",
+    "time",
+    "whose"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 3801,
+      "sent": "2026-10-08T07:45",
+      "from": "Historian opettaja",
+      "subject": "Retki Suomenlinnaan to 15.10.",
+      "pupils": [
+        1
+      ],
+      "text": "Hei!\nLähdemme retkelle koulupäivän aikana. Kokoonnumme koulun pihalla klo 8.15 ja palaamme noin klo 14. Matkat kuljemme julkisilla, joten oppilaalla pitää olla mukana matkakortti.\nMukaan eväät, juomapullo ja säänmukainen vaatetus.\nTerveisin\nHistorian opettaja"
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-15",
+          "start": "08:15",
+          "kind": "trip",
+          "pupil": 1,
+          "sure": true
+        }
+      ],
+      "not": [
+        {
+          "date": "2026-10-15",
+          "pupil": 0
+        }
+      ]
+    }
+  }
+}

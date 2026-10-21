@@ -1,0 +1,53 @@
+{
+  "id": "cancelled-trip",
+  "added": "2026-10-08",
+  "why": "A trip 'PERUTTU': tomorrow is an ordinary school day, no trip in the calendar.",
+  "tags": [
+    "trap",
+    "relative-date"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 5401,
+      "sent": "2026-10-08T15:30",
+      "from": "Luokanvalvoja Esimerkki",
+      "subject": "Huominen retki peruttu",
+      "pupils": [
+        0
+      ],
+      "text": "Hei!\nHuomiseksi perjantaiksi suunniteltu retki Korkeasaareen on PERUTTU, koska useampi aikuinen on sairastunut. Perjantai on tavallinen koulupäivä lukujärjestyksen mukaan. Yritämme löytää retkelle uuden ajankohdan keväällä.\nTerveisin\nLuokanvalvoja"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 5401,
+        "needs_action": false
+      }
+    ],
+    "action": [
+      {
+        "item": 5401,
+        "none": true
+      }
+    ],
+    "calendar": {
+      "not": [
+        {
+          "date": "2026-10-09",
+          "kind": "trip",
+          "suggestions": false,
+          "note": "the trip was cancelled"
+        }
+      ]
+    }
+  }
+}

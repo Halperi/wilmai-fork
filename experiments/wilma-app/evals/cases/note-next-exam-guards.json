@@ -1,0 +1,133 @@
+{
+  "added": "2026-10-09",
+  "today": "2026-10-10",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "7A"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "9B"
+    }
+  ],
+  "id": "note-next-exam-guards",
+  "why": "Absence alone, cancellation, optional practice and a different subject must not become a required exam on the note subject timetable.",
+  "tags": [
+    "note",
+    "relative-lesson",
+    "trap",
+    "optional",
+    "cancelled"
+  ],
+  "items": [
+    {
+      "type": "note",
+      "id": 1,
+      "pupil": 0,
+      "date": "2026-10-09",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "ENA1_71",
+      "kind": "Ennalta anottu vapaa",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Hammaslääkärikäynti englannin tunnin aikana."
+    },
+    {
+      "type": "note",
+      "id": 2,
+      "pupil": 0,
+      "date": "2026-10-08",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "ENA1_71",
+      "kind": "Ennalta anottu vapaa",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Englannin koe peruttu. Seuraavalla englannin tunnilla ei ole koetta."
+    },
+    {
+      "type": "note",
+      "id": 3,
+      "pupil": 0,
+      "date": "2026-10-07",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "ENA1_71",
+      "kind": "Ennalta anottu vapaa",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Rästikokeeseen voi tulla seuraavalla englannin tunnilla, jos haluaa harjoitella."
+    },
+    {
+      "type": "note",
+      "id": 4,
+      "pupil": 0,
+      "date": "2026-10-06",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "MA_71",
+      "kind": "Ennalta anottu vapaa",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Englannin koe, tee seuraavalla englannin tunnilla."
+    },
+    {
+      "type": "lesson",
+      "id": 5,
+      "pupil": 0,
+      "date": "2026-10-12",
+      "start": "09:00",
+      "end": "10:00",
+      "subject": "Englanti, A1",
+      "subjectCode": "ENA1_71"
+    },
+    {
+      "type": "lesson",
+      "id": 6,
+      "pupil": 0,
+      "date": "2026-10-13",
+      "start": "10:00",
+      "end": "11:00",
+      "subject": "Matematiikka",
+      "subjectCode": "MA_71"
+    }
+  ],
+  "expect": {
+    "tone": [
+      {
+        "item": 1,
+        "tone": "neutral"
+      }
+    ],
+    "noteExam": [
+      {
+        "item": 1,
+        "important": false
+      },
+      {
+        "item": 2,
+        "important": false
+      },
+      {
+        "item": 3,
+        "important": false
+      },
+      {
+        "item": 4,
+        "important": false
+      }
+    ],
+    "calendar": {
+      "not": [
+        {
+          "date": "2026-10-12",
+          "kind": "exam",
+          "suggestions": false
+        },
+        {
+          "date": "2026-10-13",
+          "kind": "exam",
+          "suggestions": false
+        }
+      ]
+    }
+  }
+}

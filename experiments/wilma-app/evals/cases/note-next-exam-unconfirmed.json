@@ -1,0 +1,69 @@
+{
+  "added": "2026-10-09",
+  "today": "2026-10-10",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "7A"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "9B"
+    }
+  ],
+  "id": "note-next-exam-unconfirmed",
+  "why": "Keep the typo-filled exam instruction visible without a timetable; never guess the note day or next weekday as its date.",
+  "tags": [
+    "note",
+    "relative-lesson",
+    "pupil-action",
+    "typo",
+    "unknown-date"
+  ],
+  "items": [
+    {
+      "type": "note",
+      "id": 1,
+      "pupil": 0,
+      "date": "2026-10-09",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "ENA1_71",
+      "kind": "Ennalta anottu vapaa",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Englannin koe, tee seuraavalla englnnin tunnilla."
+    }
+  ],
+  "expect": {
+    "tone": [
+      {
+        "item": 1,
+        "tone": "neutral"
+      }
+    ],
+    "noteExam": [
+      {
+        "item": 1,
+        "important": true,
+        "quote": "Englannin koe",
+        "date": null,
+        "originalExam": null
+      }
+    ],
+    "calendar": {
+      "atMost": [
+        {
+          "date": "2026-10-12",
+          "max": 0,
+          "kind": "exam"
+        },
+        {
+          "date": "2026-10-13",
+          "max": 0,
+          "kind": "exam"
+        }
+      ],
+      "maxDays": 1
+    }
+  }
+}

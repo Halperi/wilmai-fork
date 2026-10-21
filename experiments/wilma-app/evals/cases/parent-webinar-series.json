@@ -1,0 +1,70 @@
+{
+  "id": "parent-webinar-series",
+  "added": "2026-10-09",
+  "why": "From the real inbox: the city's talks for parents on four evenings over the year ('Infoihin ei tarvitse ilmoittautua') became four events for both children when 'is it the family's' became a choice. Talks any parent may join: suggestions at most.",
+  "tags": [
+    "real-pattern",
+    "optional",
+    "trap",
+    "list"
+  ],
+  "today": "2026-09-28",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 7901,
+      "published": "2026-09-15T12:00",
+      "from": "Kaupungin opiskeluhuolto",
+      "title": "Huoltaja, mietityttääkö nuoren jaksaminen? Tervetuloa etäinfoihin",
+      "pupils": [
+        0,
+        1
+      ],
+      "text": "Kaupungin opiskeluhuolto järjestää huoltajille maksuttomia etäinfoja nuorten hyvinvoinnista. Infot pidetään Teamsissa klo 18–19:\n- ke 7.10. Uni ja jaksaminen\n- ke 4.11. Ahdistus ja mieliala\n- ke 17.2. Ruutuaika\n- ke 21.4. Kaverisuhteet\nInfoihin ei tarvitse ilmoittautua. Linkit löytyvät kaupungin verkkosivuilta."
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 7901,
+        "needs_action": false,
+        "scope": [
+          "wider"
+        ]
+      }
+    ],
+    "action": [
+      {
+        "item": 7901,
+        "none": true
+      }
+    ],
+    "calendar": {
+      "not": [
+        {
+          "date": "2026-10-07",
+          "note": "a talk for any parent"
+        },
+        {
+          "date": "2026-11-04"
+        },
+        {
+          "date": "2027-02-17"
+        },
+        {
+          "date": "2027-04-21"
+        }
+      ]
+    }
+  }
+}

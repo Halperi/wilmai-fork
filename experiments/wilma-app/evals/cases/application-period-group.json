@@ -1,0 +1,47 @@
+{
+  "id": "application-period-group",
+  "added": "2026-10-08",
+  "why": "The weeks a group meets (21.10.–25.11.) became a five-week bar in the calendar. A group's meetings aren't a holiday; at most the sign-up deadline is a date to keep.",
+  "tags": [
+    "range",
+    "trap",
+    "recurring"
+  ],
+  "today": "2026-10-05",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 401,
+      "sent": "2026-10-01T10:00",
+      "from": "Kuraattori",
+      "subject": "Hae mukaan Stressaako? -ryhmään",
+      "pupils": [
+        0
+      ],
+      "text": "Hei huoltajat,\nkoulullamme alkaa jälleen Stressaako?-ryhmä 7.–9.-luokkalaisille. Ryhmä kokoontuu kuusi kertaa keskiviikkoisin 21.10.–25.11. klo 14.30–15.30 koulun kuraattorin johdolla.\nRyhmään voi hakea 14.10. mennessä vastaamalla tähän viestiin.\nYstävällisin terveisin\nKuraattori"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 401,
+        "needs_action": false
+      }
+    ],
+    "calendar": {
+      "maxDays": 7,
+      "not": [
+        {
+          "date": "2026-11-04",
+          "note": "in the middle of the group's weeks"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "id": "english-parents-evening",
+  "added": "2026-10-08",
+  "why": "A bulletin in English: the evening at '6 pm' and a sign-up 'by 21 October'.",
+  "tags": [
+    "language",
+    "step",
+    "deadline",
+    "time"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 6301,
+      "published": "2026-10-07T09:00",
+      "from": "Grade 9 coordinator",
+      "title": "Parents' evening for grade 9",
+      "pupils": [
+        0
+      ],
+      "text": "Dear parents,\nthe parents' evening for grade 9 will be held on Wednesday 28 October at 6 pm in the school hall. We will talk about the joint application and upper secondary options.\nPlease sign up via the Wilma form by 21 October so that we can plan the evening.\nBest regards,\nGrade 9 coordinator"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 6301,
+        "needs_action": true
+      }
+    ],
+    "action": [
+      {
+        "item": 6301,
+        "quote": "sign up",
+        "deadline": "2026-10-21"
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-28",
+          "start": "18:00",
+          "kind": "event",
+          "pupil": 0,
+          "sure": true
+        },
+        {
+          "date": "2026-10-21",
+          "kind": "deadline"
+        }
+      ]
+    }
+  }
+}

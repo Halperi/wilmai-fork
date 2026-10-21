@@ -1,0 +1,59 @@
+{
+ "messages": [
+  {
+   "Id": 14770610,
+   "Subject": "Nupatebilo tysunuf (nereve vyg kynarunudoriku) + hamyhefus fohamahiku",
+   "TimeStamp": "2026-05-26 15:08",
+   "Folder": "lygem",
+   "SenderId": 95835,
+   "SenderType": 1,
+   "Sender": "Gusitutemu Lebit (Mas)",
+   "IsEvent": true,
+   "ContentHtml": "<p>Kuj KI:p huoltajat,</p><p>luverihude butijelir hotybyn redusos:&nbsp;mufed viestin typa syvesy luvotesoroh, bupysahomymi nakomopu kevojovisopoj vyg kumebaketuhebytivu pafelavimudo hatoladodik 29.5.</p><p>Bukamikedo hisolusys ropapysadobi klo 8.30. Mufed likohik tunenyhygurelifehu fo voj pupevasopegypy gefeg bivorup. Kajilup nijotahi medoryfufimy nyjohumanov bybubu.&nbsp;</p><p>Su fihib hydohulo tamykyrod Lebit</p>",
+   "EventData": {
+    "MustApply": true,
+    "Events": [
+     {
+      "MsgID": 14770610,
+      "EventID": 1,
+      "Subject": "",
+      "Start": "2026-05-29 13:00",
+      "StartDayName": "Pe",
+      "End": "2026-05-29 14:00",
+      "EndDayName": "Pe",
+      "EnrollStart": "2026-05-26 00:00",
+      "EnrollEnd": "2026-05-29 00:00",
+      "CancelDate": "2026-05-29 00:00",
+      "Info": "Kynarunudoriku tajupikin",
+      "SameDay": true,
+      "MaxPeople": 0,
+      "Sender": "Gusitutemu Lebit (Mas)",
+      "State": "expired"
+     },
+     {
+      "MsgID": 14770610,
+      "EventID": 2,
+      "Subject": "",
+      "Start": "2026-05-29 13:00",
+      "StartDayName": "Pe",
+      "End": "2026-05-29 14:00",
+      "EndDayName": "Pe",
+      "EnrollStart": "2026-05-26 00:00",
+      "EnrollEnd": "2026-05-29 00:00",
+      "CancelDate": "2026-05-29 00:00",
+      "Info": "Pinyhymarot",
+      "SameDay": true,
+      "MaxPeople": 0,
+      "Sender": "Gusitutemu Lebit (Mas)",
+      "State": "selected-other",
+      "SelectedOther": "Fubemi Kyros (Jogyr Fylybujipes, DE)",
+      "PeopleCount": 1
+     }
+    ]
+   },
+   "ReplyList": [],
+   "AllowForward": true,
+   "AllowReply": true
+  }
+ ]
+}

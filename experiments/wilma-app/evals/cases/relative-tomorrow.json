@@ -1,0 +1,41 @@
+{
+  "id": "relative-tomorrow",
+  "added": "2026-10-08",
+  "why": "'Huomenna' is the day after the message was sent: a late start tomorrow is a changed school day.",
+  "tags": [
+    "relative-date"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 801,
+      "sent": "2026-10-08T15:00",
+      "from": "Luokanohjaaja",
+      "subject": "Huomisen aikataulu",
+      "pupils": [
+        0
+      ],
+      "text": "Huomenna koulu alkaa vasta klo 10.15 opettajien koulutuspäivän vuoksi. Ruokailu normaalisti."
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-09",
+          "kind": [
+            "schedule"
+          ],
+          "sure": true
+        }
+      ]
+    }
+  }
+}

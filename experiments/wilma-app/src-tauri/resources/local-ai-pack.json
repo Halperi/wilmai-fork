@@ -1,0 +1,34 @@
+{
+  "id": "small-b11535-v1",
+  "context": 16384,
+  "reasoningBudget": 512,
+  "runtime": {
+    "version": "b11535",
+    "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11535/llama-b11535-bin-macos-arm64.tar.gz",
+    "sha256": "69437c84cc39e7bef5fbee2a8c3e9efdb4b3f9ba0bd889d6fdce0350c5dca58d"
+  },
+  "template": {
+    "url": "https://huggingface.co/Qwen/Qwen3.5-4B/resolve/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a/chat_template.jinja",
+    "sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715"
+  },
+  "models": [
+    {
+      "name": "hf.co/ggml-org/Clef-Flash-GGUF:Q4_K_M",
+      "file": "clef-flash-q4.gguf",
+      "url": "https://huggingface.co/ggml-org/Clef-Flash-GGUF/resolve/4a192915ef971886004b5b13294f2b4c7a7fc39d/Clef-Flash-Q4_K_M.gguf",
+      "sha256": "fd3e90605e8103307dca37cb5a8cdb036267e2fe3cb2d908d80a8ceb9ec0638c",
+      "bytes": 6486448288,
+      "role": "decision",
+      "parameterSize": "9.08B"
+    },
+    {
+      "name": "wilmai-qwen35-4b-q4:latest",
+      "file": "qwen35-4b-q4.gguf",
+      "url": "https://registry.ollama.ai/v2/library/qwen3.5/blobs/sha256:a9d0a3e1d8c91732a3812becd31f8d4a8ff57414903f226306069f0437e2ac50",
+      "sha256": "a9d0a3e1d8c91732a3812becd31f8d4a8ff57414903f226306069f0437e2ac50",
+      "bytes": 2648593216,
+      "role": "reading",
+      "parameterSize": "4.2B"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": "weekday-heading-lines",
+  "added": "2026-10-08",
+  "why": "A line with only a weekday and a date ('Torstai 8.10.') became the event's title; what happens is on the next line.",
+  "tags": [
+    "weekday-date",
+    "list"
+  ],
+  "today": "2026-10-05",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 301,
+      "sent": "2026-10-05T08:00",
+      "from": "Liikunnanopettaja",
+      "subject": "Liikunta",
+      "pupils": [
+        0
+      ],
+      "text": "Hei!\nTämän viikon liikuntatunnit pidetään ulkona.\nTorstai 8.10.\nSuunnistus Keskuspuistossa, lähtö koululta klo 8.15.\nPerjantai 9.10.\nPesäpallo Brahen kentällä.\nVaratkaa säänmukainen vaatetus ja juomapullo.\nTerveisin Liikunnanopettaja"
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "titlesNot": [
+        "^(torstai|perjantai)$"
+      ]
+    }
+  }
+}

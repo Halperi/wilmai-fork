@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import { htmlToText } from "./html-text.js";
 import { parseWilmaTimestamp } from "./dates.js";
 import type { NewsItem, NewsResource } from "../types.js";
 
@@ -35,12 +36,14 @@ export function parseNewsDetailJson(
   baseUrl?: string
 ): NewsItem {
   const rawContent = data["content"] ?? data["Content"];
-  const content = typeof rawContent === "string" ? rawContent : null;
+  const html = typeof rawContent === "string" ? rawContent : null;
   let resources: NewsResource[] = [];
-  if (content && content.includes("<a")) {
-    const $ = cheerio.load(content);
+  if (html && html.includes("<a")) {
+    const $ = cheerio.load(html);
     resources = extractNewsResources($, $.root(), baseUrl);
   }
+  // The body is the editor's HTML: as text with its paragraphs and lists.
+  const content = html ? htmlToText(html) || null : null;
   return {
     wilmaId: newsId,
     title: String(data["title"] ?? data["Title"] ?? ""),
@@ -81,7 +84,8 @@ export function parseNewsDetailHtml(html: string, newsId: number, baseUrl?: stri
 
     const cleanContent = contentElem.clone();
     cleanContent.find("script, style").remove();
-    const text = cleanContent.text().trim();
+    // As text with its paragraphs and lists (the page's own indentation and spacer lines aren't text).
+    const text = htmlToText(cleanContent.html());
 
     // A container made entirely from resource anchors has no prose body. Keep
     // the labels in resources instead of duplicating them in content.

@@ -119,4 +119,14 @@ assertDateParts(selfOnlyThread.sentAt, {
   minute: 0,
 });
 
+// A message written in Wilma's editor (as stored on 7 Oct 2026): paragraphs, and "<br>" followed by a source newline.
+{
+  const { htmlToText } = await import("../dist/parsers/html-text.js");
+  assert.equal(
+    htmlToText("<p>Hei! Tämä on testiviesti.</p>\n<p>Toinen kappale, ja tässä rivinvaihto<br>\nsekä merkit &amp; ja &lt; &gt;.</p>"),
+    "Hei! Tämä on testiviesti.\n\nToinen kappale, ja tässä rivinvaihto\nsekä merkit & ja < >."
+  );
+  assert.equal(htmlToText("rivi<br/>\r\ntoinen<br>kolmas"), "rivi\ntoinen\nkolmas");
+}
+
 console.log("message parser tests passed");

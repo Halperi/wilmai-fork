@@ -1,0 +1,57 @@
+{
+  "id": "cross-postponed-no-date",
+  "added": "2026-10-09",
+  "why": "A concert announced, then put off with no new day ('siirtyy myöhempään ajankohtaan'): the old day goes, nothing new comes.",
+  "tags": [
+    "cross-item",
+    "trap"
+  ],
+  "today": "2026-10-20",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 7701,
+      "published": "2026-10-01T10:00",
+      "from": "Rehtori Esimerkki",
+      "title": "Syyskonsertti",
+      "pupils": [
+        0,
+        1
+      ],
+      "text": "Koulun syyskonsertti on torstaina 5.11. klo 18.00 koulun salissa. Kaikki perheet ovat tervetulleita!"
+    },
+    {
+      "type": "news",
+      "id": 7702,
+      "published": "2026-10-19T12:00",
+      "from": "Rehtori Esimerkki",
+      "title": "Syyskonsertti siirtyy",
+      "pupils": [
+        0,
+        1
+      ],
+      "text": "Marraskuun syyskonsertti siirtyy myöhempään ajankohtaan, koska salin remontti on viivästynyt. Uusi päivä ilmoitetaan, kun se varmistuu."
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "not": [
+        {
+          "date": "2026-11-05",
+          "suggestions": false,
+          "note": "put off, no new day yet"
+        }
+      ]
+    }
+  }
+}

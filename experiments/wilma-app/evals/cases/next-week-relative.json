@@ -1,0 +1,54 @@
+{
+  "id": "next-week-relative",
+  "added": "2026-10-08",
+  "why": "'Ensi viikon tiistaina' in a Thursday's message is the Tuesday of the coming week, and the trip is the 7th grader's only.",
+  "tags": [
+    "relative-date",
+    "time",
+    "whose"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 3201,
+      "sent": "2026-10-08T12:10",
+      "from": "Luokanvalvoja Esimerkki",
+      "subject": "Museoretki",
+      "pupils": [
+        1
+      ],
+      "text": "Hyvät 7G:n huoltajat,\nensi viikon tiistaina lähdemme luokan kanssa Luonnontieteelliseen museoon. Lähdemme koululta klo 8.30 ja palaamme kouluun ennen klo 13. Retki kuuluu biologian opetukseen ja on maksuton.\nOttakaa mukaan eväät ja juomapullo, koululounas syödään retken jälkeen.\nYstävällisin terveisin\nLuokanvalvoja"
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-13",
+          "start": "08:30",
+          "kind": "trip",
+          "pupil": 1,
+          "sure": true
+        }
+      ],
+      "not": [
+        {
+          "date": "2026-10-13",
+          "pupil": 0,
+          "note": "a 7G trip"
+        }
+      ]
+    }
+  }
+}

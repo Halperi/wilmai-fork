@@ -1,0 +1,103 @@
+{
+  "id": "exam-week-same-day",
+  "added": "2026-10-09",
+  "why": "From the real app: a make-up exam in a teacher's note ('Fysiikan rästikoe klo 15.20') was left out of the calendar when Wilma's exam list had any exam for the child that day, as if it were the same exam. Two exams on one day both show; a teacher's message about the exam Wilma lists shows once. Exams read from notes are also on the Exams page and Today.",
+  "tags": [
+    "real-pattern",
+    "note",
+    "time"
+  ],
+  "today": "2026-10-09",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "exam",
+      "id": 8101,
+      "pupil": 0,
+      "date": "2026-10-23",
+      "time": null,
+      "subject": "Ruotsin kieli, B1",
+      "subjectCode": "RUB1_91",
+      "name": "Verbikoe 3",
+      "teacher": "Ruotsalainen Riikka",
+      "teacherCode": "RuR"
+    },
+    {
+      "type": "note",
+      "id": 8102,
+      "pupil": 0,
+      "date": "2026-10-23",
+      "start": "14:00",
+      "end": "15:45",
+      "subject": "FY_91",
+      "kind": "Tiedoksi",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Fysiikan rästikoe klo 15.20"
+    },
+    {
+      "type": "exam",
+      "id": 8103,
+      "pupil": 0,
+      "date": "2026-10-20",
+      "time": null,
+      "subject": "Matematiikka",
+      "subjectCode": "MA_91",
+      "name": "Yhtälöt",
+      "teacher": "Matikainen Maija",
+      "teacherCode": "MaM"
+    },
+    {
+      "type": "message",
+      "id": 8104,
+      "sent": "2026-10-08T15:00",
+      "from": "Matikainen Maija (MaM)",
+      "subject": "Matikan koe ti 20.10.",
+      "pupils": [
+        0
+      ],
+      "text": "Hei 9C!\nMatematiikan koe on tiistaina 20.10. Kokeessa tulevat kappaleet 1–4.\nTerveisin\nMaija"
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-23",
+          "kind": "exam",
+          "title": "ruots",
+          "pupil": 0,
+          "sure": true,
+          "note": "Wilma's own exam"
+        },
+        {
+          "date": "2026-10-23",
+          "start": "15:20",
+          "kind": "exam",
+          "title": "fysiik",
+          "pupil": 0,
+          "sure": true,
+          "note": "the note's make-up exam, the same day"
+        },
+        {
+          "date": "2026-10-20",
+          "kind": "exam",
+          "pupil": 0,
+          "sure": true
+        }
+      ],
+      "atMost": [
+        {
+          "date": "2026-10-20",
+          "max": 1,
+          "kind": "exam",
+          "note": "the teacher's message is Wilma's exam: once"
+        }
+      ]
+    }
+  }
+}

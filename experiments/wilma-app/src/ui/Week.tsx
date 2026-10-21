@@ -1,0 +1,243 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ScheduleLesson } from "@wilma-client/src/core";
+import { useApp } from "../data/store";
+import { addDays, isoWeek, longDate, minutes, mondayOf, nowMinutes, shortDate, today, dayName } from "../data/dates";
+import { t } from "../i18n";
+import { forChildren, type FeedItem } from "../data/feed";
+import { DEFAULT_KINDS, allDay, calendarEvents, calendarTitle, type CalEvent } from "../data/calendar";
+import { dayTimes, examForLesson, lessonKey, unusualDays } from "../data/schedule";
+import { loadWeek } from "../data/engine";
+import type { Child } from "../data/model";
+import { Icon, Tab } from "./bits";
+import { DOCK_QUERY, useChildFilter, useMedia } from "./shared";
+import { DetailsPanel } from "./Details";
+import { Glance } from "./Glance";
+import { DayPanel, type DayFocus } from "./DayPanel";
+import { ItemSide } from "./Calendar";
+
+
+const HOUR_PX = 64;
+/** Room above the first hour, so its label isn't cut by the header's line. */
+const TOP_PX = 12;
+/** How far the Week view goes: a school term back, a few weeks ahead (timetables further out aren't set yet). */
+const WEEKS_BACK = 16;
+const WEEKS_AHEAD = 6;
+
+export function Week({ feed }: { feed: FeedItem[] }) {
+  const snap = useApp((s) => s.snapshot)!;
+  const { selected } = useChildFilter();
+  const docked = useMedia(DOCK_QUERY);
+  const now = today();
+  const [offset, setOffset] = useState(0);
+  const monday = addDays(mondayOf(now), offset * 7);
+  const days = [0, 1, 2, 3, 4].map((i) => addDays(monday, i));
+  const children = snap.children.filter((c) => !selected.length || selected.includes(c.number));
+
+  // This week and next come with every sync; other weeks are read from Wilma when shown, then kept.
+  const synced = offset === 0 || offset === 1;
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  useEffect(() => {
+    if (synced) return;
+    let live = true;
+    setLoading(true);
+    setLoadError(null);
+    Promise.all(children.map((c) => loadWeek(c.number, monday)))
+      .catch((err) => live && setLoadError(err instanceof Error ? err.message : String(err)))
+      .finally(() => live && setLoading(false));
+    return () => {
+      live = false;
+    };
+  }, [monday, synced, children.map((c) => c.number).join(",")]);
+  const lessonsOf = (c: Child) => (synced ? snap.perChild[c.number]?.lessons : snap.perChild[c.number]?.weeks?.[monday]?.lessons) ?? [];
+  const timesOf = (c: Child) => dayTimes(lessonsOf(c));
+  const unusualOf = (c: Child) => unusualDays(snap.perChild[c.number], days);
+  const all = children.flatMap((c) => lessonsOf(c).filter((l) => days.includes(l.date)).map((l) => ({ ...l, child: c })));
+  const empty = !loading && !loadError && all.length === 0;
+  const startH = Math.min(8, ...all.map((l) => Math.floor(minutes(l.start) / 60)));
+  const endH = Math.max(15, ...all.map((l) => Math.ceil(minutes(l.end) / 60)));
+  const height = (endH - startH) * HOUR_PX + TOP_PX;
+  const y = (t: string) => TOP_PX + ((minutes(t) - startH * 60) / 60) * HOUR_PX;
+  const lanes = children.length;
+  // The day in the panel, with the lesson picked in it (a click in the grid picks that one).
+  const [focus, setFocus] = useState<DayFocus | null>(null);
+  const close = useCallback(() => setFocus(null), []);
+  const pick = (child: Child, lesson: ScheduleLesson) => {
+    setItem(null);
+    setFocus({ child, date: lesson.date, lesson: lessonKey(lesson) });
+  };
+
+  // The calendar's events for the week (what's read from messages, bulletins and notes, and invitations), at the top of each day.
+  // Exams and changed days are left out: the grid shows those itself.
+  const jev = useApp((s) => s.jev);
+  const local = useApp((s) => s.local.calendar);
+  const luna = useApp((s) => s.luna);
+  const items = useMemo(() => forChildren(feed, selected), [feed, selected]);
+  const weekEvents = useMemo(
+    () =>
+      calendarEvents(snap, items, local, { from: monday, until: addDays(monday, 6), children: selected }, luna).filter(
+        (e) => (local?.kinds[e.kind] ?? DEFAULT_KINDS[e.kind]) && !e.key.startsWith("exam:") && !e.key.startsWith("day:")
+      ),
+    [snap, items, jev, local, monday, selected, luna]
+  );
+  // A message or bulletin an event comes from, shown beside the week as in the Calendar.
+  const [item, setItem] = useState<{ key: string; line: string | null } | null>(null);
+  const openEvent = (e: CalEvent) => {
+    if (e.source.kind === "item") {
+      setFocus(null);
+      setItem({ key: e.source.key, line: e.source.line });
+      return;
+    }
+    const child = snap.children.find((c) => c.number === (e.source as { child: string }).child);
+    if (!child) return;
+    const { date, start } = e.source;
+    const lesson = lessonsOf(child).find((l) => l.date === date && start !== null && l.start === start) ?? null;
+    setItem(null);
+    setFocus({ child, date, lesson: lesson ? lessonKey(lesson) : null });
+  };
+  const examFor = (child: Child, l: ScheduleLesson) => examForLesson(snap.perChild[child.number], l);
+
+  return (
+    <main className="page">
+      <div className="week-head">
+        <h1>{t("Week {n}", { n: isoWeek(monday) })}</h1>
+        <span className="sub">
+          {longDate(monday)} – {longDate(days[4])}
+        </span>
+        <span style={{ flex: 1 }} />
+        <button className="btn btn-sm" onClick={() => setOffset((o) => o - 1)} disabled={offset <= -WEEKS_BACK} aria-label={t("Previous week")}>
+          <Icon name="left" />
+        </button>
+        <button className="btn btn-sm" onClick={() => setOffset(0)} disabled={offset === 0}>
+          {t("This week")}
+        </button>
+        <button className="btn btn-sm" onClick={() => setOffset((o) => o + 1)} disabled={offset >= WEEKS_AHEAD} aria-label={t("Next week")}>
+          <Icon name="right" />
+        </button>
+      </div>
+      {loading ? <p className="week-state">{t("Reading the week from Wilma…")}</p> : null}
+      {loadError ? <div className="notice err week-state">{loadError}</div> : null}
+      {empty ? <p className="week-state">{t("Wilma has no lessons this week. A holiday, perhaps?")}</p> : null}
+      <div className="week" style={{ ["--hour" as string]: `${HOUR_PX}px`, ["--top" as string]: `${TOP_PX}px` }}>
+        <div className="colhead" />
+        {days.map((d) => (
+          <div key={d} className={`colhead${d === now ? " is-today" : ""}`}>
+            {dayName(d)}
+            <small>{shortDate(d).split(" ").slice(1).join(" ")}</small>
+            {/* When school starts and ends, for each child; a change from the usual stands out. */}
+            <span className="day-times">
+              {children.map((c) => {
+                const times = timesOf(c).get(d);
+                const odd = unusualOf(c).filter((u) => u.date === d);
+                return (
+                  <span key={c.number} className={`dt${odd.length ? " odd" : ""}`} title={odd.length ? odd.map((u) => (u.kind === "off" ? t("No lessons") : t("Usually {time}", { time: u.usual! }))).join(" · ") : undefined}>
+                    {lanes > 1 ? <Tab child={c} /> : null}
+                    {times ? `${times.start}–${times.end}` : "–"}
+                  </span>
+                );
+              })}
+            </span>
+            {weekEvents.some((e) => e.date <= d && (e.endDate ?? e.date) >= d) ? (
+              <span className="wk-events">
+                {weekEvents
+                  .filter((e) => e.date <= d && (e.endDate ?? e.date) >= d)
+                  .map((e) => {
+                    const first = snap.children.find((c) => c.number === e.children[0]);
+                    return (
+                      <button
+                        type="button"
+                        key={e.key}
+                        className={`wk-ev ${e.children.length === 1 ? `c${(first?.color ?? 0) % 5}` : "shared"} k-${e.kind}${e.sure ? "" : " suggested"}`}
+                        title={calendarTitle(e, snap.children)}
+                        onClick={() => openEvent(e)}
+                      >
+                        {allDay(e) ? null : <time>{e.start}</time>}
+                        <span>{lanes > 1 ? calendarTitle(e, snap.children) : e.title}</span>
+                      </button>
+                    );
+                  })}
+              </span>
+            ) : null}
+          </div>
+        ))}
+        <div className="hours" style={{ height }}>
+          {Array.from({ length: endH - startH + 1 }, (_, i) => (
+            <span key={i} style={{ top: TOP_PX + i * HOUR_PX }}>
+              {startH + i}
+            </span>
+          ))}
+        </div>
+        {days.map((d) => (
+          <div key={d} className={`col${d === now ? " is-today" : ""}`} style={{ height }}>
+            {all
+              .filter((l) => l.date === d)
+              .map((l, i) => {
+                const lane = children.findIndex((c) => c.number === l.child.number);
+                const exam = examFor(l.child, l);
+                return (
+                  <button
+                    type="button"
+                    key={i}
+                    onClick={() => pick(l.child, l)}
+                    aria-pressed={Boolean(focus && focus.child.number === l.child.number && focus.date === l.date && focus.lesson === lessonKey(l))}
+                    className={`les c${l.child.color % 5}${exam ? " exam" : ""}${minutes(l.end) - minutes(l.start) >= 70 ? " tall" : ""}`}
+                    style={{
+                      top: y(l.start) + 1,
+                      height: Math.max(18, y(l.end) - y(l.start) - 2),
+                      left: `calc(${(lane / lanes) * 100}% + 3px)`,
+                      width: `calc(${100 / lanes}% - 6px)`,
+                    }}
+                    title={`${l.child.first}: ${l.start}–${l.end} ${l.subject}${l.room ? ` · ${l.room}` : ""}${l.teacher ? ` · ${l.teacher}` : ""}${exam ? ` · ${t("exam")}` : ""}`}
+                  >
+                    {/* The child is the box's colour and column (see the day's times above); the subject gets the room. */}
+                    <b>{l.subject}</b>
+                    <span>
+                      {l.start}
+                      {l.room ? ` · ${l.room}` : ""}
+                    </span>
+                  </button>
+                );
+              })}
+            {d === now && nowMinutes() > startH * 60 && nowMinutes() < endH * 60 ? <div className="nowline" style={{ top: TOP_PX + ((nowMinutes() - startH * 60) / 60) * HOUR_PX }} /> : null}
+          </div>
+        ))}
+      </div>
+      {(() => {
+        // The week at a glance: beside the grid until a lesson is picked (wide windows), or under it; a picked lesson shows its day.
+        const overview = (
+          <Glance
+            feed={feed}
+            children={children}
+            days={days}
+            until={addDays(monday, 6)}
+            lessonsOf={lessonsOf}
+            onExam={(child, date) => {
+              const lesson = lessonsOf(child).find((l) => l.date === date && examFor(child, l));
+              if (lesson) pick(child, lesson);
+            }}
+            onLesson={pick}
+            homework
+          />
+        );
+        const title = t("Week {n} at a glance", { n: isoWeek(monday) });
+        return (
+          <>
+            {focus ? (
+              <DayPanel focus={focus} onFocus={setFocus} onClose={close} />
+            ) : item ? (
+              <ItemSide itemKey={item.key} line={item.line} feed={feed} snap={snap} onClose={() => setItem(null)} />
+            ) : docked ? (
+              <DetailsPanel title={title}>{overview}</DetailsPanel>
+            ) : null}
+            {!docked ? (
+              <section className="card week-overview" aria-label={title}>
+                <h2>{title}</h2>
+                {overview}
+              </section>
+            ) : null}
+          </>
+        );
+      })()}
+    </main>
+  );
+}

@@ -1,0 +1,138 @@
+{
+  "added": "2026-10-09",
+  "today": "2026-10-10",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "7A"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "9B"
+    }
+  ],
+  "id": "note-next-english-exam",
+  "why": "An exam to complete hides in a neutral pre-approved absence. Preserve the typo and pupil instruction, resolve only the same pupil/course timetable, and link the original exam without guardian action.",
+  "tags": [
+    "note",
+    "relative-lesson",
+    "pupil-action",
+    "typo",
+    "whose"
+  ],
+  "items": [
+    {
+      "type": "note",
+      "id": 1,
+      "pupil": 0,
+      "date": "2026-10-09",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "ENA1_71",
+      "kind": "Ennalta anottu vapaa",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Englannin koe, tee seuraavalla englnnin tunnilla."
+    },
+    {
+      "type": "lesson",
+      "id": 2,
+      "pupil": 0,
+      "date": "2026-10-09",
+      "start": "10:00",
+      "end": "11:00",
+      "subject": "Englanti, A1",
+      "subjectCode": "ENA1_71"
+    },
+    {
+      "type": "lesson",
+      "id": 3,
+      "pupil": 0,
+      "date": "2026-10-12",
+      "start": "08:00",
+      "end": "09:00",
+      "subject": "Matematiikka",
+      "subjectCode": "MA_71"
+    },
+    {
+      "type": "lesson",
+      "id": 4,
+      "pupil": 1,
+      "date": "2026-10-12",
+      "start": "09:00",
+      "end": "10:00",
+      "subject": "Englanti, A1",
+      "subjectCode": "ENA1_91"
+    },
+    {
+      "type": "lesson",
+      "id": 5,
+      "pupil": 0,
+      "date": "2026-10-13",
+      "start": "09:00",
+      "end": "10:00",
+      "subject": "Englanti, A1",
+      "subjectCode": "ENA1_71"
+    },
+    {
+      "type": "exam",
+      "id": 6,
+      "pupil": 0,
+      "date": "2026-10-09",
+      "time": "10:00",
+      "subject": "Englanti, A1",
+      "subjectCode": "ENA1_71",
+      "name": "Kappaleiden 1–3 koe",
+      "teacher": "Opettaja Esimerkki",
+      "teacherCode": "OPE"
+    }
+  ],
+  "expect": {
+    "tone": [
+      {
+        "item": 1,
+        "tone": "neutral"
+      }
+    ],
+    "noteExam": [
+      {
+        "item": 1,
+        "important": true,
+        "quote": "tee seuraavalla englnnin tunnilla",
+        "date": "2026-10-13",
+        "originalExam": 6
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-13",
+          "start": "09:00",
+          "kind": "exam",
+          "pupil": 0,
+          "sure": true
+        }
+      ],
+      "not": [
+        {
+          "date": "2026-10-12",
+          "kind": "exam",
+          "suggestions": false
+        },
+        {
+          "date": "2026-10-13",
+          "kind": "exam",
+          "pupil": 1,
+          "suggestions": false
+        }
+      ],
+      "atMost": [
+        {
+          "date": "2026-10-13",
+          "max": 1,
+          "kind": "exam",
+          "pupil": 0
+        }
+      ]
+    }
+  }
+}

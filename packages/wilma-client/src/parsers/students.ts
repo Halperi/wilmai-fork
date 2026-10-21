@@ -68,15 +68,23 @@ function roleName(rec: Record<string, unknown>, fallback: string): string {
 function collectStudent(
   students: Map<string, StudentInfo>,
   studentNumber: string,
-  name: string
+  name: string,
+  role?: StudentInfo["role"]
 ): void {
   if (!students.has(studentNumber)) {
     students.set(studentNumber, {
       studentNumber,
       name,
       href: `/!${studentNumber}/`,
+      ...(role ? { role } : {}),
     });
   }
+}
+
+/** A guardian's role for a child, or a student's own login; anything else unknown. */
+function studentRole(type: unknown): StudentInfo["role"] {
+  const value = typeof type === "string" ? type.toLowerCase() : "";
+  return value === "guardian" ? "guardian" : value === "student" ? "student" : undefined;
 }
 
 /**
@@ -116,7 +124,7 @@ export function parseStudentsFromAccountsRoles(data: unknown): StudentInfo[] {
     if (!name) {
       continue;
     }
-    collectStudent(students, studentNumber, name);
+    collectStudent(students, studentNumber, name, studentRole(roleType(rec)));
   }
 
   return [...students.values()];

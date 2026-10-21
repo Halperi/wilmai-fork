@@ -1,0 +1,53 @@
+{
+  "id": "weekly-club",
+  "added": "2026-10-08",
+  "why": "A club that meets on Tuesdays 13.10.–8.12. isn't an eight-week event; joining is optional.",
+  "tags": [
+    "trap",
+    "recurring",
+    "optional",
+    "range"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 5101,
+      "published": "2026-10-06T12:00",
+      "from": "Kotitalousopettaja Esimerkki",
+      "title": "Kokkikerho alkaa",
+      "pupils": [
+        0,
+        1
+      ],
+      "text": "Koulun kokkikerho kokoontuu tiistaisin klo 14.30–16.00 kotitalousluokassa 13.10.–8.12. Kerho on tarkoitettu 7.–9.-luokkalaisille, ja siihen mahtuu 12 oppilasta. Ilmoittautumiset kotitalousopettajalle viimeistään 9.10."
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 5101,
+        "needs_action": false
+      }
+    ],
+    "action": [
+      {
+        "item": 5101,
+        "none": true
+      }
+    ],
+    "calendar": {
+      "maxDays": 3
+    }
+  }
+}

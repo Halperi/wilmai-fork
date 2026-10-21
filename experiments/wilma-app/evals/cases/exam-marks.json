@@ -1,0 +1,154 @@
+{
+  "id": "exam-marks",
+  "added": "2026-10-08",
+  "why": "Marks are free text: school grades, points out of a maximum the note gives, other scales, letters. Luna read some points without their maximum (shown as a bare share).",
+  "tags": [
+    "marks"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "mark",
+      "id": 1401,
+      "pupil": 0,
+      "date": "2026-09-16",
+      "subject": "Matematiikka",
+      "name": "Trigonometria",
+      "grade": "9"
+    },
+    {
+      "type": "mark",
+      "id": 1402,
+      "pupil": 0,
+      "date": "2026-09-24",
+      "subject": "Ruotsin kieli, B1",
+      "name": "Verbikoe 2",
+      "grade": "24",
+      "info": "Pisteet /25p."
+    },
+    {
+      "type": "mark",
+      "id": 1403,
+      "pupil": 0,
+      "date": "2026-09-28",
+      "subject": "Ruotsin kieli, B1",
+      "name": "Verbikoe 3",
+      "grade": "10",
+      "info": "Max 10 p."
+    },
+    {
+      "type": "mark",
+      "id": 1404,
+      "pupil": 0,
+      "date": "2026-09-02",
+      "subject": "Äidinkieli",
+      "name": "Mielipidekirjoitus",
+      "grade": "K",
+      "info": "Arviointi T-H-K"
+    },
+    {
+      "type": "mark",
+      "id": 1405,
+      "pupil": 0,
+      "date": "2026-05-20",
+      "subject": "Äidinkieli",
+      "name": "Työskentely kevään tunneilla",
+      "grade": "4",
+      "info": "Arviointi 1-5\n5 = työskentely on esimerkillistä\n3 = työskentely on pääsääntöisesti sujuvaa\n1 = työskentelyssä on paljon parannettavaa"
+    },
+    {
+      "type": "mark",
+      "id": 1406,
+      "pupil": 0,
+      "date": "2026-09-10",
+      "subject": "Matematiikka",
+      "name": "Yhtälöt",
+      "grade": "8½"
+    },
+    {
+      "type": "mark",
+      "id": 1407,
+      "pupil": 0,
+      "date": "2026-09-21",
+      "subject": "Englanti",
+      "name": "Set 1",
+      "grade": "poissa"
+    },
+    {
+      "type": "mark",
+      "id": 1408,
+      "pupil": 0,
+      "date": "2026-09-14",
+      "subject": "Fysiikka",
+      "name": "Liike",
+      "grade": "21,5/24"
+    }
+  ],
+  "expect": {
+    "marks": [
+      {
+        "item": 1401,
+        "kind": "grade",
+        "value": 9
+      },
+      {
+        "item": 1402,
+        "kind": "points",
+        "text": "24/25",
+        "share": [
+          0.95,
+          0.97
+        ]
+      },
+      {
+        "item": 1403,
+        "kind": "points",
+        "text": "10/10",
+        "share": [
+          0.99,
+          1
+        ]
+      },
+      {
+        "item": 1404,
+        "kind": "letter",
+        "share": [
+          0.9,
+          1
+        ]
+      },
+      {
+        "item": 1405,
+        "kind": "scale",
+        "share": [
+          0.7,
+          0.85
+        ]
+      },
+      {
+        "item": 1406,
+        "kind": "grade",
+        "value": 8.5
+      },
+      {
+        "item": 1407,
+        "kind": "absent"
+      },
+      {
+        "item": 1408,
+        "kind": "points",
+        "text": "21,5/24",
+        "share": [
+          0.89,
+          0.9
+        ]
+      }
+    ]
+  }
+}

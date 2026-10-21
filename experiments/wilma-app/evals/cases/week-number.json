@@ -1,0 +1,48 @@
+{
+  "id": "week-number",
+  "added": "2026-10-08",
+  "why": "'Viikolla 47' is the week of Monday 16.11.: a changed school week, not a month.",
+  "tags": [
+    "week-number",
+    "range"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 3901,
+      "published": "2026-10-08T09:00",
+      "from": "Rehtori Esimerkki",
+      "title": "Hyvinvointiviikko",
+      "pupils": [
+        0,
+        1
+      ],
+      "text": "Viikolla 47 koko koulussa vietetään hyvinvointiviikkoa. Viikon aikana koulupäivät alkavat kaikilla klo 9.00, ja aamuisin on yhteinen ulkoiluhetki. Tarkemmat ohjelmat luokanvalvojilta."
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-11-16",
+          "kind": [
+            "schedule",
+            "event"
+          ]
+        }
+      ],
+      "maxDays": 7
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "id": "cross-month-camp-payment",
+  "added": "2026-10-08",
+  "why": "A camp school across a month's end ('ma 30.11.–ke 2.12.') for the 7th grader, and its fee: a payment is a step with a deadline.",
+  "tags": [
+    "range",
+    "step",
+    "deadline",
+    "whose"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 3501,
+      "sent": "2026-10-08T09:30",
+      "from": "Luokanvalvoja Esimerkki",
+      "subject": "Leirikoulu ja leirimaksu",
+      "pupils": [
+        1
+      ],
+      "text": "Hei 7G:n huoltajat!\nLeirikoulumme Nuuksiossa on ma 30.11.–ke 2.12. Lähtö koululta maanantaina klo 8.00 ja paluu keskiviikkona noin klo 15.\nLeirin omavastuuosuus on 60 €. Maksu maksetaan luokan leiritilille 13.11. mennessä, viitenumero ja tilinumero ovat liitteenä.\nPakkauslista lähetetään myöhemmin.\nTerveisin\nLuokanvalvoja"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 3501,
+        "needs_action": true
+      }
+    ],
+    "action": [
+      {
+        "item": 3501,
+        "quote": "maksetaan",
+        "deadline": "2026-11-13"
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-11-30",
+          "endDate": "2026-12-02",
+          "kind": "trip",
+          "pupil": 1,
+          "sure": true
+        },
+        {
+          "date": "2026-11-13",
+          "kind": "deadline"
+        }
+      ],
+      "not": [
+        {
+          "date": "2026-11-30",
+          "pupil": 0,
+          "note": "a 7G camp"
+        }
+      ],
+      "maxDays": 3
+    }
+  }
+}

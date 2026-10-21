@@ -9,6 +9,7 @@ pnpm --filter @wilm-ai/wilma-cli test
 - `news-resources.mjs`: bulletin attachments and downloads
 - `mcp-login.mjs`: MCP server, browser login page, several Wilmas
 - `mfa.mjs`: two-step verification (`MFA_STRICT=1` rejects reused codes)
+- `logout.mjs`: `wilma logout` and `wilma_logout` (ending the session, keeping the login)
 - `audit.mjs`: download names, `--student` matching, argument checks, JSON errors, config safety
 
 ## Live (your own account)

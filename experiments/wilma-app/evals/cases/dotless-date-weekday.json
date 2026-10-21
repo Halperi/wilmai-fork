@@ -1,0 +1,50 @@
+{
+  "id": "dotless-date-weekday",
+  "added": "2026-10-08",
+  "why": "A date without its final dot and a bare hour ('ti 13.10 klo 9'): the exam at 9:00 on the 13th.",
+  "tags": [
+    "weekday-date",
+    "time"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 3101,
+      "sent": "2026-10-07T15:20",
+      "from": "Matematiikan opettaja",
+      "subject": "Matikan koe",
+      "pupils": [
+        0
+      ],
+      "text": "Hei 9C:n huoltajat ja oppilaat!\nSeuraava matematiikan koe on ti 13.10 klo 9 luokassa 214. Kokeessa tulevat kirjan luvut 1–3. Kertaustehtävät löytyvät Classroomista.\nTerveisin\nMatematiikan opettaja"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 3101,
+        "kind": [
+          "schoolwork"
+        ]
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-13",
+          "start": "09:00",
+          "kind": "exam",
+          "pupil": 0,
+          "sure": true
+        }
+      ]
+    }
+  }
+}

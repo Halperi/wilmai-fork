@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
-import type { Exam, UpcomingExam } from "../types.js";
+import type { Exam, PastExam, UpcomingExam } from "../types.js";
+import { htmlToText } from "./html-text.js";
 
 export function parseExamsHtml(html: string): Exam[] {
   const $ = cheerio.load(html);
@@ -87,6 +88,103 @@ export function parseExamsHtml(html: string): Exam[] {
   });
 
   return exams;
+}
+
+/**
+ * Wilma's past exams page (Kokeet > Menneet): a table with a row per exam,
+ * columns seen, date, teachers, exam, notes, grade and verbal assessment. The
+ * exam cell reads "name : group course-code : course title", e.g.
+ * "Verbikoe 4 : RUB1_ Ruotsin kieli, B1.t RUB1_91 : Ruotsin kieli, B1".
+ * Columns are found by their headings (Finnish, Swedish or English), or by
+ * Wilma's usual order. Newest first.
+ */
+export function parsePastExamsHtml(html: string): PastExam[] {
+  const $ = cheerio.load(html);
+  const table = $("table#examtable").first().length ? $("table#examtable").first() : $("main table").first();
+  if (!table.length) return [];
+
+  const headings = table.find("tr").first().find("th").toArray().map((th) => $(th).text().trim().toLowerCase());
+  const column = (pattern: RegExp, fallback: number) => {
+    const at = headings.findIndex((h) => pattern.test(h));
+    return at >= 0 ? at : fallback;
+  };
+  const col = {
+    seen: column(/nähty|sedd|seen/, 0),
+    date: column(/^pvm|päivä|datum|date/, 1),
+    teacher: column(/opettaja|lärare|teacher/, 2),
+    exam: column(/^(koe|prov|exam)$/, 3),
+    info: column(/lisätied|tilläggs|additional|info/, 4),
+    grade: column(/^(arvosana|vitsord|grade)$/, 5),
+    verbal: column(/sanallinen|verbal/, 6),
+  };
+
+  const isoDate = (text: string): string | null => {
+    const m = /(\d{1,2})\.(\d{1,2})\.(\d{4})/.exec(text);
+    return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : null;
+  };
+
+  const exams: PastExam[] = [];
+  table.find("tr").each((_, row) => {
+    const cells = $(row).children("td").toArray();
+    if (cells.length < 6) return;
+    const cell = (i: number) => (cells[i] ? $(cells[i]) : null);
+    const date = isoDate(cell(col.date)?.text() ?? "");
+    if (!date) return;
+
+    const { name, subject, subjectCode } = splitPastExamTitle(compactText(cell(col.exam)?.text() ?? ""));
+    const links = (cell(col.teacher)?.find("a.profile-link").toArray() ?? []).map((a) => $(a));
+    const teacherText = compactText(cell(col.teacher)?.text() ?? "");
+    const grade = compactText(cell(col.grade)?.text() ?? "");
+    const info = htmlToText(cell(col.info)?.html());
+    const verbal = htmlToText(cell(col.verbal)?.html());
+
+    exams.push({
+      date,
+      name,
+      subject,
+      subjectCode,
+      grade: grade || null,
+      verbalGrade: verbal || null,
+      info: info || null,
+      teacher: links.length ? links.map((a) => compactText(a.attr("title") || a.text())).join(", ") : teacherText,
+      teacherCode: links.length ? links.map((a) => compactText(a.text())).join(", ") : "",
+      seen: isoDate(cell(col.seen)?.text() ?? ""),
+    });
+  });
+
+  // Newest first; the order Wilma gave within a day.
+  return exams.map((exam, i) => ({ exam, i })).sort((a, b) => b.exam.date.localeCompare(a.exam.date) || a.i - b.i).map((x) => x.exam);
+}
+
+const COURSE_CODE = /^[\p{Lu}\d]+_[\p{L}\d]*$/u;
+
+/** "RUB1_ Ruotsin kieli, B1.t RUB1_91": a group and its course, ending in the course code; that code, else null. */
+function courseCodeOf(part: string): string | null {
+  const words = part.trim().split(/\s+/);
+  return words.length >= 2 && COURSE_CODE.test(words[0]) && COURSE_CODE.test(words[words.length - 1]) ? words[words.length - 1] : null;
+}
+
+/**
+ * "Name : GROUP_ Group title CODE_91 : Course title" → its name, course title
+ * and code. Without a name Wilma writes only "GROUP_ Group title CODE_91 :
+ * Course title"; without a course, "Name : Course title".
+ */
+function splitPastExamTitle(text: string): { name: string; subject: string; subjectCode: string } {
+  const parts = text.split(" : ");
+  if (parts.length >= 3) {
+    const middle = parts[parts.length - 2].trim().split(/\s+/);
+    const last = middle[middle.length - 1] ?? "";
+    return {
+      name: parts.slice(0, -2).join(" : ").trim(),
+      subject: parts[parts.length - 1].trim(),
+      subjectCode: COURSE_CODE.test(last) ? last : "",
+    };
+  }
+  if (parts.length === 2) {
+    const code = courseCodeOf(parts[0]);
+    return code ? { name: "", subject: parts[1].trim(), subjectCode: code } : { name: parts[0].trim(), subject: parts[1].trim(), subjectCode: "" };
+  }
+  return { name: text, subject: "", subjectCode: "" };
 }
 
 /**

@@ -1,0 +1,53 @@
+[package]
+name = "wilmai-home"
+version = "0.1.0"
+description = "WilmAI Home: your children's Wilma, sorted. Runs on this computer."
+authors = ["WilmAI"]
+license = "MIT"
+edition = "2021"
+rust-version = "1.90"
+
+[features]
+local-ai = []
+
+[lib]
+name = "wilmai_home_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# system-proxy: the computer's own proxy settings (Windows, macOS), which school and work networks often require.
+# rustls-tls-native-roots: the computer's own certificates as well, for networks whose proxy inspects HTTPS.
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "rustls-tls-native-roots", "json", "system-proxy"] }
+base64 = "0.22"
+keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
+tokio = { version = "1", features = ["macros", "rt", "sync", "time", "fs", "io-util"] }
+sha2 = "0.10"
+fs2 = "0.4"
+getrandom = "0.2"
+libc = "0.2"
+tauri-plugin-updater = "2"
+semver = "1"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
+
+# Hashing real model packs must remain fast in development smoke tests.
+[profile.dev.package.sha2]
+opt-level = 3
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+mac-notification-sys = "0.6.15"

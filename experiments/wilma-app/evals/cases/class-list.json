@@ -1,0 +1,54 @@
+{
+  "id": "class-list",
+  "added": "2026-10-08",
+  "why": "An event for a list of classes ('luokille 8A, 8C ja 9C'): 9C is on it, 7G isn't.",
+  "tags": [
+    "whose",
+    "time"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 4801,
+      "published": "2026-10-07T11:00",
+      "from": "Rehtori Esimerkki",
+      "title": "Tietoturvaluento",
+      "pupils": [
+        0,
+        1
+      ],
+      "text": "Poliisin tietoturvaluento pidetään auditoriossa torstaina 15.10. klo 12.15–13.00 luokille 8A, 8C ja 9C. Muilla luokilla on normaali lukujärjestys."
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-15",
+          "start": "12:15",
+          "kind": "event",
+          "pupil": 0,
+          "sure": true
+        }
+      ],
+      "not": [
+        {
+          "date": "2026-10-15",
+          "pupil": 1,
+          "note": "7G isn't on the list"
+        }
+      ]
+    }
+  }
+}

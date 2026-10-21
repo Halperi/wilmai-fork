@@ -12,3 +12,8 @@
 # Build output with content hashes in the names never changes.
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
+
+# WilmAI Home's update feed (one file for every platform), changed with each
+# release. Short-lived, so a withdrawn release goes quickly.
+/app/latest.json
+  Cache-Control: public, max-age=60, must-revalidate

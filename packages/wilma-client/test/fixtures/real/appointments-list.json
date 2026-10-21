@@ -1,0 +1,152 @@
+{
+ "Messages": [
+  {
+   "Id": 14770610,
+   "Subject": "Nupatebilo tysunuf (nereve vyg kynarunudoriku) + hamyhefus fohamahiku",
+   "TimeStamp": "2026-05-26 15:08",
+   "Folder": "lygem",
+   "SenderId": 95835,
+   "SenderType": 1,
+   "Sender": "Gusitutemu Lebit (Mas)",
+   "Senders": [
+    {
+     "Name": "Gusitutemu Lebit (Mas)",
+     "Href": "/!69944915/momefava/gylesofe/95835"
+    }
+   ],
+   "IsEvent": true,
+   "Applying": {
+    "Status": "Applied",
+    "ExtraInfo": "29.05.2026 13:00",
+    "SortValue": "applied-88304,5104278990"
+   }
+  },
+  {
+   "Id": 43668361,
+   "Subject": "Rynol hyjadubetot 25.5.",
+   "TimeStamp": "2026-05-20 15:56",
+   "Folder": "lygem",
+   "SenderId": 95835,
+   "SenderType": 1,
+   "Sender": "Gusitutemu Lebit (Mas)",
+   "Senders": [
+    {
+     "Name": "Gusitutemu Lebit (Mas)",
+     "Href": "/!69944915/momefava/gylesofe/95835"
+    }
+   ],
+   "IsEvent": true,
+   "Applying": {
+    "Status": "ExpiredReg",
+    "ExtraInfo": "25.05.2026 14:00",
+    "SortValue": "holylirygybekiduhad-98302,3203145326"
+   }
+  },
+  {
+   "Id": 99408599,
+   "Subject": "Bylijosaves vyg kynarunudoriku tajupikin?",
+   "TimeStamp": "2025-12-01 14:00",
+   "Folder": "lygem",
+   "SenderId": 95835,
+   "SenderType": 1,
+   "Sender": "Gusitutemu Lebit (Mas)",
+   "Senders": [
+    {
+     "Name": "Gusitutemu Lebit (Mas)",
+     "Href": "/!69944915/momefava/gylesofe/95835"
+    }
+   ],
+   "IsEvent": true,
+   "Applying": {
+    "Status": "Applied",
+    "ExtraInfo": "18.12.2025 13:00",
+    "SortValue": "applied-92159,5104278990"
+   }
+  },
+  {
+   "Id": 42430142,
+   "Subject": "Bysys gilimenijobisekonil",
+   "TimeStamp": "2025-10-20 09:20",
+   "Folder": "lygem",
+   "SenderId": 95835,
+   "SenderType": 1,
+   "Sender": "Gusitutemu Lebit (Mas)",
+   "Senders": [
+    {
+     "Name": "Gusitutemu Lebit (Mas)",
+     "Href": "/!69944915/momefava/gylesofe/95835"
+    }
+   ],
+   "IsEvent": true,
+   "Applying": {
+    "Status": "Applied",
+    "ExtraInfo": "24.10.2025 12:00",
+    "SortValue": "applied-61992,5"
+   }
+  },
+  {
+   "Id": 23648036,
+   "Subject": "Bysys rodepotorytykojy ke 8.10.",
+   "TimeStamp": "2025-09-26 14:39",
+   "Folder": "lygem",
+   "SenderId": 95835,
+   "SenderType": 1,
+   "Sender": "Gusitutemu Lebit (Mas)",
+   "Senders": [
+    {
+     "Name": "Gusitutemu Lebit (Mas)",
+     "Href": "/!69944915/momefava/gylesofe/95835"
+    }
+   ],
+   "IsEvent": true,
+   "Applying": {
+    "Status": "Applied",
+    "ExtraInfo": "08.10.2025 17:30",
+    "SortValue": "applied-25578,4085750629"
+   }
+  },
+  {
+   "Id": 13126473,
+   "Subject": "FY: bysys gilimenijobisekonil",
+   "TimeStamp": "2024-10-23 13:49",
+   "Folder": "lygem",
+   "SenderId": 95835,
+   "SenderType": 1,
+   "Sender": "Gusitutemu Lebit (Mas)",
+   "Senders": [
+    {
+     "Name": "Gusitutemu Lebit (Mas)",
+     "Href": "/!69944915/momefava/gylesofe/95835"
+    }
+   ],
+   "IsEvent": true,
+   "Applying": {
+    "Status": "Applied",
+    "ExtraInfo": "11.11.2024 09:00",
+    "SortValue": "applied-55674,375"
+   }
+  },
+  {
+   "Id": 15557510,
+   "Subject": "Bysys FY:p pepypi ti 20.8.",
+   "TimeStamp": "2024-08-13 10:00",
+   "Folder": "lygem",
+   "SenderId": 95835,
+   "SenderType": 1,
+   "Sender": "Gusitutemu Lebit (Mas)",
+   "Senders": [
+    {
+     "Name": "Gusitutemu Lebit (Mas)",
+     "Href": "/!69944915/momefava/gylesofe/95835"
+    }
+   ],
+   "IsEvent": true,
+   "Applying": {
+    "Status": "ExpiredReg",
+    "ExtraInfo": "18.08.2024",
+    "SortValue": "holylirygybekiduhad-19268"
+   }
+  }
+ ],
+ "Status": 200
+}

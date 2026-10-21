@@ -1,0 +1,382 @@
+/*
+ * WilmAI Intelligence in Settings: No AI, recommended OpenAI or an opt-in local pack.
+ * Adding an OpenAI API key or completing local installation enables it. OpenAI
+ * usage has a light-use cost estimate, recorded spending in
+ * USD and a separate pause limit (luna/client.ts). The tokens and prices
+ * behind the recorded spending are under Details.
+ */
+import { useEffect, useRef, useState } from "react";
+import { getState, updateSettings, useApp } from "../data/store";
+import { useLocalEdition } from "../data/edition";
+import { shortDate } from "../data/dates";
+import { AI_BUDGET_STEP, MAX_AI_BUDGET, MIN_AI_BUDGET, budgetText, normalizeAIBudget } from "../data/ai-budget";
+import { intelligenceOn, intelligenceProvider, type UsageBucket } from "../data/model";
+import { localPackStatus, stopLocalSetup } from "../ai/managed";
+import { LocalAISetup } from "./LocalAISetup";
+import { OpenAIBlocked } from "./OpenAIBlocked";
+import { DECISIONS_INPUT_PRICE, LUNA, LunaError, READING_MODELS, costOf, monthCost, nextMonth, openAIBlockedMessage, openAIReach, overLimit, readingModel, readingTotal, thisMonth, totalUsage } from "../luna/client";
+import { checkOpenAIKey, forgetLuna, lunaBacklog, runLuna } from "../luna/events";
+import { runJev } from "../jev/runner";
+import { isDesktopApp } from "../wilma/transport";
+import { Icon } from "./bits";
+import { language, plural, t } from "../i18n";
+
+/** Recorded API costs stay in USD. */
+const money = (n: number): string => `$${n.toFixed(2)}`;
+const precise = (n: number) => `$${n.toFixed(n < 0.01 ? 4 : n < 1 ? 3 : 2)}`;
+const tokens = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)} M` : n >= 1e4 ? `${Math.round(n / 1e3)} k` : String(n));
+
+const AI_CHOICES = [
+  { value: "off", label: "No AI", badge: "Default", icon: "book", help: "You read and sort everything yourself.", detail: "Free" },
+  { value: "openai", label: "OpenAI", badge: "Recommended", icon: "sparkles", help: "GPT-6 Luna. Fast and accurate.", detail: "Your own API key · tens of cents a month" },
+  { value: "local", label: "Local AI", badge: "On this Mac", icon: "laptop", help: "Nothing goes to an AI service. Slower, and less accurate.", detail: "9.1 GB download · works the Mac hard" },
+] as const;
+
+/**
+ * Can this computer run local AI? Only the Mac build has the runtime, and it needs Apple Silicon with 16 GB of
+ * memory (local_ai.rs decides). null while asking. In the browser (development) the setup panel can be looked at.
+ */
+function useLocalSupport(): boolean | null {
+  const localEdition = useLocalEdition();
+  const [supported, setSupported] = useState<boolean | null>(isDesktopApp ? null : true);
+  useEffect(() => {
+    if (!isDesktopApp || localEdition !== true) return;
+    let live = true;
+    localPackStatus().then((s) => { if (live) setSupported(s.supported); }).catch(() => { if (live) setSupported(false); });
+    return () => { live = false; };
+  }, [localEdition]);
+  return localEdition === false ? false : supported;
+}
+
+export function AISettings() {
+  const localSupport = useLocalSupport();
+  const settings = useApp((s) => s.settings);
+  const reading = useApp((s) => s.lunaStatus);
+  const sorting = useApp((s) => s.jevStatus);
+  const usage = useApp((s) => s.usage);
+  const luna = useApp((s) => s.luna);
+  const on = intelligenceOn(settings);
+  const [choice, setChoice] = useState(settings.localAI?.setupPending ? "local" as const : intelligenceProvider(settings));
+  const sourceGeneration = useRef(0);
+  // The key being typed: shown when there's none yet, or while replacing it.
+  const [key, setKey] = useState("");
+  const [replacing, setReplacing] = useState(false);
+  const [check, setCheck] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const blocked = useApp((s) => s.openaiBlocked);
+  const [reaching, setReaching] = useState(false);
+
+  // Choosing OpenAI checks the network first: when it blocks OpenAI, no key can help, so none is asked for.
+  useEffect(() => {
+    if (choice !== "openai" || on) return;
+    let live = true;
+    setReaching(true);
+    void openAIReach().finally(() => { if (live) setReaching(false); });
+    return () => { live = false; };
+  }, [choice, on]);
+
+  const turnOn = async () => {
+    const token = ++sourceGeneration.current;
+    const value = key.trim();
+    if (!value) return;
+    setBusy(true);
+    setCheck(null);
+    try {
+      // Unreachable: nothing is saved, and the notice says why.
+      if (!(await openAIReach()).reachable || sourceGeneration.current !== token) return;
+      updateSettings({ aiProvider: "openai", decider: "luna", decisionsModel: LUNA, readingModel: LUNA, openaiKey: value });
+      await checkOpenAIKey();
+      if (sourceGeneration.current !== token) return;
+      setCheck({ ok: true, text: t("On. OpenAI answered.") });
+      setKey("");
+      setReplacing(false);
+      void runJev();
+      void runLuna();
+    } catch (err) {
+      if (sourceGeneration.current !== token) return;
+      // A key OpenAI refuses isn't kept (it would only fail later), nor one OpenAI couldn't be asked about (the typed key
+      // stays in the field for Check again); a busy OpenAI keeps it, to try again.
+      if (err instanceof LunaError && !err.retryable) {
+        updateSettings({ openaiKey: "" });
+        if (getState().openaiBlocked) setCheck(null);
+        else {
+          setKey("");
+          setCheck({ ok: false, text: err.message });
+        }
+      } else setCheck({ ok: false, text: t("Saved, but OpenAI didn't answer the test: {error}", { error: err instanceof Error ? err.message : String(err) }) });
+    } finally {
+      setBusy(false);
+    }
+  };
+  const turnOff = () => {
+    ++sourceGeneration.current;
+    updateSettings({ aiProvider: "off", openaiKey: "" });
+    setChoice("off");
+    setKey("");
+    setReplacing(false);
+    setCheck({ ok: true, text: t("Turned off. The key was removed from this app.") });
+  };
+  const changeSource = (value: typeof choice) => {
+    ++sourceGeneration.current;
+    setChoice(value);
+    setCheck(null);
+    setReplacing(false);
+    updateSettings({ aiProvider: value === "local" ? "off" : value, ...(value === "openai" ? { decider: "luna", decisionsModel: LUNA, readingModel: LUNA } as const : {}) });
+    void stopLocalSetup().catch((err) => setCheck({ ok: false, text: String(err) }));
+    if (value === "openai" && settings.openaiKey.trim()) { void runJev(); void runLuna(); }
+  };
+
+  const total = totalUsage(usage);
+  const spent = monthCost();
+  const limit = normalizeAIBudget(settings.aiMonthlyBudgetUsd);
+  const limitText = budgetText(limit);
+  const changeBudget = (value: number) => {
+    const next = normalizeAIBudget(value);
+    updateSettings({ aiMonthlyBudgetUsd: next });
+    if (next > limit && on && choice === "openai" && !overLimit()) { void runJev(); void runLuna(); }
+  };
+
+  const records = Object.values(luna);
+  const found = records.reduce((n, r) => n + r.events.length, 0);
+  const dropped = records.reduce((n, r) => n + r.dropped, 0);
+  const failed = records.filter((r) => r.error).length;
+  const waiting = on ? lunaBacklog().length : 0;
+  const price = READING_MODELS[readingModel()] ?? READING_MODELS["gpt-6-luna"];
+  // While OpenAI is unreachable, its notice says so once (and how to check again).
+  const errors = on ? [...new Set([sorting.error, reading.error].filter((e): e is string => Boolean(e) && !(blocked && e === openAIBlockedMessage())))] : [];
+  const kept = isDesktopApp ? t("Kept on this computer in the app's own data, scrambled but not encrypted.") : t("Kept in this browser only, scrambled but not encrypted.");
+
+  const keyInput = (
+    <div className="ai-key">
+      <input
+        id="openai-key"
+        className="input"
+        type="password"
+        autoComplete="off"
+        value={key}
+        onChange={(e) => setKey(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") void turnOn();
+        }}
+        placeholder={t("Paste your OpenAI API key")}
+      />
+      <button className="btn btn-primary" onClick={() => void turnOn()} disabled={busy || !key.trim()}>
+        {busy ? t("Checking…") : on ? t("Save the new key") : t("Turn on")}
+      </button>
+      {replacing ? (
+        <button className="btn btn-quiet" onClick={() => setReplacing(false)}>
+          {t("Cancel")}
+        </button>
+      ) : null}
+    </div>
+  );
+
+  const row = (label: string, b: UsageBucket | undefined) => (
+    <tr>
+      <th scope="row">{label}</th>
+      <td>{b ? b.items : 0}</td>
+      <td>
+        {b ? readingTotal(b).calls : 0} · {tokens(b ? readingTotal(b).input : 0)} / {tokens(b ? readingTotal(b).output : 0)}
+      </td>
+      <td>
+        {b ? b.decisions.calls : 0} · {b?.decisions.estimated ? "~" : ""}
+        {tokens(b?.decisions.input ?? 0)}
+      </td>
+      <td>
+        <b>{precise(b ? costOf(b) : 0)}</b>
+      </td>
+    </tr>
+  );
+
+  return (
+    <section className="card ai-settings" aria-labelledby="ai-settings-title">
+      <h2 id="ai-settings-title">
+        <Icon name="sparkles" /> {t("WilmAI Intelligence")}
+        {on ? <span className="ai-on">{t("On")}</span> : null}
+      </h2>
+      <p>
+        {t(
+          "WilmAI Intelligence reads new messages, bulletins and teachers' notes for you, and picks out what needs you, by when, and the dates for your calendar. It's optional, and you can change your choice any time."
+        )}
+      </p>
+      <fieldset className="ai-choices">
+        <legend>{t("Choose your AI")}</legend>
+        {AI_CHOICES.map(({ value, label, badge, icon, help, detail }) => {
+          // Local AI stays in the list on computers that can't run it, greyed out with the reason.
+          const unavailable = value === "local" && localSupport !== true;
+          return (
+            <label key={value} className={`ai-choice ai-choice-${value}${choice === value ? " selected" : ""}${unavailable ? " unavailable" : ""}`}>
+              <span className="ai-choice-top">
+                <span className="ai-choice-badge" id={`ai-${value}-badge`}>
+                  {value === "openai" ? <Icon name="star" /> : null}{t(badge)}
+                </span>
+                <input type="radio" name="ai-source" value={value} checked={choice === value} onChange={() => changeSource(value)} disabled={busy || unavailable}
+                  onClick={() => { if (value === "off" && choice === "off" && settings.aiProvider === undefined) changeSource("off"); }}
+                  aria-labelledby={`ai-${value}-label`} aria-describedby={`ai-${value}-badge ai-${value}-help ai-${value}-detail`} />
+              </span>
+              <span className="ai-choice-art" aria-hidden="true">
+                <Icon name={icon} />
+                {value === "local" ? <span className="ai-choice-emoji">🔒</span> : null}
+              </span>
+              <b id={`ai-${value}-label`}>{t(label)}</b>
+              <small id={`ai-${value}-help`}>{t(help)}</small>
+              <span className="ai-choice-detail" id={`ai-${value}-detail`}>
+                {unavailable && localSupport === false ? t("Needs an Apple Silicon Mac with 16 GB of memory") : t(detail)}
+              </span>
+            </label>
+          );
+        })}
+      </fieldset>
+      {choice === "local" ? (
+        <>
+          <LocalAISetup />
+          {sorting.running ? <p className="help-line">{t("Sorting: {done} of {total}…", { done: sorting.done, total: sorting.total })}</p> : null}
+          {reading.running ? <p className="help-line">{t("Reading: {done} of {total}…", { done: reading.done, total: reading.total })}</p> : null}
+          {errors.map((e) => <div key={e} className="notice err">{e}</div>)}
+        </>
+      ) : choice === "off" ? (
+        <p className="notice">{t("Without AI you see everything Wilma has, as Wilma shows it, but nothing picks out what needs you, deadlines or dates from the text. AI answers from earlier stay.")}</p>
+      ) : !on && blocked ? (
+        <OpenAIBlocked where="settings" />
+      ) : !on && reaching ? (
+        <p className="help-line">{t("Checking that this computer can reach OpenAI…")}</p>
+      ) : !on ? (
+        <>
+          <div className="field">
+            <div className="ai-key-label">
+              <label htmlFor="openai-key">{t("Add your OpenAI API key")}</label>
+              {/* Step by step on the website, for anyone who has never made one */}
+              <a className="linkish" href={`https://wilm.ai/${language()}/home#openai-key`} target="_blank" rel="noreferrer">{t("How to get a key")} ↗</a>
+            </div>
+            {keyInput}
+            <span className="help">
+              {kept} {t("Sent only to OpenAI.")}
+            </span>
+          </div>
+          <p className="ai-reassure">
+            <Icon name="check" />
+            <span>
+              {t("For a family, OpenAI usually costs tens of cents a month. OpenAI bills your key directly, and the app pauses AI if a month reaches your limit ({limit}).", {
+                limit: limitText,
+              })}
+            </span>
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="ai-cost">
+            <div>
+              <span>{t("This month (USD)")}</span>
+              <b>{money(spent)}</b>
+            </div>
+            <div>
+              <span>{t("Usually")}</span>
+              <b>{t("Tens of cents")}</b>
+              <small>{t("a month")}</small>
+            </div>
+            <div>
+              <span>{t("Monthly limit (USD)")}</span>
+              <b>{limitText}</b>
+              <small>{t("AI pauses there")}</small>
+            </div>
+          </div>
+          <p className="help-line">
+            {t("OpenAI bills your key directly. If a month reaches the limit, WilmAI Intelligence pauses until {date} and says so here.", { date: shortDate(nextMonth()) })}
+          </p>
+          {sorting.running ? <p className="help-line">{t("Sorting: {done} of {total}…", { done: sorting.done, total: sorting.total })}</p> : null}
+          {reading.running ? <p className="help-line">{t("Reading: {done} of {total}…", { done: reading.done, total: reading.total })}</p> : null}
+          {!reading.running && waiting && !errors.length && !blocked ? <p className="help-line">{plural(waiting, "{n} item waits to be read.", "{n} items wait to be read.")}</p> : null}
+          <OpenAIBlocked where="settings" />
+          {errors.map((e) => (
+            <div key={e} className="notice err">
+              {e}
+            </div>
+          ))}
+
+          <div className="field ai-key-row">
+            <label htmlFor="openai-key">{t("OpenAI API key")}</label>
+            {replacing ? (
+              keyInput
+            ) : (
+              <div className="ai-key">
+                <span className="ai-key-saved">{t("Saved ({end})", { end: `…${settings.openaiKey.trim().slice(-4)}` })}</span>
+                <button className="btn btn-sm" onClick={() => setReplacing(true)}>
+                  {t("Replace key")}
+                </button>
+                <button className="btn btn-sm btn-quiet" onClick={turnOff}>
+                  {t("Turn off")}
+                </button>
+              </div>
+            )}
+            <span className="help">
+              {kept} {t("Sent only to OpenAI.")}
+            </span>
+          </div>
+        </>
+      )}
+      {choice === "openai" ? (
+        <>
+          <div className="field ai-budget-control">
+            <label htmlFor="ai-monthly-budget">{t("Monthly limit (USD)")} <output htmlFor="ai-monthly-budget">{limitText}</output></label>
+            <input id="ai-monthly-budget" type="range" min={MIN_AI_BUDGET} max={MAX_AI_BUDGET} step={AI_BUDGET_STEP} value={limit} onChange={(e) => changeBudget(Number(e.target.value))} aria-valuetext={t("{amount} US dollars per month", { amount: limit })} aria-describedby="ai-budget-help" disabled={busy || reading.running || sorting.running} />
+            <div className="ai-budget-scale" aria-hidden="true"><span>{budgetText(MIN_AI_BUDGET)}</span><span>{budgetText(MAX_AI_BUDGET)}</span></div>
+            <span id="ai-budget-help" className="help">{t("$0.50–$3 a month, $1 to start with. Today warns you at 80%, and AI pauses at the limit. Raising the limit picks up what's waiting.")}</span>
+          </div>
+          <p className="help-line">{t("The first reading of your older messages costs a little more. Amounts are in US dollars, as OpenAI bills them.")}</p>
+        </>
+      ) : null}
+      {check ? <div className={`notice ${check.ok ? "ok" : "err"}`}>{check.text}</div> : null}
+
+      {on && choice === "openai" ? (
+        <details className="ai-details">
+          <summary>{t("Details")}</summary>
+          <div className="stats">
+            <div>
+              <b>{records.length}</b>
+              <span>{plural(records.length, "item read", "items read")}</span>
+            </div>
+            <div>
+              <b>{found}</b>
+              <span>{plural(found, "date found", "dates found")}</span>
+            </div>
+            <div>
+              <b>{dropped}</b>
+              <span>{t("left out: the words weren't in the text")}</span>
+            </div>
+          </div>
+          {failed ? <p className="help-line">{plural(failed, "The answer for {n} item wasn't readable.", "The answers for {n} items weren't readable.")}</p> : null}
+          <table className="luna-usage">
+            <thead>
+              <tr>
+                <th />
+                <th scope="col">{t("Items")}</th>
+                <th scope="col">{t("Reading: calls · tokens in / out")}</th>
+                <th scope="col">{t("Questions: calls · tokens")}</th>
+                <th scope="col">{t("Cost (USD)")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {row(t("This month"), usage[thisMonth()])}
+              {row(t("All"), total)}
+            </tbody>
+          </table>
+          <p className="help-line">
+            {t(
+              "Counted on this computer from the tokens OpenAI reports, at OpenAI's list prices for GPT-6 Luna (8 Oct 2026, per million tokens: ${input} in, ${cached} cached, ${output} out; questions ${decisions} in). The bill itself is in your OpenAI account.",
+              {
+                input: price.input.toFixed(2),
+                cached: price.cached.toFixed(2),
+                output: price.output.toFixed(2),
+                decisions: DECISIONS_INPUT_PRICE.toFixed(2),
+              }
+            )}
+            {total.decisions.estimated ? ` ${t("Questions don't report their tokens: ~ is estimated from the length.")}` : null}
+          </p>
+          <button className="btn btn-sm" onClick={() => void forgetLuna()} disabled={reading.running}>
+            <Icon name="refresh" /> {t("Read everything again")}
+          </button>
+        </details>
+      ) : null}
+    </section>
+  );
+}

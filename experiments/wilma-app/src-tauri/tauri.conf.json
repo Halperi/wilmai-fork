@@ -1,0 +1,45 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "WilmAI Home",
+  "version": "0.1.0",
+  "identifier": "ai.wilm.home",
+  "build": {
+    "frontendDist": "../dist-tauri",
+    "devUrl": "http://127.0.0.1:5197",
+    "beforeDevCommand": "pnpm vite --mode tauri --host 127.0.0.1 --port 5197 --strictPort",
+    "beforeBuildCommand": "pnpm vite build --mode tauri"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "WilmAI Home",
+        "width": 1320,
+        "height": 880,
+        "minWidth": 380,
+        "minHeight": 560,
+        "resizable": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "backgroundColor": "#eef1f6"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Education",
+    "macOS": { "signingIdentity": "-", "minimumSystemVersion": "13.3" },
+    "shortDescription": "Your children's Wilma, sorted."
+  }
+}

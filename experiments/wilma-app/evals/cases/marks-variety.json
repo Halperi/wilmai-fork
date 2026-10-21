@@ -1,0 +1,154 @@
+{
+  "id": "marks-variety",
+  "added": "2026-10-08",
+  "why": "More ways a mark is written: '8,5' and '9-' are school grades, 'S' and 'H' on a pass/fail scale (H is failed there, not hyvä), '18/20' and '88 %', 'T+' on T-H-K, 'kesken' not a result.",
+  "tags": [
+    "marks"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "mark",
+      "id": 6101,
+      "pupil": 0,
+      "date": "2026-09-15",
+      "subject": "Matematiikka",
+      "name": "Prosenttilaskut",
+      "grade": "8,5"
+    },
+    {
+      "type": "mark",
+      "id": 6102,
+      "pupil": 0,
+      "date": "2026-09-18",
+      "subject": "Englanti",
+      "name": "Sanakoe 4",
+      "grade": "9-"
+    },
+    {
+      "type": "mark",
+      "id": 6103,
+      "pupil": 0,
+      "date": "2026-09-03",
+      "subject": "Liikunta",
+      "name": "Uimataito",
+      "grade": "S",
+      "info": "Arviointi S/H"
+    },
+    {
+      "type": "mark",
+      "id": 6104,
+      "pupil": 0,
+      "date": "2026-09-22",
+      "subject": "Kemia",
+      "name": "Mooli",
+      "grade": "18/20"
+    },
+    {
+      "type": "mark",
+      "id": 6105,
+      "pupil": 0,
+      "date": "2026-09-25",
+      "subject": "Biologia",
+      "name": "Solut",
+      "grade": "88 %"
+    },
+    {
+      "type": "mark",
+      "id": 6106,
+      "pupil": 0,
+      "date": "2026-09-11",
+      "subject": "Äidinkieli",
+      "name": "Novellianalyysi",
+      "grade": "T+",
+      "info": "Arviointi T-H-K"
+    },
+    {
+      "type": "mark",
+      "id": 6107,
+      "pupil": 0,
+      "date": "2026-09-29",
+      "subject": "Historia",
+      "name": "Tutkielma",
+      "grade": "kesken"
+    },
+    {
+      "type": "mark",
+      "id": 6108,
+      "pupil": 0,
+      "date": "2026-09-08",
+      "subject": "Kotitalous",
+      "name": "Hygieniapassi",
+      "grade": "H",
+      "info": "S = suoritettu, H = hylätty"
+    }
+  ],
+  "expect": {
+    "marks": [
+      {
+        "item": 6101,
+        "kind": "grade",
+        "value": 8.5
+      },
+      {
+        "item": 6102,
+        "kind": "grade",
+        "value": 8.75
+      },
+      {
+        "item": 6103,
+        "kind": "pass"
+      },
+      {
+        "item": 6104,
+        "kind": "points",
+        "text": "18/20",
+        "share": [
+          0.89,
+          0.91
+        ]
+      },
+      {
+        "item": 6105,
+        "kind": [
+          "points",
+          "scale",
+          "other"
+        ],
+        "share": [
+          0.75,
+          0.95
+        ]
+      },
+      {
+        "item": 6106,
+        "kind": "letter",
+        "share": [
+          0.45,
+          0.75
+        ]
+      },
+      {
+        "item": 6107,
+        "kind": [
+          "absent",
+          "other"
+        ]
+      },
+      {
+        "item": 6108,
+        "kind": "pass",
+        "share": [
+          0,
+          0.3
+        ]
+      }
+    ]
+  }
+}

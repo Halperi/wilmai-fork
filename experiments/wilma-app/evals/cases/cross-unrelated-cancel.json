@@ -1,0 +1,52 @@
+{
+  "id": "cross-unrelated-cancel",
+  "added": "2026-10-09",
+  "why": "A later message cancels this week's club ('kokkikerho on peruttu'; it goes on next week, the trip's week): the trip stays.",
+  "tags": [
+    "cross-item",
+    "trap"
+  ],
+  "today": "2026-10-13",
+  "pupils": [
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 7601,
+      "published": "2026-10-01T09:00",
+      "from": "Luokanvalvoja Esimerkki",
+      "title": "7G:n teatteriretki",
+      "pupils": [
+        0
+      ],
+      "text": "7G lähtee teatteriin torstaina 22.10. klo 9.30. Esitys on Kaupunginteatterissa, ja paluu koululle on noin klo 13."
+    },
+    {
+      "type": "message",
+      "id": 7602,
+      "sent": "2026-10-12T14:00",
+      "from": "Kotitalousopettaja Esimerkki",
+      "subject": "Kerho peruttu",
+      "pupils": [
+        0
+      ],
+      "text": "Hei!\nTämän viikon torstain kokkikerho on peruttu opettajan sairastumisen vuoksi. Kerho jatkuu taas ensi viikolla.\nTerveisin\nKotitalousopettaja"
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-22",
+          "kind": "trip",
+          "pupil": 0,
+          "sure": true
+        }
+      ]
+    }
+  }
+}

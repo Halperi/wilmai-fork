@@ -1,0 +1,36 @@
+{
+  "id": "note-missed-exam-next-lesson",
+  "added": "2026-10-10",
+  "why": "A missed exam may be reassigned using ensi tunnilla, seuraavalla tunnilla or ensi kerralla without repeating the subject. Each instruction must reach home attention and the pupil's next lesson, regardless of the absence category.",
+  "tags": ["note", "relative-lesson", "time", "whose"],
+  "today": "2026-10-10",
+  "pupils": [{ "name": "Aino Esimerkki", "class": "7A" }],
+  "items": [
+    { "type": "note", "id": 1, "pupil": 0, "date": "2026-10-09", "start": "10:00", "end": "10:45", "subject": "ENA1_71", "kind": "Sairauspoissaolo", "teacher": "Opettaja Esimerkki", "text": "Olit poissa englannin kokeesta. Tee koe ensi tunnilla." },
+    { "type": "note", "id": 2, "pupil": 0, "date": "2026-10-09", "start": "11:00", "end": "11:45", "subject": "MA_71", "kind": "Selvitetty poissaolo", "teacher": "Opettaja Esimerkki", "text": "Matematiikan koe jäi tekemättä poissaolon vuoksi. Teet sen seuraavalla tunnilla." },
+    { "type": "note", "id": 3, "pupil": 0, "date": "2026-10-08", "start": "13:00", "end": "13:45", "subject": "FY_71", "kind": "Ennalta anottu vapaa", "teacher": "Opettaja Esimerkki", "text": "Fysiikan koe. Tee se ensi kerralla." },
+    { "type": "lesson", "id": 4, "pupil": 0, "date": "2026-10-12", "start": "08:00", "end": "08:45", "subject": "Matematiikka", "subjectCode": "MA_71" },
+    { "type": "lesson", "id": 5, "pupil": 0, "date": "2026-10-12", "start": "09:00", "end": "09:45", "subject": "Fysiikka", "subjectCode": "FY_71" },
+    { "type": "lesson", "id": 6, "pupil": 0, "date": "2026-10-13", "start": "10:00", "end": "10:45", "subject": "Englanti, A1", "subjectCode": "ENA1_71" },
+    { "type": "lesson", "id": 7, "pupil": 0, "date": "2026-10-14", "start": "10:00", "end": "10:45", "subject": "Englanti, A1", "subjectCode": "ENA1_71" }
+  ],
+  "expect": {
+    "noteExam": [
+      { "item": 1, "important": true, "quote": "Tee koe ensi tunnilla", "date": "2026-10-13", "originalExam": null },
+      { "item": 2, "important": true, "quote": "Teet sen seuraavalla tunnilla", "date": "2026-10-12", "originalExam": null },
+      { "item": 3, "important": true, "quote": "Tee se ensi kerralla", "date": "2026-10-12", "originalExam": null }
+    ],
+    "calendar": {
+      "events": [
+        { "date": "2026-10-13", "start": "10:00", "kind": "exam", "pupil": 0, "sure": true, "title": "englannin|english" },
+        { "date": "2026-10-12", "start": "08:00", "kind": "exam", "pupil": 0, "sure": true, "title": "matematiikan|math" },
+        { "date": "2026-10-12", "start": "09:00", "kind": "exam", "pupil": 0, "sure": true, "title": "fysiikan|physics" }
+      ],
+      "not": [{ "date": "2026-10-14", "kind": "exam", "suggestions": false }],
+      "atMost": [
+        { "date": "2026-10-12", "kind": "exam", "pupil": 0, "max": 2 },
+        { "date": "2026-10-13", "kind": "exam", "pupil": 0, "max": 1 }
+      ]
+    }
+  }
+}

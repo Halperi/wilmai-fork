@@ -13,6 +13,10 @@
  * --keep   keep only these elements of an HTML page (default: the whole body)
  * --allow  also keep the words found in these elements (e.g. a legend of
  *          generic labels); applies to every file in the run
+ * --forms  keep forms (inputs, selects, options, textareas) and data-
+ *          attributes, for fixtures of Wilma's write forms: formkeys, secrets
+ *          and tokens become "fake-formkey", ids are remapped and texts
+ *          anonymized like everything else; applies to every file in the run
  * JSON files (by extension) are walked; string fields ending in "Html" are
  * treated as HTML.
  *
@@ -26,12 +30,18 @@ import * as cheerio from "cheerio";
 const WILMA_WORDS = new Set(
   `julkaistu pysyvät vanhat tiedotteet tiedote yhteensä päivämäärä huomioita arvosana laajuus suorituspäivä
    oppimäärä tai kurssi tulostettava versio opettaja kokeen lisätiedot lähettäjä vastaanottajat lähetetty klo
-   ma ti ke to pe la su wilma`
+   ma ti ke to pe la su wilma
+   huollettavasi tiedot nimi luokka ryhmänohjaaja luokanvalvoja muut ohjaajat lähetä viesti kaikille ohjaajille
+   opiskelijan opettajille yleiset opiskelija huoltajat omat opettajat henkilökunta kaikki valitse tallenna
+   luonnos peruuta vastaa viestin lähettäjälle välitä edelleen poissaolon ajankohta poissaolosta ilmoita
+   terveydellinen syy huomenna tänään nähty pvm koe sanallinen arvio
+   selected other expired applied expiredreg ckeditor true false`
     .split(/\s+/)
     .filter(Boolean)
 );
 const SALT = randomBytes(16);
 const allowed = new Set();
+const options = { forms: false };
 const numberMap = new Map();
 
 function hash(value) {
@@ -80,7 +90,11 @@ export function anonymizeText(text) {
     if (WILMA_WORDS.has(lower) || allowed.has(lower)) return token;
     return bare
       .split(/([.:-])/)
-      .map((part) => (/^[.:-]$/.test(part) || !part ? part : /^\d+$/.test(part) ? (part.length > 3 ? fakeNumber(part) : part) : fakeWord(part)))
+      .map((part) => {
+        if (/^[.:-]$/.test(part) || !part) return part;
+        if (/^\d+$/.test(part)) return part.length > 3 ? fakeNumber(part) : part;
+        return WILMA_WORDS.has(part.toLowerCase()) || allowed.has(part.toLowerCase()) ? part : fakeWord(part);
+      })
       .join("") + tail;
   });
 }
@@ -102,9 +116,17 @@ function anonymizeUrl(value) {
   return url;
 }
 
+/** A form field's value or a data- attribute: secrets replaced, ids remapped, paths and text anonymized. */
+function anonymizeValue(name, value) {
+  if (/formkey|secret|sessionid|token|crc/i.test(name)) return "fake-formkey";
+  if (/^\d+$/.test(value)) return value.length > 3 ? fakeNumber(value) : value;
+  if (/[/?=]/.test(value)) return anonymizeUrl(value);
+  return anonymizeText(value);
+}
+
 export function anonymizeHtml(html, keep) {
   const $ = cheerio.load(html);
-  $("script, style, noscript, iframe, form input, form select, form textarea, svg, link, meta").remove();
+  $(`script, style, noscript, iframe, svg, link, meta${options.forms ? "" : ", form input, form select, form textarea"}`).remove();
   $("*").contents().filter((_, node) => node.type === "comment").remove();
   const title = $("title").text();
   const kept = keep ? $(keep) : $("body").children();
@@ -114,10 +136,17 @@ export function anonymizeHtml(html, keep) {
 
   out("*").each((_, el) => {
     for (const [name, value] of Object.entries(el.attribs ?? {})) {
+      if (options.forms && (name === "value" || name.startsWith("data-"))) {
+        out(el).attr(name, anonymizeValue(name === "value" ? (el.attribs.name ?? "") : name, value));
+        continue;
+      }
+      if (options.forms && (name === "checked" || name === "selected" || name === "disabled" || name === "method")) continue;
       if (name.startsWith("data-") || name.startsWith("on") || name === "style" || name === "value") out(el).removeAttr(name);
       else if (name === "href" || name === "src" || name === "action") out(el).attr(name, anonymizeUrl(value));
       else if (name === "title" || name === "alt" || name === "aria-label" || name === "placeholder") out(el).attr(name, anonymizeText(value));
-      else if (name === "id" || name === "class" || name === "colspan" || name === "rowspan" || name === "type" || name === "name") continue;
+      // Ids and classes can carry student numbers ("heading-own-student-123456").
+      else if (name === "id" || name === "class") out(el).attr(name, value.replace(/\d{4,}/g, (digits) => fakeNumber(digits)));
+      else if (name === "colspan" || name === "rowspan" || name === "type" || name === "name") continue;
       else out(el).removeAttr(name);
     }
   });
@@ -148,7 +177,8 @@ async function main(argv) {
   const allowSelectors = [];
   let keep = null;
   for (let i = 0; i < argv.length; i += 1) {
-    if (argv[i] === "--keep") keep = argv[++i];
+    if (argv[i] === "--forms") options.forms = true;
+    else if (argv[i] === "--keep") keep = argv[++i];
     else if (argv[i] === "--allow") allowSelectors.push(argv[++i]);
     else {
       jobs.push({ input: argv[i], output: argv[i + 1], keep });

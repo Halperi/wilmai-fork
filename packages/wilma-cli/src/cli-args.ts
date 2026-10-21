@@ -55,7 +55,7 @@ const DATA_COMMANDS = [
   "printouts",
   "students",
 ] as const;
-const OTHER_COMMANDS = ["accounts", "find-school", "login", "mcp", "update", "config", "help"] as const;
+const OTHER_COMMANDS = ["accounts", "find-school", "login", "logout", "mcp", "update", "config", "help"] as const;
 
 const ALIASES: Record<string, string> = {
   kids: "students",
@@ -261,6 +261,8 @@ export function parseCliArgs(argv: string[]): ParsedCommand {
       if (args[0] === "remove") return parsed("remove", args.slice(1));
       noMore(args);
       return parsed(null);
+    case "logout":
+      return parsed(null, args);
     case "config":
       if (args[0] !== "clear" || args.length > 1) throw usage('Expected "wilma config clear".');
       return parsed("clear");

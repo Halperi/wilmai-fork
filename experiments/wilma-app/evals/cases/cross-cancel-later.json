@@ -1,0 +1,52 @@
+{
+  "id": "cross-cancel-later",
+  "added": "2026-10-09",
+  "why": "A trip in an earlier bulletin, cancelled in a later message ('Torstain Nuuksion-retki on valitettavasti peruttu'): each item read alone kept the trip.",
+  "tags": [
+    "cross-item",
+    "trap"
+  ],
+  "today": "2026-10-13",
+  "pupils": [
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 7101,
+      "published": "2026-10-01T09:00",
+      "from": "Rehtori Esimerkki",
+      "title": "Syksyn retkipäivät",
+      "pupils": [
+        0
+      ],
+      "text": "7. luokat tekevät retken Nuuksioon torstaina 15.10. klo 8.30–14.00. Mukaan eväät ja ulkoiluvaatteet."
+    },
+    {
+      "type": "message",
+      "id": 7102,
+      "sent": "2026-10-12T15:00",
+      "from": "Luokanvalvoja Esimerkki",
+      "subject": "Torstain retki",
+      "pupils": [
+        0
+      ],
+      "text": "Hei!\nTorstain Nuuksion-retki on valitettavasti peruttu, koska bussiyhtiö perui kuljetuksen. Torstai on tavallinen koulupäivä lukujärjestyksen mukaan. Yritämme järjestää retken keväällä uudelleen.\nTerveisin\nLuokanvalvoja"
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "not": [
+        {
+          "date": "2026-10-15",
+          "kind": "trip",
+          "suggestions": false,
+          "note": "cancelled in the later message"
+        }
+      ]
+    }
+  }
+}

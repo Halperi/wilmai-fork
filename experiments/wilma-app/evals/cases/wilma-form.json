@@ -1,0 +1,54 @@
+{
+  "id": "wilma-form",
+  "added": "2026-10-08",
+  "why": "A form the guardian fills in Wilma by a date; 'marraskuussa' (the check-ups) isn't a month-long event.",
+  "tags": [
+    "step",
+    "deadline",
+    "trap"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 4401,
+      "sent": "2026-10-07T10:00",
+      "from": "Terveydenhoitaja Esimerkki",
+      "subject": "7. luokan terveystarkastukset",
+      "pupils": [
+        0
+      ],
+      "text": "Hyvät 7G:n huoltajat,\n7. luokan laajat terveystarkastukset alkavat marraskuussa. Täyttäkää Wilmassa (Lomakkeet-välilehti) esitietolomake ennen lapsenne tarkastusta, viimeistään pe 30.10. Lomake on huoltajan täytettävä.\nKutsu tarkastukseen tulee erikseen.\nTerveisin\nTerveydenhoitaja"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 4401,
+        "needs_action": true
+      }
+    ],
+    "action": [
+      {
+        "item": 4401,
+        "quote": "Täyttäkää",
+        "deadline": "2026-10-30"
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-30",
+          "kind": "deadline"
+        }
+      ],
+      "maxDays": 3
+    }
+  }
+}

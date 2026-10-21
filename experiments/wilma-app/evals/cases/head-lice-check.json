@@ -1,0 +1,45 @@
+{
+  "id": "head-lice-check",
+  "added": "2026-10-08",
+  "why": "A request to check the child's hair is a step for the guardian (Jev and Luna disagreed on this kind of bulletin).",
+  "tags": [
+    "step"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 1201,
+      "published": "2026-10-06T09:00",
+      "from": "Terveydenhoitaja",
+      "title": "Koulussa todettu täitä",
+      "pupils": [
+        0
+      ],
+      "text": "Hyvät huoltajat,\nkoulussamme on todettu täitartuntoja. Tarkistakaa lapsenne hiukset tällä viikolla ja hoitakaa tarvittaessa ohjeen mukaan. Hoidon jälkeen lapsi voi tulla kouluun normaalisti."
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 1201,
+        "needs_action": true,
+        "kind": [
+          "wellbeing"
+        ]
+      }
+    ],
+    "action": [
+      {
+        "item": 1201,
+        "quote": "Tarkistakaa"
+      }
+    ]
+  }
+}

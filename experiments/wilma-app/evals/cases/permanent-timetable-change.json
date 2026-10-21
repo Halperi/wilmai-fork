@@ -1,0 +1,52 @@
+{
+  "id": "permanent-timetable-change",
+  "added": "2026-10-08",
+  "why": "A permanent timetable change from 2.11. on: Wilma's timetable shows it; it isn't an event every Thursday or a months-long bar.",
+  "tags": [
+    "trap",
+    "recurring"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 5301,
+      "published": "2026-10-08T12:00",
+      "from": "Apulaisrehtori Esimerkki",
+      "title": "Lukujärjestysmuutos 7G",
+      "pupils": [
+        0
+      ],
+      "text": "Hei 7G!\nLukujärjestykseen tulee pysyvä muutos maanantaista 2.11. alkaen: maanantain musiikin tunti (klo 12.15–13.00) siirtyy torstaille klo 10.30–11.15. Muutos näkyy Wilman lukujärjestyksessä viikon 44 aikana."
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 5301,
+        "needs_action": false
+      }
+    ],
+    "action": [
+      {
+        "item": 5301,
+        "none": true
+      }
+    ],
+    "calendar": {
+      "not": [
+        {
+          "date": "2026-11-05",
+          "note": "an ordinary Thursday after the change"
+        }
+      ],
+      "maxDays": 3
+    }
+  }
+}

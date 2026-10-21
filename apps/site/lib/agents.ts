@@ -6,7 +6,7 @@ import type { Lang } from "./i18n";
  * line (quickstart.comingLater in i18n.tsx) and add its guide here.
  */
 
-export const agentIds = ["claude", "chatgpt", "grok", "openclaw", "claude-code", "codex", "cli"] as const;
+export const agentIds = ["claude", "chatgpt", "grok", "muse", "openclaw", "claude-code", "codex", "cli"] as const;
 export type AgentId = (typeof agentIds)[number];
 
 /**
@@ -108,6 +108,22 @@ Never ask me to type my Wilma password into this chat.`,
 1. Asenna CLI: npm install -g @wilm-ai/wilma-cli
 2. Asenna wilma-taito: clawhub install wilma
 3. Kirjaa minut sisään komennolla: wilma login (se avaa kirjautumissivun selaimeeni)
+Älä koskaan pyydä minua kirjoittamaan Wilma-salasanaani tähän keskusteluun.`
+};
+
+// Meta Muse keeps logins in its vault: the Wilma login goes there before signing in, never into the chat.
+const museMessage = {
+  en: `Please set up WilmAI so you can read my kids' school information from Wilma.
+1. Install the CLI: npm install -g @wilm-ai/wilma-cli
+2. Add the Wilma skill from ${REPO} (skills/wilma).
+3. Ask me which city my kids' school is in, find our Wilma with "wilma find-school <city>" and let me pick it.
+4. Before logging in, ask me to save my Wilma username and password in your vault. Then log me in with them: WILMA_TENANT is the Wilma I picked, WILMA_USERNAME and WILMA_PASSWORD come from the vault.
+Never ask me to type my Wilma password into this chat.`,
+  fi: `Ota WilmAI käyttöön, jotta voit lukea lasteni koulutiedot Wilmasta.
+1. Asenna CLI: npm install -g @wilm-ai/wilma-cli
+2. Lisää Wilma-taito osoitteesta ${REPO} (skills/wilma).
+3. Kysy, missä kaupungissa lasteni koulu on, etsi Wilmamme komennolla "wilma find-school <kaupunki>" ja anna minun valita se.
+4. Ennen kirjautumista pyydä minua tallentamaan Wilma-käyttäjätunnukseni ja salasanani holviisi (vault). Kirjaa minut sitten sisään niillä: WILMA_TENANT on valitsemani Wilma, WILMA_USERNAME ja WILMA_PASSWORD tulevat holvista.
 Älä koskaan pyydä minua kirjoittamaan Wilma-salasanaani tähän keskusteluun.`
 };
 
@@ -240,6 +256,48 @@ export const agents: Agent[] = [
           {
             title: "Kysy koulusta",
             body: "Kokeile: ”Lähetä minulle joka arkiaamu klo 7 kooste molempien lasten koulupäivästä.”"
+          }
+        ]
+      }
+    }
+  },
+  {
+    // Tried by Antti in the US (October 2026): pointed at wilm.ai, Muse installed the CLI and started using it.
+    id: "muse",
+    logo: "/logos/meta.svg",
+    brand: "Meta Muse",
+    guide: {
+      en: {
+        name: "Meta Muse",
+        tagline: "Send one message",
+        status: "Not in Finland yet",
+        summary: "Muse installs WilmAI itself, on its own cloud computer or with Muse for Mac on yours. Send it one message, then save your Wilma login in Muse's vault when it asks.",
+        steps: [
+          { title: "Send this to Muse", action: { kind: "message", text: museMessage.en } },
+          {
+            title: "Save your Wilma login in the vault",
+            body: "Before it logs in, Muse asks you to save your Wilma username and password in its vault. They're kept securely there, and you never type them into the chat."
+          },
+          {
+            title: "Ask about school",
+            body: "Try: “What do the kids have at school tomorrow?”"
+          }
+        ]
+      },
+      fi: {
+        name: "Meta Muse",
+        tagline: "Lähetä yksi viesti",
+        status: "Ei vielä Suomessa",
+        summary: "Muse asentaa WilmAI:n itse, omalle pilvikoneelleen tai Muse for Macilla sinun koneellesi. Lähetä sille yksi viesti ja tallenna Wilma-tunnuksesi Musen holviin, kun se pyytää.",
+        steps: [
+          { title: "Lähetä tämä Muselle", action: { kind: "message", text: museMessage.fi } },
+          {
+            title: "Tallenna Wilma-tunnuksesi holviin",
+            body: "Ennen kirjautumista Muse pyytää sinua tallentamaan Wilma-käyttäjätunnuksesi ja salasanasi holviinsa (vault). Siellä ne ovat turvassa, eikä niitä kirjoiteta keskusteluun."
+          },
+          {
+            title: "Kysy koulusta",
+            body: "Kokeile: ”Mitä lapsilla on huomenna koulussa?”"
           }
         ]
       }

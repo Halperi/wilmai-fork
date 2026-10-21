@@ -1,0 +1,17 @@
+{
+  "build": {
+    "features": [
+      "local-ai"
+    ],
+    "beforeDevCommand": "pnpm local:runtime && pnpm vite --mode tauri --host 127.0.0.1 --port 5197 --strictPort",
+    "beforeBuildCommand": "pnpm local:runtime && pnpm vite build --mode tauri"
+  },
+  "bundle": {
+    "resources": {
+      "resources/local-ai/": "local-ai/"
+    },
+    "macOS": {
+      "minimumSystemVersion": "13.3"
+    }
+  }
+}

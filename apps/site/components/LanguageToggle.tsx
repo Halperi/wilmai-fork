@@ -4,7 +4,7 @@ import type { Lang } from "../lib/i18n";
 
 const labels: Record<Lang, string> = { en: "EN", fi: "FI" };
 
-export default function LanguageToggle({ lang }: { lang: Lang }) {
+export default function LanguageToggle({ lang, section = "" }: { lang: Lang; section?: string }) {
   const remember = (next: Lang) => {
     document.cookie = `lang=${next};path=/;max-age=31536000;SameSite=Lax`;
   };
@@ -14,7 +14,7 @@ export default function LanguageToggle({ lang }: { lang: Lang }) {
       {(Object.keys(labels) as Lang[]).map((code) => (
         <a
           key={code}
-          href={`/${code}`}
+          href={`/${code}${section}`}
           className={`lang-option ${code === lang ? "active" : ""}`}
           aria-current={code === lang ? "true" : undefined}
           lang={code}

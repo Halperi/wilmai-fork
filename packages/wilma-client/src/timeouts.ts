@@ -4,13 +4,12 @@
  * read — not after a fixed total, so a large attachment on a slow connection
  * still finishes while a stalled one doesn't hang forever.
  */
-import { Response } from "undici";
 import { NetworkError, wrapNetworkError } from "./network-error.js";
 
 /** An abort signal that fires after `ms` without progress. */
 export class IdleTimer {
   private readonly controller = new AbortController();
-  private timer: NodeJS.Timeout | undefined;
+  private timer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(private readonly ms: number) {
     this.touch();
@@ -27,8 +26,8 @@ export class IdleTimer {
       () => this.controller.abort(new DOMException("The server stopped answering", "TimeoutError")),
       this.ms
     );
-    // A response nobody reads must not keep the process alive.
-    this.timer.unref?.();
+    // A response nobody reads must not keep the process alive (Node only).
+    (this.timer as { unref?: () => void } | undefined)?.unref?.();
   }
 
   stop(): void {
@@ -52,12 +51,46 @@ const NULL_BODY_STATUSES = new Set([101, 103, 204, 205, 304]);
  * restarts the wait, and a stall or broken connection while reading surfaces
  * as a NetworkError, like one before the response.
  */
-export function watchBody(response: Response, idle: IdleTimer, origin: string): Response {
-  if (!response.body || NULL_BODY_STATUSES.has(response.status)) {
-    idle.stop();
+export function watchBody(
+  response: { status: number; statusText?: string; headers: unknown; body: unknown; url: string },
+  idle: IdleTimer,
+  origin: string
+): Response {
+  return watchedResponse(
+    {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers as Headers,
+      body: response.body as ReadableStream<Uint8Array> | null,
+      url: response.url,
+    },
+    idle,
+    origin
+  );
+}
+
+export interface ResponseParts {
+  status: number;
+  statusText?: string;
+  headers: Headers;
+  body: ReadableStream<Uint8Array> | string | null;
+  /** The address that answered: parsers resolve links against it. */
+  url: string;
+}
+
+/** A standard Response from a transport's reply, its body read under the idle timer. */
+export function watchedResponse(parts: ResponseParts, idle: IdleTimer, origin: string): Response {
+  const make = (body: ReadableStream<Uint8Array> | string | null) => {
+    const response = new Response(body as never, { status: parts.status, statusText: parts.statusText, headers: parts.headers });
+    Object.defineProperty(response, "url", { value: parts.url });
     return response;
+  };
+  if (parts.body === null || typeof parts.body === "string" || NULL_BODY_STATUSES.has(parts.status)) {
+    idle.stop();
+    if (parts.body && typeof parts.body !== "string") void parts.body.cancel().catch(() => {});
+    return make(NULL_BODY_STATUSES.has(parts.status) ? null : parts.body);
   }
-  const reader = response.body.getReader();
+  const reader = parts.body.getReader();
   const body = new ReadableStream<Uint8Array>({
     async pull(controller) {
       try {
@@ -79,12 +112,5 @@ export function watchBody(response: Response, idle: IdleTimer, origin: string): 
       return reader.cancel(reason);
     },
   });
-  const watched = new Response(body as never, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: response.headers,
-  });
-  // Parsers resolve links against the final address.
-  Object.defineProperty(watched, "url", { value: response.url });
-  return watched;
+  return make(body);
 }

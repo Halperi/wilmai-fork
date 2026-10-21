@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 export const locales = ["en", "fi"] as const;
@@ -128,10 +129,10 @@ const en: Dictionary = {
     phoneShare: "Send yourself the link",
     phoneCopied: "Link copied",
     downloadOnComputer: "Open this page on your computer to download it.",
-    help: "Stuck? Tell us what happened:",
+    help: "Stuck? Tell me what happened:",
     helpLink: "open an issue on GitHub",
     comingLater:
-      "Coming later: Meta Muse and Instinct (not in Finland yet), and OpenAI dots (only on business plans in Finland so far). We'll add setup steps when they work here."
+      "Coming later: Instinct (not in Finland yet), and OpenAI dots (only on business plans in Finland so far). I'll add setup steps when they work here."
   },
   ask: {
     eyebrow: "you ask, your assistant answers",
@@ -189,7 +190,17 @@ const en: Dictionary = {
           <p>
             The one you already use. Claude Desktop has the simplest setup: download one
             file and open it. ChatGPT works through its desktop app, in Work mode. Agents with their own
-            computer, like Grok Bot and OpenClaw, can install WilmAI themselves.
+            computer, like Grok Bot, Meta Muse and OpenClaw, can install WilmAI themselves.
+          </p>
+        )
+      },
+      {
+        q: "Is there an app of its own, without an assistant?",
+        a: (
+          <p>
+            Yes, in beta: <Link href="/en/home">WilmAI Home</Link>, a desktop app for students and
+            parents, with AI built in, for Mac and Windows. You use it yourself, it notifies you when something
+            needs you, and it can also reply to teachers and sign you up for things.
           </p>
         )
       },
@@ -238,7 +249,7 @@ const en: Dictionary = {
         q: "Does it work on my phone?",
         a: (
           <p>
-            Partly. Agents that run on their own computer, like Grok Bot and OpenClaw, can be
+            Partly. Agents that run on their own computer, like Grok Bot, Meta Muse and OpenClaw, can be
             used from your phone once they are set up, and they can send you the daily updates
             in chat. The Claude and ChatGPT phone apps can&apos;t reach WilmAI: your login stays
             on your own devices, and WilmAI has no server in between.
@@ -353,7 +364,7 @@ const fi: Dictionary = {
     help: "Jäitkö jumiin? Kerro mitä tapahtui:",
     helpLink: "avaa issue GitHubissa",
     comingLater:
-      "Tulossa myöhemmin: Meta Muse ja Instinct (eivät vielä Suomessa) sekä OpenAI dots (Suomessa toistaiseksi vain yritystileillä). Lisäämme ohjeet, kun ne toimivat täällä."
+      "Tulossa myöhemmin: Instinct (ei vielä Suomessa) sekä OpenAI dots (Suomessa toistaiseksi vain yritystileillä). Lisään ohjeet, kun ne toimivat täällä."
   },
   ask: {
     eyebrow: "sinä kysyt, avustajasi vastaa",
@@ -411,8 +422,18 @@ const fi: Dictionary = {
           <p>
             Sitä, jota jo käytät. Claude Desktopissa käyttöönotto on helpoin: lataa yksi
             tiedosto ja avaa se. ChatGPT toimii työpöytäsovelluksensa Work-tilassa. Agentit,
-            joilla on oma tietokone, kuten Grok Bot ja OpenClaw, osaavat asentaa WilmAI:n
+            joilla on oma tietokone, kuten Grok Bot, Meta Muse ja OpenClaw, osaavat asentaa WilmAI:n
             itse.
+          </p>
+        )
+      },
+      {
+        q: "Onko WilmAI:sta omaa sovellusta, ilman avustajaa?",
+        a: (
+          <p>
+            On, beta-vaiheessa: <Link href="/fi/home">WilmAI Home</Link>, työpöytäsovellus oppilaille
+            ja vanhemmille, johon tekoäly on rakennettu sisään, Macille ja Windowsille. Käytät sitä itse, se
+            ilmoittaa, kun jokin vaatii sinua, ja sillä voi myös vastata opettajille ja ilmoittautua.
           </p>
         )
       },
@@ -460,7 +481,7 @@ const fi: Dictionary = {
         q: "Toimiiko tämä puhelimessa?",
         a: (
           <p>
-            Osittain. Agentteja, jotka toimivat omalla koneellaan, kuten Grok Botia ja
+            Osittain. Agentteja, jotka toimivat omalla koneellaan, kuten Grok Botia, Meta Musea ja
             OpenClaw&apos;ta, voi käyttää puhelimesta, kun ne on otettu käyttöön, ja ne voivat
             lähettää päivän kuulumiset sinulle viestinä. Clauden ja ChatGPT:n
             puhelinsovellukset eivät pääse WilmAI:hin: kirjautumistietosi pysyvät omilla

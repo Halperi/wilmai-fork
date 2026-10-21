@@ -1,4 +1,4 @@
-import { WilmaAccess } from "./agent-data.js";
+import { WilmaAccess, logoutSession } from "./agent-data.js";
 import { loadConfig, saveConfig } from "./config.js";
 import { mfaCallbackFor, type ActiveAccount } from "./credentials.js";
 
@@ -30,4 +30,27 @@ export function createAccess(accounts: ActiveAccount[], opts: { debug?: boolean;
       },
     }))
   );
+}
+
+/**
+ * End WilmAI's Wilma session for each login (see logoutSession), for `wilma
+ * logout` and the wilma_logout tool. The logins stay saved. Tries every login
+ * (different Wilmas don't affect each other), then throws the first failure.
+ */
+export async function logoutAccounts(accounts: ActiveAccount[]) {
+  const results = await Promise.allSettled(accounts.map((account) => logoutSession(account.profile)));
+  const failed = results.find((result): result is PromiseRejectedResult => result.status === "rejected");
+  if (failed) throw failed.reason;
+  const logins = accounts.map((account, index) => ({
+    wilma: account.stored?.tenantName ?? account.profile.baseUrl,
+    username: account.profile.username,
+    session: (results[index] as PromiseFulfilledResult<boolean>).value ? ("ended" as const) : ("none" as const),
+  }));
+  return {
+    status: "ok" as const,
+    logins,
+    hint: logins.length
+      ? "The logins stay saved. The next time WilmAI reads Wilma it logs in again, and that ends the user's Wilma session in the browser."
+      : "No saved Wilma login, so there was nothing to log out.",
+  };
 }

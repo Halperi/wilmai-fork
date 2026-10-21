@@ -21,7 +21,7 @@ WilmAI connects Wilma, the system Finnish schools use for schedules, homework, e
 
 ## What you get
 
-- **18 read-only MCP tools.** Summary, schedule, homework, exams, grades and the gradebook, lesson notes and absences, messages with replies, news with attachments, printouts. One call covers every child, across every Wilma the family uses.
+- **19 MCP tools.** Summary, schedule, homework, exams, grades and the gradebook, lesson notes and absences, messages with replies, news with attachments, printouts, and a logout. One call covers every child, across every Wilma the family uses.
 - **A CLI for people and agents.** Text in a terminal, JSON when a program reads it: the same JSON as the MCP tools. `wilma summary --since yesterday` returns only what's new, for daily runs.
 - **It all runs on your computer.** No WilmAI server, no account, no telemetry. It logs in only to your school's Wilma and can't send messages or change anything there. The password goes into a local login page, never into a chat.
 - **Agent skills.** `wilma` teaches an agent the tools and commands; `wilma-triage` turns them into a morning briefing that flags what needs doing and puts exams in the family calendar.
@@ -91,6 +91,8 @@ Opens a one-time page on `127.0.0.1` in your browser. Pick your school's Wilma, 
 
 Children on different Wilmas (say, a city school and a private school or lukio)? Press **Add another Wilma** on the same page, or run `wilma login` again. Every saved login is used together: every command covers all your children. `wilma accounts` lists the saved logins and `wilma accounts remove <number>` removes one.
 
+Wilma allows one session per account: when WilmAI logs in, Wilma logs you out in your browser, and the other way round. WilmAI keeps its session and logs in again only when Wilma has ended it. To use Wilma in the browser, run `wilma logout` or ask your assistant to log out of Wilma (`wilma_logout`). That ends WilmAI's session and keeps the login; the next command or question logs in again.
+
 Without a browser (scripts, agents on cloud computers), first find the Wilma address:
 
 ```bash
@@ -121,7 +123,7 @@ Running `wilma` without arguments in a terminal opens an interactive menu.
 wilma mcp
 ```
 
-A stdio MCP server with read-only tools: `wilma_summary`, `wilma_schedule`, `wilma_homework`, `wilma_upcoming_exams`, `wilma_grades`, `wilma_gradebook`, `wilma_lesson_notes`, `wilma_lesson_notes_summary`, `wilma_list_messages`, `wilma_read_message`, `wilma_list_news`, `wilma_read_news`, `wilma_get_news_attachment`, `wilma_list_printouts`, `wilma_get_printout`, `wilma_account`, `wilma_find_school`, `wilma_login`. Every tool covers all children unless `student` is given, and the JSON is the same as the CLI's. If nobody is logged in, tools open the browser login and tell the assistant what to relay.
+A stdio MCP server with these tools: `wilma_summary`, `wilma_schedule`, `wilma_homework`, `wilma_upcoming_exams`, `wilma_grades`, `wilma_gradebook`, `wilma_lesson_notes`, `wilma_lesson_notes_summary`, `wilma_list_messages`, `wilma_read_message`, `wilma_list_news`, `wilma_read_news`, `wilma_get_news_attachment`, `wilma_list_printouts`, `wilma_get_printout`, `wilma_account`, `wilma_find_school`, `wilma_login`, `wilma_logout`. They only read from Wilma, except that `wilma_logout` ends WilmAI's Wilma session. Every tool covers all children unless `student` is given, and the JSON is the same as the CLI's. If nobody is logged in, tools open the browser login and tell the assistant what to relay.
 
 Any MCP client can run it with `npx -y @wilm-ai/wilma-cli@2 mcp`. For Claude Code: `claude mcp add --scope user wilma -- npx -y @wilm-ai/wilma-cli@2 mcp` (`--scope user` makes it available in every project).
 
@@ -199,7 +201,7 @@ Two things that make this hard to recognise:
 
 ## Credentials & Privacy
 
-Your Wilma login is stored locally in `~/.config/wilmai/config.json` (or `$XDG_CONFIG_HOME/wilmai/config.json`), readable only by your user account. The password is obfuscated (not encrypted) for convenience — this is a personal productivity tool, not a vault. The current Wilma session is kept next to it (`wilmai-sessions.json`, same protection, at most 6 hours) so commands don't log in each time; set `WILMAI_NO_SESSION_CACHE=1` to turn that off. `wilma config clear` removes both.
+Your Wilma login is stored locally in `~/.config/wilmai/config.json` (or `$XDG_CONFIG_HOME/wilmai/config.json`), readable only by your user account. The password is obfuscated (not encrypted) for convenience — this is a personal productivity tool, not a vault. The current Wilma session is kept next to it (`wilmai-sessions.json`, same protection, at most 6 hours) so commands don't log in each time; set `WILMAI_NO_SESSION_CACHE=1` to turn that off. `wilma logout` ends the session in Wilma and removes it, keeping the login; `wilma config clear` removes both.
 
 The CLI, the MCP server and the Claude Desktop extension have no server behind them: they log in only to your school's Wilma. Besides Wilma, they open links from school bulletins when you ask for an attachment (only public websites, never with your Wilma login), and once a day they ask npm whether a newer version is out (not when started through `npx`, which fetches the newest version itself; `WILMAI_NO_UPDATE_CHECK=1` turns it off). When an AI assistant uses WilmAI, the school information it reads goes to that assistant's provider, the same as pasting it into a chat; your password does not.
 

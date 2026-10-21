@@ -1,0 +1,50 @@
+{
+  "id": "moved-exam",
+  "added": "2026-10-08",
+  "why": "An exam moves ('siirtyy torstailta 15.10. tiistaille 20.10.'): the new day is the exam, the old one isn't.",
+  "tags": [
+    "trap",
+    "time"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 5501,
+      "sent": "2026-10-08T11:00",
+      "from": "Kemian opettaja",
+      "subject": "Kemian koe siirtyy",
+      "pupils": [
+        0
+      ],
+      "text": "Hei 9C!\nKemian koe siirtyy torstailta 15.10. tiistaille 20.10. samaan aikaan klo 10.15. Koealue pysyy samana.\nTerveisin\nKemian opettaja"
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-20",
+          "start": "10:15",
+          "kind": "exam",
+          "pupil": 0,
+          "sure": true
+        }
+      ],
+      "not": [
+        {
+          "date": "2026-10-15",
+          "kind": "exam",
+          "suggestions": false,
+          "note": "the old day"
+        }
+      ]
+    }
+  }
+}

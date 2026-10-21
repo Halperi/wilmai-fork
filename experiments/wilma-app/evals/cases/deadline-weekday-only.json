@@ -1,0 +1,54 @@
+{
+  "id": "deadline-weekday-only",
+  "added": "2026-10-08",
+  "why": "'Perjantaihin mennessä' in a Monday's message is that week's Friday.",
+  "tags": [
+    "step",
+    "deadline",
+    "weekday-date",
+    "relative-date"
+  ],
+  "today": "2026-10-05",
+  "pupils": [
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 5601,
+      "sent": "2026-10-05T08:10",
+      "from": "Luokanvalvoja Esimerkki",
+      "subject": "Lupalappu",
+      "pupils": [
+        0
+      ],
+      "text": "Hei!\nOppilaat saivat tänään kotiin lupalapun syksyn teatteriesitykseen. Palauttakaa lupalappu allekirjoitettuna perjantaihin mennessä.\nTerveisin\nLuokanvalvoja"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 5601,
+        "needs_action": true
+      }
+    ],
+    "action": [
+      {
+        "item": 5601,
+        "quote": "lupalap",
+        "deadline": "2026-10-09"
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-09",
+          "kind": "deadline"
+        }
+      ]
+    }
+  }
+}

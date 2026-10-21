@@ -1,0 +1,49 @@
+{
+  "name": "wilmai-app-experiment",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "app": "tauri dev",
+    "build:app": "tsc --noEmit && tauri build",
+    "install:app": "tsc --noEmit && sh scripts/install-app.sh",
+    "tauri": "tauri",
+    "typecheck": "tsc --noEmit",
+    "eval": "tsx evals/run.ts",
+    "eval:local": "tsx scripts/eval-local.ts",
+    "local:runtime": "tsx scripts/prepare-local-runtime.ts",
+    "release:check": "tsx scripts/release-home.ts --check",
+    "release:build": "tsx scripts/release-home.ts",
+    "release:downloads": "tsx scripts/home-downloads.ts",
+    "test:release": "tsx --test evals/home-release.test.ts evals/updates.test.ts",
+    "test:ai": "tsx --test evals/local-ai.test.ts evals/local-setup.test.ts evals/local-runtime.test.ts evals/ai-budget.test.ts evals/note-exams.test.ts evals/note-kinds.test.ts evals/openai-blocked.test.ts evals/account-storage.test.ts",
+    "replay": "tsx evals/replay.ts",
+    "calibrate": "tsx evals/calibrate.ts"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource/atkinson-hyperlegible-next": "^5.3.0",
+    "@tauri-apps/api": "^2.12.1",
+    "@tauri-apps/plugin-opener": "^2.7.0",
+    "@tauri-apps/plugin-updater": "^2.13.2",
+    "cheerio": "1.2.0",
+    "idb-keyval": "^6.3.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "semver": "^7.8.5"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.1",
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/semver": "^7.8.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "fake-indexeddb": "^6.2.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.3"
+  }
+}

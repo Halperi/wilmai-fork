@@ -6,15 +6,15 @@ export const dynamic = "force-static";
 const BASE = "https://wilm.ai";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  return (["en", "fi"] as const).map((lang) => ({
-    url: `${BASE}/${lang}`,
+  return (["", "/home"] as const).flatMap((section) => (["en", "fi"] as const).map((lang) => ({
+    url: `${BASE}/${lang}${section}`,
     changeFrequency: "weekly",
-    priority: 1,
+    priority: section ? 0.7 : 1,
     alternates: {
       languages: {
-        en: `${BASE}/en`,
-        fi: `${BASE}/fi`
+        en: `${BASE}/en${section}`,
+        fi: `${BASE}/fi${section}`
       }
     }
-  }));
+  })));
 }

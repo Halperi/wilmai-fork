@@ -1,0 +1,70 @@
+{
+  "id": "note-absence-neutral",
+  "added": "2026-10-08",
+  "why": "Absence notes for a health visit or an illness are neutral records, not concerns.",
+  "tags": [
+    "note",
+    "tone"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "note",
+      "id": 6001,
+      "pupil": 0,
+      "date": "2026-10-07",
+      "start": "10:30",
+      "end": "11:15",
+      "subject": "Matematiikka",
+      "kind": "Poissaolo",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Terveydenhoitajalla"
+    },
+    {
+      "type": "note",
+      "id": 6002,
+      "pupil": 0,
+      "date": "2026-10-06",
+      "start": "12:15",
+      "end": "13:00",
+      "subject": "Liikunta",
+      "kind": "Poissaolo",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Huoltajan ilmoitus: hammaslääkärissä"
+    },
+    {
+      "type": "note",
+      "id": 6003,
+      "pupil": 0,
+      "date": "2026-10-05",
+      "start": "09:00",
+      "end": "09:45",
+      "subject": "Kemia",
+      "kind": "Tiedoksi",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Ollut kipeänä, tekee laboratoriotyön myöhemmin."
+    }
+  ],
+  "expect": {
+    "tone": [
+      {
+        "item": 6001,
+        "tone": "neutral"
+      },
+      {
+        "item": 6002,
+        "tone": "neutral"
+      },
+      {
+        "item": 6003,
+        "tone": "neutral"
+      }
+    ]
+  }
+}

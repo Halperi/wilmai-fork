@@ -32,7 +32,8 @@ function formatContent(value: string): string {
   const lines = value
     .replace(/\r/g, "")
     .split("\n")
-    .map((line) => line.trim())
+    // Leading spaces stay: they indent nested list items.
+    .map((line) => line.trimEnd())
     .filter((line, index, arr) => line !== "" || arr[index - 1] !== "");
   return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }

@@ -339,13 +339,28 @@ export function useSessionStore(store: SessionStore | undefined): void {
   sessionStore = store;
 }
 
-function rememberSession(key: string, client: WilmaClient): void {
+/**
+ * Save the session for the other processes, and share theirs: when Wilma ends
+ * this one, the client first continues the newest session another process
+ * saved (a CLI command, an assistant's connector, the desktop app), and logs
+ * in only when that one has ended too. Each login ends the others, so this
+ * keeps WilmAI's programs from logging each other out.
+ */
+function rememberSession(key: string, client: WilmaClient, opts: { fresh: boolean }): void {
   const store = sessionStore;
   if (!store) return;
-  const save = () => store.save(key, client.exportSession()).catch(() => {});
-  client.onLogin(() => void save());
-  void save();
+  const save = (state: string): Promise<void> => {
+    const saving = store.save(key, state).catch(() => {});
+    pendingSaves.add(saving);
+    void saving.finally(() => pendingSaves.delete(saving));
+    return saving;
+  };
+  client.useSharedSession({ load: () => store.load(key), save });
+  // A resumed session is already saved (and another process may have saved a newer one since).
+  if (opts.fresh) void save(client.exportSession());
 }
+
+const pendingSaves = new Set<Promise<void>>();
 
 /** Identifies one Wilma account and password (a changed password starts fresh). */
 function poolKey(profile: WilmaProfile): string {
@@ -364,16 +379,50 @@ function poolKey(profile: WilmaProfile): string {
 export function adoptSession(profile: WilmaProfile, client: WilmaClient): void {
   const key = poolKey(profile);
   pool.set(key, { client: Promise.resolve(client), lastUsed: Date.now() });
-  rememberSession(key, client);
+  rememberSession(key, client, { fresh: true });
 }
 
-/** Save any sessions still being written (call before a short-lived process exits). */
+/**
+ * Finish saving sessions (call before a short-lived process exits). Only
+ * logins made here are saved, never an older session over a newer one
+ * another process saved meanwhile.
+ */
 export async function flushSessions(): Promise<void> {
-  if (!sessionStore) return;
-  for (const [key, entry] of pool) {
-    const client = await entry.client.catch(() => null);
-    if (client) await sessionStore.save(key, client.exportSession()).catch(() => {});
+  for (const entry of pool.values()) await entry.client.catch(() => null);
+  await Promise.all([...pendingSaves]);
+}
+
+/**
+ * End WilmAI's Wilma session for one login (Wilma's own "Log out") and forget
+ * it, in this process and in the session store, so nothing continues it. The
+ * login itself stays saved; the next command or tool call logs in again.
+ * Never logs in. Returns true when a live session was ended, false when there
+ * was none. If Wilma can't be reached, throws and keeps the saved session, so
+ * logging out can be tried again.
+ */
+export async function logoutSession(profile: WilmaProfile): Promise<boolean> {
+  const key = poolKey(profile);
+  const entry = pool.get(key);
+  // The session in use here (a login in progress finishes first) and the saved
+  // one, which another process may have replaced since. At most one is live.
+  const pooled = entry ? await entry.client.catch(() => null) : null;
+  const pooledState = pooled?.exportSession();
+  const saved = sessionStore ? await sessionStore.load(key).catch(() => null) : null;
+  let ended = pooled ? await pooled.logout() : false;
+  if (pool.get(key) === entry) pool.delete(key);
+  if (saved && saved !== pooledState) {
+    const resumed = WilmaClient.resume({ ...profile, studentNumber: null }, saved);
+    if (resumed && (await resumed.logout())) ended = true;
   }
+  await sessionStore?.remove(key);
+  return ended;
+}
+
+/** Forget one login's session without ending it in Wilma (when the login itself is removed). */
+export async function forgetSession(profile: WilmaProfile): Promise<void> {
+  const key = poolKey(profile);
+  pool.delete(key);
+  await sessionStore?.remove(key);
 }
 
 function pooledSession(account: AccessAccount): Promise<WilmaClient> {
@@ -389,9 +438,9 @@ function pooledSession(account: AccessAccount): Promise<WilmaClient> {
       // A saved session first; it logs in again by itself if Wilma has ended it.
       const saved = sessionStore ? await sessionStore.load(key).catch(() => null) : null;
       const resumed = saved ? WilmaClient.resume(profile, saved, account.mfa) : null;
-      const fresh = resumed ?? (await WilmaClient.login(profile, account.mfa));
-      rememberSession(key, fresh);
-      return fresh;
+      const client = resumed ?? (await WilmaClient.login(profile, account.mfa));
+      rememberSession(key, client, { fresh: !resumed });
+      return client;
     })();
     const created = { client, lastUsed: now };
     entry = created;

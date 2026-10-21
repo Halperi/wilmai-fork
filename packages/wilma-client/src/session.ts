@@ -1,6 +1,48 @@
+import * as cheerio from "cheerio";
 import { CookieJar, type Cookie } from "tough-cookie";
-import { fetch, type RequestInit, type Response } from "undici";
-import { IdleTimer, asNetworkError, watchBody } from "./timeouts.js";
+import { IdleTimer, asNetworkError, watchedResponse } from "./timeouts.js";
+import { getDefaultTransport, type WilmaTransport } from "./transport.js";
+
+/** What a request may carry (a subset of fetch's RequestInit that every transport can send). */
+export interface RequestInit {
+  method?: string;
+  headers?: Record<string, string | undefined> | Headers | [string, string][];
+  body?: string;
+  redirect?: "follow" | "manual";
+  signal?: AbortSignal;
+}
+
+export interface SessionOptions {
+  studentNumber?: string | null;
+  debug?: boolean;
+  /** How requests are sent (default: the transport set by the entry point; undici on Node). */
+  transport?: WilmaTransport;
+  /**
+   * Log in again by itself when Wilma ends the session (default true, with
+   * the credentials of the last login). Set false where a background login
+   * would be unwelcome — every login ends the parent's other Wilma sessions:
+   * requests then fail with SessionEndedError and the caller decides.
+   */
+  relogin?: boolean;
+  /** Where the WilmAI programs on one computer keep this login's session (see SharedSession). */
+  shared?: SharedSession;
+}
+
+/**
+ * The session of one Wilma login, kept where every WilmAI program on the
+ * computer finds it (the CLI, assistants' connectors, the desktop app).
+ * Wilma allows one live session per account, so programs that each log in
+ * keep ending each other's sessions. With a shared session, a client whose
+ * session Wilma ended first continues the newest one another program saved,
+ * and logs in only when that one has ended too; after its own login it saves
+ * the session for the others.
+ */
+export interface SharedSession {
+  /** The newest saved session (exportState() format), or null. */
+  load(): Promise<string | null>;
+  /** Save this client's session (after it logged in). */
+  save(state: string): Promise<void>;
+}
 
 export class AuthenticationError extends Error {
   constructor(message: string) {
@@ -24,6 +66,17 @@ export class APIError extends Error {
     this.status = status;
   }
 }
+/**
+ * Wilma ended the session (another login on the account, or it expired) and
+ * this client doesn't log in again by itself (no saved credentials, or
+ * `relogin: false`). Nothing was sent; log in again and retry.
+ */
+export class SessionEndedError extends APIError {
+  constructor(message = "Wilma ended the session; log in again") {
+    super(message, 401);
+    this.name = "SessionEndedError";
+  }
+}
 
 /** How long Wilma may go silent (before answering, or mid-body) before a request fails. */
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -42,15 +95,24 @@ const LOGIN_FAIL_RE = /loginFailed/i;
  */
 interface SessionAuth {
   cookieJar: CookieJar;
+  transport: WilmaTransport;
+  /** Whether an ended session is logged in again by itself (see SessionOptions.relogin). */
+  reloginAllowed: boolean;
+  shared?: SharedSession;
   loggedIn: boolean;
+  /** Wilma ended the session (as opposed to never logged in, or logged out on purpose). */
+  endedByWilma: boolean;
   username?: string;
   password?: string;
   onMfa?: (formkey: string) => Promise<string>;
+  /** Getting a live session back (a shared one, or a login), shared by every request that noticed. */
   relogin: Promise<void> | null;
   /** Bumped on every successful login, so a late 401/403 from an older login isn't mistaken for a new problem. */
   generation: number;
   /** Called after every successful login (first or again), e.g. to save the session. */
   onLogin?: () => void;
+  /** Told what happened to the session (see SessionEvent). */
+  onEvent?: (event: SessionEvent) => void;
   /**
    * Set when Wilma refused the saved login itself (its explicit "login
    * failed" answer, or a code is needed and there is no way to make one).
@@ -61,17 +123,41 @@ interface SessionAuth {
   failed: Error | null;
 }
 
+/**
+ * What happened to a client's session, for a host that shows it (e.g. a
+ * sign-in history): "login" (this client logged in), "adopted" (Wilma had
+ * ended its session and it continued the one another WilmAI program saved),
+ * "ended" (Wilma ended it and the client may not, or could not, get a live
+ * one back by itself).
+ */
+export type SessionEvent = "login" | "adopted" | "ended";
+
 export class WilmaSession {
   private baseUrl: string;
   private auth: SessionAuth;
   private studentNumber?: string | null;
   private debug = false;
 
-  constructor(baseUrl: string, opts?: { studentNumber?: string | null; debug?: boolean }) {
+  constructor(baseUrl: string, opts?: SessionOptions) {
     this.baseUrl = baseUrl.replace(/\/$/, "");
-    this.auth = { cookieJar: new CookieJar(), loggedIn: false, relogin: null, generation: 0, failed: null };
+    this.auth = {
+      cookieJar: new CookieJar(),
+      transport: opts?.transport ?? getDefaultTransport(),
+      reloginAllowed: opts?.relogin ?? true,
+      shared: opts?.shared,
+      loggedIn: false,
+      endedByWilma: false,
+      relogin: null,
+      generation: 0,
+      failed: null,
+    };
     this.studentNumber = opts?.studentNumber ?? null;
     this.debug = Boolean(opts?.debug);
+  }
+
+  /** The address of this Wilma, e.g. "https://example.inschool.fi". */
+  get origin(): string {
+    return new URL(this.baseUrl).origin;
   }
 
   /** The login's cookies, so another process can resume the session (see resumeState). */
@@ -82,19 +168,21 @@ export class WilmaSession {
   /**
    * Continue a session saved by exportState() instead of logging in. If Wilma
    * has ended it meanwhile, the first request notices (401/403 or the login
-   * page) and logs in again with these credentials. Returns false when the
-   * state holds no session to resume.
+   * page) and logs in again with these credentials; without credentials it
+   * fails with SessionEndedError. Returns false when the state holds no
+   * session to resume.
    */
-  resumeState(state: string, username: string, password: string): boolean {
+  resumeState(state: string, username?: string, password?: string): boolean {
     let jar: CookieJar;
     try {
       jar = CookieJar.deserializeSync(JSON.parse(state));
     } catch {
       return false;
     }
-    if (!jar.getCookiesSync(this.baseUrl).some((cookie: Cookie) => cookie.key === "Wilma2SID")) return false;
+    if (!holdsSession(jar, this.baseUrl)) return false;
     this.auth.cookieJar = jar;
     this.auth.loggedIn = true;
+    this.auth.endedByWilma = false;
     this.auth.generation += 1;
     this.auth.username = username;
     this.auth.password = password;
@@ -102,8 +190,17 @@ export class WilmaSession {
   }
 
   /** Called after every successful login (first or again). */
+  /** Share this login's session with the other WilmAI programs (see SharedSession). */
+  setShared(shared: SharedSession | undefined): void {
+    this.auth.shared = shared;
+  }
+
   onLogin(callback: (() => void) | undefined): void {
     this.auth.onLogin = callback;
+  }
+
+  onSessionEvent(callback: ((event: SessionEvent) => void) | undefined): void {
+    this.auth.onEvent = callback;
   }
 
   /** Used to answer the two-step verification challenge when the session has to log in again. */
@@ -117,7 +214,7 @@ export class WilmaSession {
    * Wilma picks the student from the "/!<number>/" path prefix.
    */
   forStudent(studentNumber: string | null): WilmaSession {
-    const session = new WilmaSession(this.baseUrl, { studentNumber, debug: this.debug });
+    const session = new WilmaSession(this.baseUrl, { studentNumber, debug: this.debug, transport: this.auth.transport });
     session.auth = this.auth;
     return session;
   }
@@ -205,11 +302,12 @@ export class WilmaSession {
     // would otherwise pass the text check, accepting any username and password.
     if (resp.status < 400 && (hasSessionCookie || resp.status < 300)) {
       this.auth.loggedIn = true;
+      this.auth.endedByWilma = false;
       this.auth.generation += 1;
       this.auth.failed = null;
       this.auth.username = username;
       this.auth.password = password;
-      this.auth.onLogin?.();
+      this.loggedInNow();
       return;
     }
 
@@ -261,12 +359,65 @@ export class WilmaSession {
     }
 
     this.auth.loggedIn = true;
+
+    this.auth.endedByWilma = false;
     this.auth.generation += 1;
     this.auth.failed = null;
-    this.auth.onLogin?.();
+    this.loggedInNow();
     if (this.debug) {
       console.error(`[wilmai] MFA verification successful`);
     }
+  }
+
+  /**
+   * End this login's session in Wilma, as its "Log out" button does: the
+   * logout form on the front page posts its formkey to /logout. Never logs
+   * in; a session Wilma has already ended needs nothing. The session is
+   * shared with every per-student session made from this one, and afterwards
+   * none of them logs in again by itself (call login() for a new session).
+   * Returns true when a live session was ended, false when there was none.
+   * If Wilma can't be reached, throws and keeps the session, so logging out
+   * can be tried again.
+   */
+  async logout(): Promise<boolean> {
+    const auth = this.auth;
+    // A re-login in progress makes a new session: let it finish, then end that one.
+    if (auth.relogin) await auth.relogin.catch(() => {});
+    const ended = holdsSession(auth.cookieJar, this.baseUrl) ? await this.endSession() : false;
+    auth.cookieJar.removeAllCookiesSync();
+    auth.loggedIn = false;
+    auth.username = undefined;
+    auth.password = undefined;
+    return ended;
+  }
+
+  private async endSession(): Promise<boolean> {
+    // Only raw requests: request() would log in again if the session has ended.
+    const home = await this.rawRequest("/", { method: "GET", stopAtLogin: true });
+    if (home.status >= 500) {
+      await home.body?.cancel();
+      throw new APIError(`Wilma answered HTTP ${home.status} while logging out`, home.status);
+    }
+    let formkey: string | null = null;
+    if (home.status === 200) formkey = logoutFormkey(await home.text());
+    else await home.body?.cancel();
+    if (!formkey) {
+      // The login page, or a 401/403: nothing to end. A live session without
+      // the form is kept rather than forgotten while still open.
+      if (await this.sessionAlive()) throw new APIError("Wilma's front page had no logout form", home.status);
+      return false;
+    }
+    const resp = await this.rawRequest("/logout", {
+      method: "POST",
+      body: new URLSearchParams({ formkey }).toString(),
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      redirect: "manual",
+    });
+    await resp.body?.cancel();
+    if (resp.status >= 500 || (resp.status >= 400 && (await this.sessionAlive()))) {
+      throw new APIError(`Wilma didn't log out (HTTP ${resp.status})`, resp.status);
+    }
+    return true;
   }
 
   private async getLoginFormFields(): Promise<Record<string, string>> {
@@ -308,9 +459,10 @@ export class WilmaSession {
     if (auth.failed) throw auth.failed;
     // A re-login in progress: wait for it (and share its outcome).
     if (auth.relogin) await auth.relogin;
+    const canRelogin = () => auth.reloginAllowed && Boolean(auth.username && auth.password);
     if (!auth.loggedIn) {
-      // An earlier re-login failed (Wilma down, network blip): try again now.
-      if (auth.username && auth.password) await this.relogin();
+      // Ended earlier (or an earlier re-login failed): another program may have a session now, or try logging in again.
+      if (canRelogin() || auth.endedByWilma) await this.recover();
       else throw new AuthenticationError("WilmaSession not logged in – call login() first");
     }
 
@@ -326,12 +478,15 @@ export class WilmaSession {
     // another login on the same account cancelled this session, or just this
     // one item is off-limits.
     const loggedOut = (r: Response) => r.status === 401 || this.isLoginRedirect(r);
-    if ((loggedOut(resp) || resp.status === 403) && auth.username && auth.password) {
-      const someoneElseLoggedIn = () => auth.generation !== generation || auth.relogin !== null;
-      let retry = someoneElseLoggedIn();
+    if (loggedOut(resp) || resp.status === 403) {
+      // Another request may have got a session back meanwhile (generation bumped, or recovering now).
+      const recoveredElsewhere = () => auth.generation !== generation || auth.relogin !== null;
+      let retry = recoveredElsewhere();
+      // Tell an ended session apart from one item that's off-limits (403 with the session alive).
       if (!retry && (loggedOut(resp) || !(await this.sessionAlive()))) {
-        // Check again: another request may have logged in while we probed.
-        if (!someoneElseLoggedIn()) await this.relogin();
+        await resp.body?.cancel();
+        // Check again: another request may have recovered while we probed.
+        if (!recoveredElsewhere()) await this.recover();
         retry = true;
       }
       if (retry) {
@@ -410,11 +565,23 @@ export class WilmaSession {
     }
   }
 
-  /** Log in again, once for everyone sharing this login even if many requests notice at the same time. */
-  private async relogin(): Promise<void> {
+  /**
+   * A live session after Wilma ended this one, once for everyone sharing this
+   * login even if many requests notice at the same time: the newest session
+   * another program saved (no login), else a login when this client may log
+   * in again. Without either, SessionEndedError.
+   */
+  private async recover(): Promise<void> {
     if (!this.auth.relogin) {
       const auth = this.auth;
       const attempt = (async () => {
+        if (await this.adoptShared()) return;
+        if (!(auth.reloginAllowed && auth.username && auth.password)) {
+          auth.loggedIn = false;
+          auth.endedByWilma = true;
+          auth.onEvent?.("ended");
+          throw new SessionEndedError();
+        }
         auth.loggedIn = false;
         // Start from a clean jar: a leftover session cookie must not make a
         // failed login look successful.
@@ -446,6 +613,47 @@ export class WilmaSession {
     await this.auth.relogin;
   }
 
+  /** Continue the session another program saved, if it differs from ours and Wilma still accepts it. */
+  private async adoptShared(): Promise<boolean> {
+    const auth = this.auth;
+    if (!auth.shared) return false;
+    let jar: CookieJar;
+    try {
+      const state = await auth.shared.load();
+      if (!state) return false;
+      jar = CookieJar.deserializeSync(JSON.parse(state));
+    } catch {
+      return false;
+    }
+    const theirs = sessionCookie(jar, this.baseUrl);
+    if (!theirs || theirs === sessionCookie(auth.cookieJar, this.baseUrl)) return false;
+    const ours = auth.cookieJar;
+    auth.cookieJar = jar;
+    if (!(await this.sessionAlive())) {
+      auth.cookieJar = ours;
+      return false;
+    }
+    if (this.debug) console.error("[wilmai] continuing the session another program saved");
+    auth.loggedIn = true;
+    auth.endedByWilma = false;
+    auth.failed = null;
+    auth.generation += 1;
+    auth.onEvent?.("adopted");
+    return true;
+  }
+
+  /** After a login: tell the host (onLogin) and save the session for the other programs. */
+  private loggedInNow(): void {
+    this.auth.onLogin?.();
+    this.auth.onEvent?.("login");
+    void this.auth.shared?.save(this.exportState()).catch(() => {});
+  }
+
+  /** Changes whenever the session behind this client changes (a login, or another program's session continued). */
+  get sessionMark(): number {
+    return this.auth.generation;
+  }
+
   async get(
     path: string,
     init?: RequestInit,
@@ -456,6 +664,53 @@ export class WilmaSession {
 
   async post(path: string, init?: RequestInit): Promise<Response> {
     return this.request(path, { ...init, method: "POST" });
+  }
+
+  /**
+   * Send a form that changes something in Wilma (a reply, a sign-up, an
+   * absence report): one POST, never repeated. Unlike request(), it doesn't
+   * log in again and retry when the session has ended — after a new login
+   * the form's key is stale, and a write must not be sent twice — it fails
+   * with SessionEndedError instead (nothing was sent; prepare the form
+   * again). Redirects within Wilma are followed; the answer is returned for
+   * the caller to check.
+   */
+  async submit(
+    path: string,
+    form: URLSearchParams | Record<string, string> | [string, string][],
+    opts: { headers?: Record<string, string> } = {}
+  ): Promise<Response> {
+    const auth = this.auth;
+    if (auth.failed) throw auth.failed;
+    if (auth.relogin) await auth.relogin.catch(() => {});
+    if (!auth.loggedIn) throw new SessionEndedError("Not logged in to Wilma; nothing was sent");
+    const prefixedPath = this.getPrefixedPath(path);
+    const body = (form instanceof URLSearchParams ? form : new URLSearchParams(form as Record<string, string>)).toString();
+    const generation = auth.generation;
+    const resp = await this.rawRequest(prefixedPath, {
+      method: "POST",
+      body,
+      headers: { ...opts.headers, "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+      stopAtLogin: true,
+    });
+    // 403 is also how Wilma answers a session another login cancelled.
+    const ended =
+      resp.status === 401 ||
+      this.isLoginRedirect(resp) ||
+      (resp.status === 403 && auth.generation === generation && !(await this.sessionAlive()));
+    if (ended) {
+      await resp.body?.cancel();
+      auth.loggedIn = false;
+      auth.endedByWilma = true;
+      auth.onEvent?.("ended");
+      // The form belonged to the ended session. Preparing again (a read) continues another program's session, or logs in when allowed.
+      throw new SessionEndedError("Wilma ended the session; nothing was sent. Prepare it again.");
+    }
+    if (resp.status >= 300 && resp.status < 400) {
+      await resp.body?.cancel();
+      throw new APIError(`Wilma redirected to another site at ${redactPath(prefixedPath)}`, resp.status);
+    }
+    return resp;
   }
 
   private async getLoginToken(): Promise<string> {
@@ -526,7 +781,7 @@ export class WilmaSession {
     baseHeaders.set("User-Agent", USER_AGENT);
     baseHeaders.set("Referer", `${this.baseUrl}/`);
 
-    const { stopAtLogin, ...fetchInit } = init ?? {};
+    const stopAtLogin = init?.stopAtLogin;
     const follow = init?.redirect !== "manual";
     const idle = new IdleTimer(timeoutMs);
     const signal = init?.signal ? AbortSignal.any([init.signal, idle.signal]) : idle.signal;
@@ -534,9 +789,12 @@ export class WilmaSession {
     let body = init?.body;
 
     for (let hop = 0; ; hop += 1) {
-      const headers = new Headers(baseHeaders);
+      const headers: Record<string, string> = {};
+      baseHeaders.forEach((value, key) => {
+        headers[key] = value;
+      });
       const cookieHeader = this.auth.cookieJar.getCookieStringSync(url.href);
-      if (cookieHeader) headers.set("Cookie", cookieHeader);
+      if (cookieHeader) headers["cookie"] = cookieHeader;
 
       if (this.debug) {
         // Method and path only: never headers, bodies or query strings.
@@ -546,31 +804,28 @@ export class WilmaSession {
       let resp: Response;
       try {
         idle.touch();
-        resp = await fetch(url, { ...fetchInit, method, body, headers, signal, redirect: "manual" });
+        const reply = await this.auth.transport({ url: url.href, method, headers, body, signal });
+        for (const cookie of reply.setCookies) {
+          // A cookie Wilma isn't allowed to set (e.g. for another domain) is dropped, not fatal.
+          this.auth.cookieJar.setCookieSync(cookie, url.href, { ignoreError: true });
+        }
+        resp = watchedResponse({ status: reply.status, headers: reply.headers, body: reply.body, url: url.href }, idle, origin);
       } catch (err) {
         idle.stop();
         // Timeouts, and `fetch failed` with its cause code and remediation attached.
         throw asNetworkError(err, origin);
       }
 
-      const headersAny = resp.headers as unknown as { getSetCookie?: () => string[] };
-      const setCookies = headersAny.getSetCookie?.() ?? [];
-      const single = setCookies.length ? [] : [resp.headers.get("set-cookie")].filter((c): c is string => !!c);
-      for (const cookie of [...setCookies, ...single]) {
-        // A cookie Wilma isn't allowed to set (e.g. for another domain) is dropped, not fatal.
-        this.auth.cookieJar.setCookieSync(cookie, url.href, { ignoreError: true });
-      }
-
       const location = resp.headers.get("location");
       if (!follow || resp.status < 300 || resp.status >= 400 || !location) {
-        return watchBody(resp, idle, origin);
+        return resp;
       }
       const next = new URL(location, url);
       if (next.origin !== origin) {
-        return watchBody(resp, idle, origin); // hand the off-site redirect back to the caller
+        return resp; // hand the off-site redirect back to the caller
       }
       if (stopAtLogin && /^\/login\/?$/i.test(next.pathname)) {
-        return watchBody(resp, idle, origin); // logged out: the caller decides
+        return resp; // logged out: the caller decides
       }
       if (hop >= MAX_REDIRECTS) {
         idle.stop();
@@ -608,6 +863,21 @@ function isPermanentLoginFailure(err: unknown): boolean {
     err instanceof MfaRequiredError ||
     (err instanceof AuthenticationError && /^Wilma login failed/.test(err.message))
   );
+}
+
+/** Does the jar hold a Wilma session cookie for this Wilma? */
+function holdsSession(jar: CookieJar, baseUrl: string): boolean {
+  return sessionCookie(jar, baseUrl) !== null;
+}
+
+/** The Wilma session cookie's value, telling sessions apart. */
+function sessionCookie(jar: CookieJar, baseUrl: string): string | null {
+  return jar.getCookiesSync(baseUrl).find((cookie: Cookie) => cookie.key === "Wilma2SID")?.value ?? null;
+}
+
+/** The formkey of Wilma's logout form (`<form id="logout-form" action="/logout">`, on every page of a live session). */
+function logoutFormkey(html: string): string | null {
+  return cheerio.load(html)('form#logout-form input[name="formkey"]').attr("value") || null;
 }
 
 function isLoginOk(text: string): boolean {

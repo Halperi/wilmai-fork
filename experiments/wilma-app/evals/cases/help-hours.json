@@ -1,0 +1,54 @@
+{
+  "id": "help-hours",
+  "added": "2026-10-08",
+  "why": "Weekly help hours ('joka keskiviikko') are an offer, not an event on next Wednesday.",
+  "tags": [
+    "trap",
+    "recurring",
+    "optional"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 5201,
+      "sent": "2026-10-07T10:30",
+      "from": "Matematiikan opettaja",
+      "subject": "Tukiopetusta matematiikassa",
+      "pupils": [
+        0
+      ],
+      "text": "Hei!\nMatematiikan tukiopetusta on joka keskiviikko klo 14.15–15.00 luokassa 214. Tukiopetukseen voi tulla ilman ilmoittautumista, kun haluaa apua läksyihin tai kokeisiin valmistautumiseen.\nTerveisin\nMatematiikan opettaja"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 5201,
+        "needs_action": false
+      }
+    ],
+    "action": [
+      {
+        "item": 5201,
+        "none": true
+      }
+    ],
+    "calendar": {
+      "not": [
+        {
+          "date": "2026-10-14",
+          "suggestions": false,
+          "note": "a weekly help hour"
+        }
+      ],
+      "maxDays": 1
+    }
+  }
+}

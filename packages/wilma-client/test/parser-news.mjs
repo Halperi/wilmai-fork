@@ -132,4 +132,54 @@ assert.equal(jsonDetail.resources?.[0]?.url, "https://helsinki.inschool.fi/files
 assert.equal(jsonDetail.resources?.[0]?.authContext, "wilma");
 assert.equal(jsonDetail.resources?.[0]?.fileName, "liite.pdf");
 
+// A bulletin as Wilma's editor writes it: spacer paragraphs (&nbsp;), list items indented with tabs in the
+// page's source, a nested list and a numbered one. The text keeps paragraphs and lists, not the source's layout.
+const formatted = parseNewsDetailHtml(
+  `<html><body><main id="main-content"><div id="news-content">
+    <p>Hyvät huoltajat,</p>
+    <p>&nbsp;</p>
+    <ul>
+	<li>Voit varata ajan.</li>
+	<li>Vastaanotto palvelee 2. kerroksessa.</li>
+    </ul>
+    <p>&nbsp;</p>
+    <p>Rokotus on maksuton:</p>
+    <ul>
+	<li>Riskiryhmät</li>
+	<li>Lähipiiri:
+	<ul>
+		<li>vakavasti sairaat</li>
+		<li>raskaana olevat</li>
+	</ul>
+	</li>
+	<li>Muut</li>
+    </ul>
+    <ol><li><p>Varaa aika.</p></li><li>Tule paikalle.</li></ol>
+  </div></main></body></html>`,
+  8
+);
+assert.equal(
+  formatted.content,
+  [
+    "Hyvät huoltajat,",
+    "",
+    "- Voit varata ajan.",
+    "- Vastaanotto palvelee 2. kerroksessa.",
+    "",
+    "Rokotus on maksuton:",
+    "",
+    "- Riskiryhmät",
+    "- Lähipiiri:",
+    "  - vakavasti sairaat",
+    "  - raskaana olevat",
+    "- Muut",
+    "",
+    "1. Varaa aika.",
+    "2. Tule paikalle.",
+  ].join("\n")
+);
+assert.ok(!/\t|\u00a0/.test(formatted.content), "no tabs or non-breaking spaces from the source");
+// The JSON form's body is the same editor HTML.
+assert.equal(parseNewsDetailJson(9, { title: "T", content: "<p>Eka</p><p>&nbsp;</p><ul>\n\t<li>A</li>\n\t<li>B</li>\n</ul>" }).content, "Eka\n\n- A\n- B");
+
 console.log("parser-news: all assertions passed");

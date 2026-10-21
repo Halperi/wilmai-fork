@@ -221,6 +221,7 @@ function parseTopLevelGrades(exams: RawTopLevelExam[]): ExamGrade[] {
       info: exam.Info?.trim() || null,
       teacher: teacher?.TeacherName ?? "",
       teacherCode: teacher?.TeacherCode ?? "",
+      seen: /^\d{4}-\d{2}-\d{2}/.exec(exam.ExamSeen ?? "")?.[0] ?? null,
     });
   }
 

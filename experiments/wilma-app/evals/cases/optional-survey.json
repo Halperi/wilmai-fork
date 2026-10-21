@@ -1,0 +1,57 @@
+{
+  "id": "optional-survey",
+  "added": "2026-10-08",
+  "why": "A guardians' survey 'vapaaehtoista, mutta toivomme…': no step, and its last day isn't a calendar event.",
+  "tags": [
+    "no-step",
+    "optional",
+    "trap"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 4201,
+      "published": "2026-10-07T12:00",
+      "from": "Rehtori Esimerkki",
+      "title": "Huoltajakysely on avattu",
+      "pupils": [
+        0,
+        1
+      ],
+      "text": "Hyvät huoltajat,\nkoulumme huoltajakysely on avoinna 30.10. asti. Kysely löytyy Wilman Kyselyt-välilehdeltä, ja vastaaminen vie noin 10 minuuttia. Vastaaminen on vapaaehtoista, mutta toivomme mahdollisimman monen vastaavan, jotta voimme kehittää koulun toimintaa.\nKiitos!"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 4201,
+        "needs_action": false
+      }
+    ],
+    "action": [
+      {
+        "item": 4201,
+        "none": true
+      }
+    ],
+    "calendar": {
+      "not": [
+        {
+          "date": "2026-10-30",
+          "note": "an optional survey's last day"
+        }
+      ]
+    }
+  }
+}

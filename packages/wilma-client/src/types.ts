@@ -24,7 +24,92 @@ export interface Message {
   recipients?: string[] | null;
   /** Message detail: the thread's replies, oldest first. */
   replies?: MessageReply[];
+  /** Message detail: the sender opened the thread for everyone ("avoin keskustelu"), so a reply goes to all recipients. */
+  discussion?: boolean;
+  /** Message detail: Wilma allows answering it (null when Wilma doesn't say). */
+  canReply?: boolean | null;
+  /** Message detail: the time slots and this family's choice, when the message is an event invitation. */
+  invitation?: Invitation | null;
   fetchedAt: Date;
+}
+
+/** An event invitation (Tapahtumakutsu): a parents' evening, a learning discussion with time slots… */
+export interface Invitation {
+  /** Wilma asks for a sign-up, not just attendance. */
+  mustApply: boolean;
+  slots: InvitationSlot[];
+  /** Wilma offers "En osallistu" (won't attend) for this invitation. */
+  canDecline: boolean;
+  /** The family has said it won't attend ("En osallistu"). */
+  declined: boolean;
+}
+
+export interface InvitationSlot {
+  /** Wilma's event id, for answering. */
+  id: string;
+  start: Date | null;
+  end: Date | null;
+  /** Sign-up opens / closes. */
+  enrollStart: Date | null;
+  enrollEnd: Date | null;
+  /** The last moment a sign-up can be cancelled. */
+  cancelUntil: Date | null;
+  info: string;
+  subject: string;
+  /** 0 when there's no limit. */
+  maxPeople: number;
+  peopleCount: number;
+  /** You signed up for this slot (Wilma: "selected-cancellable" while it can be cancelled, "selected" after). */
+  selected: boolean;
+  /** Another guardian signed up for this slot, as Wilma names them ("Name (child, class)"). */
+  selectedByOther: string | null;
+  /** Wilma's own word for the slot: "available", "selected-cancellable", "selected", "selected-other", "full", "pending", "expired", or "". */
+  wilmaState: string;
+  /** "En osallistu" covers this slot (CanDismissEvent). */
+  canDecline: boolean;
+  /** "En osallistu" was answered for this slot (IsDismissed). */
+  declined: boolean;
+}
+
+/**
+ * chosen: your slot (chosen-locked: too late to cancel); chosen-by-other:
+ * another guardian's; taken: the family already has another slot; open: can
+ * sign up now.
+ */
+export type InvitationSlotState = "chosen" | "chosen-locked" | "chosen-by-other" | "taken" | "open" | "full" | "not-yet" | "closed";
+
+/** Someone a message can go to, as Wilma offers them. */
+export interface MessageRecipient {
+  /** As Wilma shows it, e.g. "Virtanen Sari (VIR)", or "Kaikki" for a group. */
+  name: string;
+  /** The list Wilma puts it in: "Omat opettajat", "Opettajat", "Henkilökunta", "Opiskelija"… */
+  group: string;
+  /** The school, for staff and teachers listed per school. */
+  school: string | null;
+  /** teacher, staff (other personnel), student (the child), guardian (the other guardians), group (several at once). */
+  kind: "teacher" | "staff" | "student" | "guardian" | "group" | "other";
+  /** Wilma's compose page with this recipient filled in, for prepareMessage(). */
+  composePath: string;
+}
+
+/** The child's class and the people responsible for it, from the front page. */
+export interface StudentDetails {
+  name: string | null;
+  /** E.g. "9A". */
+  className: string | null;
+  /** Class teacher and other supervisors, in Wilma's order. */
+  supervisors: { name: string; role: string; recipient: MessageRecipient | null }[];
+  /** Groups the front page offers to message at once: all supervisors, all the child's teachers. */
+  messageGroups: MessageRecipient[];
+}
+
+/** An entry in the invitations list (Tapahtumakutsut). */
+export interface InvitationListing {
+  message: Message;
+  /** Wilma's status for this family: "Applied", "ExpiredReg"…; null when it shows none. */
+  status: string | null;
+  /** The chosen time or the sign-up deadline, in Wilma's words. */
+  extra: string | null;
 }
 
 export interface MessageReply {
@@ -81,6 +166,11 @@ export interface StudentInfo {
   studentNumber: string;
   name: string;
   href: string;
+  /**
+   * Whose login this is for the student, as Wilma's account roles say: a guardian's, or the student's own.
+   * Missing when Wilma doesn't say (older Wilmas without the roles API).
+   */
+  role?: "guardian" | "student";
 }
 
 export interface Municipality {
@@ -149,6 +239,30 @@ export interface ExamGrade {
   info: string | null;
   teacher: string;
   teacherCode: string;
+  /** When a guardian saw the grade in Wilma (YYYY-MM-DD), or null. */
+  seen?: string | null;
+}
+
+/** A past exam from Wilma's exam list (Kokeet > Menneet), graded or not yet. */
+export interface PastExam {
+  /** YYYY-MM-DD */
+  date: string;
+  name: string;
+  /** The course title, e.g. "Fysiikka". */
+  subject: string;
+  /** The course code, e.g. "FY_91" ("" when Wilma doesn't give one). */
+  subjectCode: string;
+  /** The grade as Wilma shows it ("8+", "9½", "S", "21,5/24"), or null before it's given. */
+  grade: string | null;
+  verbalGrade: string | null;
+  /** The exam's notes (topics, pages), lines kept. */
+  info: string | null;
+  /** The teachers' names, comma-separated. */
+  teacher: string;
+  /** The teachers' codes, comma-separated. */
+  teacherCode: string;
+  /** When a guardian marked the grade seen (YYYY-MM-DD), or null. */
+  seen: string | null;
 }
 
 export interface HomeworkItem {

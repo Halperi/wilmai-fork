@@ -1,0 +1,56 @@
+{
+  "id": "past-only-trap",
+  "added": "2026-10-08",
+  "why": "A thank-you for last Tuesday's parents' evening: 'tiistain' is past, and the next evening has no date yet. Nothing for the calendar.",
+  "tags": [
+    "trap",
+    "past",
+    "no-step"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 4001,
+      "sent": "2026-10-08T08:00",
+      "from": "Luokanvalvoja Esimerkki",
+      "subject": "Kiitos vanhempainillasta",
+      "pupils": [
+        0
+      ],
+      "text": "Hyvät huoltajat,\nkiitos kaikille, jotka osallistuivat tiistain vanhempainiltaan! Illan diat ovat tämän viestin liitteenä. Keskustelimme mm. koeviikoista ja jatko-opintoihin hakemisesta.\nSeuraava vanhempainilta pidetään keväällä, ja siitä tiedotetaan myöhemmin.\nTerveisin\nLuokanvalvoja"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 4001,
+        "needs_action": false
+      }
+    ],
+    "action": [
+      {
+        "item": 4001,
+        "none": true
+      }
+    ],
+    "calendar": {
+      "not": [
+        {
+          "date": "2026-10-13",
+          "suggestions": false,
+          "note": "the evening was last Tuesday"
+        }
+      ],
+      "titlesNot": [
+        "vanhempainil"
+      ]
+    }
+  }
+}

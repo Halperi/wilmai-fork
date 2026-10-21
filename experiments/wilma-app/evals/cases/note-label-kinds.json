@@ -1,0 +1,203 @@
+{
+  "id": "note-label-kinds",
+  "added": "2026-10-21",
+  "why": "Schools name their own lesson-note types; with AI the model says what kind each is, so effort praise (\"Jaksoit … sinnikkäästi\") isn't a neutral note and a negative effort label (\"Et jaksanut …\") isn't praise. Labels from the kinds Helsinki schools use.",
+  "tags": [
+    "note",
+    "tone",
+    "praise"
+  ],
+  "today": "2026-10-14",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "note",
+      "id": 6101,
+      "pupil": 0,
+      "date": "2026-10-01",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "MA_91",
+      "kind": "Jaksoit työskennellä pitkäjänteisesti ja sinnikkäästi",
+      "teacher": "Opettaja Esimerkki"
+    },
+    {
+      "type": "note",
+      "id": 6102,
+      "pupil": 0,
+      "date": "2026-10-02",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "MA_91",
+      "kind": "Otit hienosti vastuuta omasta oppimisestasi",
+      "teacher": "Opettaja Esimerkki"
+    },
+    {
+      "type": "note",
+      "id": 6103,
+      "pupil": 0,
+      "date": "2026-10-03",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "MA_91",
+      "kind": "Autoit muita oppilaita",
+      "teacher": "Opettaja Esimerkki"
+    },
+    {
+      "type": "note",
+      "id": 6104,
+      "pupil": 0,
+      "date": "2026-10-04",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "MA_91",
+      "kind": "Sinulla oli tehtäviä tekemättä",
+      "teacher": "Opettaja Esimerkki"
+    },
+    {
+      "type": "note",
+      "id": 6105,
+      "pupil": 0,
+      "date": "2026-10-05",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "MA_91",
+      "kind": "Sinulta puuttui opiskeluvälineitä",
+      "teacher": "Opettaja Esimerkki"
+    },
+    {
+      "type": "note",
+      "id": 6106,
+      "pupil": 0,
+      "date": "2026-10-06",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "MA_91",
+      "kind": "Myöhästyminen",
+      "teacher": "Opettaja Esimerkki"
+    },
+    {
+      "type": "note",
+      "id": 6107,
+      "pupil": 0,
+      "date": "2026-10-07",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "MA_91",
+      "kind": "Häiritsit oppitunnin työrauhaa",
+      "teacher": "Opettaja Esimerkki"
+    },
+    {
+      "type": "note",
+      "id": 6108,
+      "pupil": 0,
+      "date": "2026-10-08",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "MA_91",
+      "kind": "Ennalta anottu vapaa",
+      "teacher": "Opettaja Esimerkki"
+    },
+    {
+      "type": "note",
+      "id": 6109,
+      "pupil": 0,
+      "date": "2026-10-09",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "MA_91",
+      "kind": "Terveydellinen syy",
+      "teacher": "Opettaja Esimerkki"
+    },
+    {
+      "type": "note",
+      "id": 6110,
+      "pupil": 0,
+      "date": "2026-10-10",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "MA_91",
+      "kind": "Tiedoksi",
+      "teacher": "Opettaja Esimerkki"
+    },
+    {
+      "type": "note",
+      "id": 6111,
+      "pupil": 0,
+      "date": "2026-10-11",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "MA_91",
+      "kind": "Opiskelu muualla",
+      "teacher": "Opettaja Esimerkki"
+    },
+    {
+      "type": "note",
+      "id": 6112,
+      "pupil": 0,
+      "date": "2026-10-12",
+      "start": "10:00",
+      "end": "10:45",
+      "subject": "MA_91",
+      "kind": "Et jaksanut keskittyä tunnilla",
+      "teacher": "Opettaja Esimerkki"
+    }
+  ],
+  "expect": {
+    "noteKind": [
+      {
+        "item": 6101,
+        "kind": "praise"
+      },
+      {
+        "item": 6102,
+        "kind": "praise"
+      },
+      {
+        "item": 6103,
+        "kind": "praise"
+      },
+      {
+        "item": 6104,
+        "kind": "forgot"
+      },
+      {
+        "item": 6105,
+        "kind": "forgot"
+      },
+      {
+        "item": 6106,
+        "kind": "late"
+      },
+      {
+        "item": 6107,
+        "kind": "remark"
+      },
+      {
+        "item": 6108,
+        "kind": "absence"
+      },
+      {
+        "item": 6109,
+        "kind": "absence"
+      },
+      {
+        "item": 6110,
+        "kind": "other"
+      },
+      {
+        "item": 6111,
+        "kind": "other"
+      },
+      {
+        "item": 6112,
+        "kind": "remark"
+      }
+    ]
+  }
+}

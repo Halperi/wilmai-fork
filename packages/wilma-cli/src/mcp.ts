@@ -6,8 +6,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { AuthenticationError } from "@wilm-ai/wilma-client";
 import { type WilmaAccess, useSessionStore } from "./agent-data.js";
-import { fileSessionStore } from "./session-store.js";
-import { createAccess } from "./access.js";
+import { fileSessionStore, nameSessionOwner } from "./session-store.js";
+import { createAccess, logoutAccounts } from "./access.js";
 import { loadConfig } from "./config.js";
 import { ENV_VARS, isMfaFailure, resolveAccounts } from "./credentials.js";
 import { createUniqueDownloadFile } from "./downloads.js";
@@ -190,6 +190,25 @@ function createWilmaMcpServer(version: string): McpServer {
     async () => startBrowserLogin(true)
   );
 
+  server.registerTool(
+    "wilma_logout",
+    {
+      title: "Log out of Wilma",
+      description:
+        "End WilmAI's Wilma session, as Wilma's own Log out does. Wilma allows one session per account, so use this when the user wants to use Wilma in their browser or asks to log out. The login stays saved: the next Wilma tool call logs in again, and that ends the user's session in the browser, so don't call other Wilma tools afterwards unless the user asks.",
+      inputSchema: {},
+      annotations: { title: "Log out of Wilma", readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    async () => {
+      try {
+        return json(await logoutAccounts(await resolveAccounts(await loadConfig())));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return textResult(["Couldn't log out of Wilma; an open session was kept, so this can be tried again.", message].join("\n"), true);
+      }
+    }
+  );
+
   return server;
 }
 
@@ -198,6 +217,7 @@ export async function runMcpServer(version: string): Promise<void> {
   console.log = (...args: unknown[]) => console.error(...args);
   console.info = (...args: unknown[]) => console.error(...args);
   // Share saved sessions with the CLI: no login per process, no extra codes.
+  nameSessionOwner("mcp");
   useSessionStore(fileSessionStore);
   // Checked once a day at most; npx already runs the newest version.
   if (updateChecksEnabled()) updateCheck = startUpdateCheck();

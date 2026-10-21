@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "What the app window may do: its own commands, moving the window, and opening https links in the browser.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "updater:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-toggle-maximize",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "https://*" }]
+    }
+  ]
+}

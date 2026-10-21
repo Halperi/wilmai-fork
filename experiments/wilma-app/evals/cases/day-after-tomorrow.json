@@ -1,0 +1,73 @@
+{
+  "id": "day-after-tomorrow",
+  "added": "2026-10-08",
+  "why": "'Ylihuomenna perjantaina' on a Wednesday is Friday the 9th: a shorter school day for everyone.",
+  "tags": [
+    "relative-date",
+    "whose"
+  ],
+  "today": "2026-10-07",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 3301,
+      "published": "2026-10-07T08:00",
+      "from": "Rehtori Esimerkki",
+      "title": "Lyhennetty koulupäivä",
+      "pupils": [
+        0,
+        1
+      ],
+      "text": "Ylihuomenna perjantaina koulupäivä päättyy kaikilla luokilla klo 12.00 henkilökunnan koulutuspäivän vuoksi. Lounas syödään normaalisti. Iltapäivän kerhot eivät kokoonnu."
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 3301,
+        "needs_action": false,
+        "kind": [
+          "schedule"
+        ]
+      }
+    ],
+    "action": [
+      {
+        "item": 3301,
+        "none": true
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-09",
+          "kind": [
+            "schedule",
+            "event"
+          ],
+          "pupil": 0,
+          "sure": true
+        },
+        {
+          "date": "2026-10-09",
+          "kind": [
+            "schedule",
+            "event"
+          ],
+          "pupil": 1,
+          "sure": true
+        }
+      ]
+    }
+  }
+}

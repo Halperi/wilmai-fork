@@ -10,8 +10,10 @@ import { parseGradebookHtml } from "../dist/parsers/gradebook.js";
 import { parsePrintoutsHtml } from "../dist/parsers/printouts.js";
 import { parseMessageDetailJson, parseMessagesList } from "../dist/parsers/messages.js";
 import { parseTimetableJson } from "../dist/parsers/schedule.js";
-import { addExamTimes, parseExamsHtml } from "../dist/parsers/exams.js";
+import { addExamTimes, parseExamsHtml, parsePastExamsHtml } from "../dist/parsers/exams.js";
 import { parseOverview } from "../dist/parsers/overview.js";
+import { parseInvitationListings, slotState, awaitingAnswer } from "../dist/parsers/invitations.js";
+import { parseRecipientsHtml, parseStudentDetailsHtml, recipientListSources } from "../dist/parsers/recipients.js";
 
 const fixture = (name) => readFileSync(new URL(`./fixtures/real/${name}`, import.meta.url), "utf8");
 const finnishDay = (date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Helsinki" }).format(date);
@@ -147,6 +149,109 @@ const finnishDay = (date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europ
   assert.equal(sameDay.length, 2);
   assert.equal(sameDay.filter((e) => e.time).length, 1);
   assert.deepEqual(addExamTimes(upcoming, []).filter((e) => e.time), [], "no calendar, no times");
+  // The front page says when a guardian saw each grade.
+  const grades = parseOverview(JSON.parse(fixture("overview.json")), new Date("2026-10-04T12:00:00+03:00")).grades;
+  assert.equal(grades.length, 9);
+  assert.ok(grades.every((g) => /^\d{4}-\d{2}-\d{2}$/.test(g.seen)));
+}
+
+/* ---------------- past exams: Kokeet > Menneet, two school years (7 Oct 2026, grades scrambled) ---------------- */
+{
+  const past = parsePastExamsHtml(fixture("exams-past.html"));
+  assert.equal(past.length, 55);
+  assert.ok(past.every((e, i) => i === 0 || e.date <= past[i - 1].date), "newest first");
+  assert.deepEqual([past[0].date, past.at(-1).date], ["2026-10-06", "2024-09-10"]);
+  // "Name : GROUP_ Group title CODE_91 : Course title"
+  assert.equal(past[0].subjectCode, "FY_91");
+  assert.ok(past[0].name && past[0].subject && !past[0].name.includes(" : "));
+  assert.ok(past.every((e) => e.subjectCode && e.subject));
+  // Without a name Wilma writes only "GROUP_ Group title CODE_91 : Course title".
+  const nameless = past.filter((e) => !e.name);
+  assert.equal(nameless.length, 11);
+  assert.ok(nameless.some((e) => e.subjectCode === "YH_91"));
+  // Not graded yet, absent, letters, halves, points.
+  assert.equal(past.filter((e) => e.grade).length, 51);
+  assert.equal(past[0].grade, null);
+  assert.equal(past[1].grade, "poissa");
+  assert.deepEqual(
+    ["K", "K(-)", "9½", "8,5", "9.5", "7 1/2", "19,5/24", "7-/10"].filter((g) => !past.some((e) => e.grade === g)),
+    [],
+    "grades as Wilma writes them"
+  );
+  // Seen by a guardian once graded; notes keep their lines; several teachers.
+  assert.equal(past.filter((e) => e.seen).length, 51);
+  assert.equal(past[0].seen, null);
+  assert.equal(past[1].seen, "2026-10-02");
+  assert.equal(past.filter((e) => e.info?.includes("\n")).length, 16);
+  const shared = past.filter((e) => e.teacherCode.includes(", "));
+  assert.equal(shared.length, 4);
+  assert.ok(shared.every((e) => e.teacher.split(", ").length === e.teacherCode.split(", ").length));
+}
+
+/* ---------------- class, supervisors and recipients (7 Oct 2026) ---------------- */
+{
+  const base = "https://example.inschool.fi";
+  const home = fixture("student-home.html");
+  const child = /\/!(\d+)\//.exec(home)[1];
+  const details = parseStudentDetailsHtml(home, `${base}/!${child}/`);
+  assert.ok(details.name, "Nimi");
+  assert.match(details.className, /^\S{2}$/, "Luokka, e.g. 9A");
+  assert.deepEqual(details.supervisors.map((s) => s.role), ["Ryhmänohjaaja/Luokanvalvoja", "Muut ohjaajat", "Muut ohjaajat"]);
+  assert.ok(details.supervisors.every((s) => s.name && s.recipient?.kind === "teacher"));
+  assert.ok(details.supervisors.every((s) => new RegExp(`^/!${child}/messages/compose\\?r_teacher=\\d+$`).test(s.recipient.composePath)));
+  assert.deepEqual(
+    details.messageGroups.map((g) => [g.name, g.kind]),
+    [
+      ["Lähetä viesti kaikille ohjaajille", "group"],
+      ["Lähetä viesti opiskelijan kaikille opettajille", "group"],
+    ]
+  );
+  const everyone = new URL(details.messageGroups[0].composePath, base).searchParams.getAll("r_teacher");
+  assert.deepEqual(everyone, details.supervisors.map((s) => new URL(s.recipient.composePath, base).searchParams.get("r_teacher")));
+  assert.deepEqual(parseStudentDetailsHtml("<html><body><p>Ei mitään</p></body></html>", `${base}/`), { name: null, className: null, supervisors: [], messageGroups: [] });
+
+  const page = `${base}/!${child}/messages/recipients`;
+  const recipients = parseRecipientsHtml(fixture("messages-recipients.html"), page);
+  const count = (group, kind) => recipients.filter((r) => r.group === group && r.kind === kind).length;
+  assert.equal(count("Opiskelija", "student"), 1, "the child");
+  assert.equal(count("Muut huoltajat", "guardian"), 1);
+  assert.equal(count("Omat opettajat", "group"), 1, "all own teachers at once");
+  assert.equal(count("Henkilökunta", "staff"), 6);
+  assert.equal(count("Opettajat", "teacher"), 49, "4 more are listed but disabled");
+  assert.equal(recipients.length, 58);
+  assert.ok(recipients.filter((r) => r.kind === "teacher" || r.kind === "staff").every((r) => r.school), "staff and teachers per school");
+  assert.ok(recipients.every((r) => r.composePath.startsWith(`/!${child}/messages/compose?r_`)));
+  const sources = recipientListSources(fixture("messages-recipients.html"), page);
+  assert.equal(sources.length, 1);
+  assert.equal(sources[0][0], "Omat opettajat");
+  assert.match(sources[0][1], new RegExp(`^/!${child}/messages/recipients/ownteachers/\\d+$`));
+  const own = parseRecipientsHtml(fixture("recipients-ownteachers.html"), `${base}${sources[0][1]}`, { group: "Omat opettajat" });
+  assert.equal(own.length, 13);
+  assert.ok(own.every((r) => r.group === "Omat opettajat" && r.kind === "teacher" && /\(.+\)$/.test(r.name)));
+}
+
+/* ---------------- event invitations (7 Oct 2026) ---------------- */
+{
+  const list = JSON.parse(fixture("appointments-list.json"));
+  const listings = parseInvitationListings(list, parseMessagesList(list, "appointments"));
+  assert.equal(listings.length, 7);
+  assert.deepEqual(listings.map((l) => l.status), ["Applied", "ExpiredReg", "Applied", "Applied", "Applied", "Applied", "ExpiredReg"]);
+  assert.ok(listings.every((l) => l.extra && l.message.wilmaId > 0));
+
+  // EventData came as an object here (a JSON string on other messages).
+  const thread = JSON.parse(fixture("appointment.json"));
+  const message = parseMessageDetailJson(thread, 1);
+  assert.equal(message.canReply, true);
+  assert.equal(message.discussion, false);
+  const invitation = message.invitation;
+  assert.equal(invitation.mustApply, true);
+  assert.deepEqual(invitation.slots.map((s) => s.id), ["1", "2"]);
+  assert.equal(invitation.slots[0].start.toISOString(), "2026-05-29T10:00:00.000Z", "13:00 Finnish summer time");
+  assert.deepEqual(invitation.slots.map((s) => s.wilmaState), ["expired", "selected-other"]);
+  assert.ok(invitation.slots[1].selectedByOther, "the other guardian signed up, by name");
+  assert.deepEqual(invitation.slots.map((s) => slotState(s, new Date("2026-05-27T12:00:00Z"), invitation)), ["closed", "chosen-by-other"]);
+  assert.equal(awaitingAnswer(invitation, new Date("2026-05-27T12:00:00Z")), false, "the family has answered");
+  assert.equal(listings.find((l) => l.message.wilmaId === message.wilmaId)?.status, "Applied");
 }
 
 console.log("real-pages: all assertions passed");

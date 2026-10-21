@@ -1,0 +1,77 @@
+{
+  "id": "newsletter-no-step",
+  "added": "2026-10-08",
+  "why": "A monthly letter with many topics and no step: the holiday as one bar, the optional disco at most a suggestion, opening hours not events.",
+  "tags": [
+    "newsletter",
+    "long",
+    "no-step",
+    "holiday",
+    "week-number",
+    "trap",
+    "recurring"
+  ],
+  "today": "2026-10-01",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 4601,
+      "published": "2026-09-30T15:00",
+      "from": "Rehtori Esimerkki",
+      "title": "Lokakuun kuulumiset",
+      "pupils": [
+        0,
+        1
+      ],
+      "text": "Hyvät huoltajat,\n\nsyyskuu on mennyt vauhdikkaasti! Tässä lokakuun kuulumiset.\n\nSyysloma\nSyysloma on viikolla 42 (12.–16.10.). Koulu jatkuu maanantaina 19.10. lukujärjestyksen mukaan.\n\nHalloween-disko\nOppilaskunta järjestää 7.–9.-luokkalaisille Halloween-diskon perjantaina 30.10. klo 18–20. Disko on vapaaehtoinen, ja pääsylippu maksaa 2 €.\n\nTerveydenhoitaja\nKouluterveydenhoitaja on tavattavissa maanantaisin ja keskiviikkoisin klo 8–15 ilman ajanvarausta.\n\nKoulun kirjasto\nKirjasto on auki joka päivä klo 8–16. Uusia kirjoja on tullut runsaasti, tervetuloa lainaamaan!\n\nRuokalista\nLokakuun ruokalista löytyy koulun verkkosivuilta.\n\nAurinkoista syksyä!\nRehtori"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 4601,
+        "needs_action": false,
+        "kind": [
+          "newsletter"
+        ]
+      }
+    ],
+    "action": [
+      {
+        "item": 4601,
+        "none": true
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-12",
+          "endDate": "2026-10-16",
+          "kind": "holiday",
+          "sure": true
+        }
+      ],
+      "not": [
+        {
+          "date": "2026-10-19",
+          "note": "school as usual"
+        }
+      ],
+      "titlesNot": [
+        "terveydenhoitaja",
+        "kirjasto"
+      ],
+      "maxDays": 7
+    }
+  }
+}

@@ -38,6 +38,7 @@ const server = createServer((req, res) => {
     return send(200, "text/html", '<div id="page-content-area" class="panel-body"><h1>Vanha viesti</h1><table class="proptable"><tr><th>Lähettäjä</th><td>Opettaja</td></tr><tr><th>Lähetetty</th><td>5.10.2026 klo 8:00</td></tr></table><div class="inner">Sisältö</div></div>');
   }
   if (path === "/!1/attendance/view") return send(200, "text/html", fixture("attendance.html"));
+  if (path === "/!1/exams/calendar/past") return send(200, "text/html", fixture("exams-past.html"));
   if (path === "/!1/gradebook") return send(200, "text/html", fixture("gradebook.html"));
   if (path === "/!1/printouts") return send(200, "text/html", fixture("printouts.html"));
   if (/^\/!\d+\/printouts\/\d+\.pdf$/.test(path)) {
@@ -85,6 +86,7 @@ try {
   assert.ok(requests.includes("/!1/attendance/view?range=-4"), "the school year");
   assert.equal(year.total, 57);
   assert.equal(year.from, null);
+  assert.equal((await kid.attendance.schoolYear()).length, 57, "the whole year's notes, not just the counts");
   const septemberSummary = await kid.attendance.summary({ from: "2026-09-01", to: "2026-09-30" });
   assert.equal(septemberSummary.total, september.length);
 
@@ -103,6 +105,13 @@ try {
   assert.equal(exams.length, withoutCalendar.length, "a broken calendar page costs only the times");
   assert.ok(withoutCalendar.every((e) => !e.time));
   assert.ok(requests.includes("/!1/exams/calendar"));
+  // Past exams: this school year by Wilma's default, or a period further back.
+  assert.equal((await kid.exams.past()).length, 55);
+  assert.ok(requests.includes("/!1/exams/calendar/past"));
+  await kid.exams.past({ from: "2018-08-01", to: "2026-10-07" });
+  assert.ok(requests.includes("/!1/exams/calendar/past?range=-3&first=1.8.2018&last=7.10.2026"));
+  await kid.exams.past({ to: "2026-03-15" });
+  assert.ok(requests.includes("/!1/exams/calendar/past?range=-3&first=1.8.2025&last=15.3.2026"), "the school year of `to`");
 
   // Bulletins: dated, pinned and older ones.
   const news = await kid.news.list();

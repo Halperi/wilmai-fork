@@ -1,0 +1,76 @@
+{
+  "id": "christmas-break-year-boundary",
+  "added": "2026-10-08",
+  "why": "A holiday over the new year ('19.12.–6.1.') ends in the next year; the first school day after it isn't an event.",
+  "tags": [
+    "holiday",
+    "range",
+    "year-boundary",
+    "time"
+  ],
+  "today": "2026-12-01",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 3401,
+      "published": "2026-11-30T10:00",
+      "from": "Rehtori Esimerkki",
+      "title": "Joulujuhla ja joululoma",
+      "pupils": [
+        0,
+        1
+      ],
+      "text": "Hyvät huoltajat,\nsyyslukukauden päättäjäisjuhla pidetään perjantaina 18.12. klo 9.00–10.30 koulun salissa, ja koulupäivä päättyy juhlan jälkeen. Huoltajat ovat tervetulleita juhlaan.\nJoululoma on 19.12.–6.1. Kevätlukukausi alkaa torstaina 7.1. lukujärjestyksen mukaan.\nRauhallista joulun odotusta!\nRehtori"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 3401,
+        "needs_action": false
+      }
+    ],
+    "action": [
+      {
+        "item": 3401,
+        "none": true
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-12-18",
+          "start": "09:00",
+          "kind": [
+            "event",
+            "schedule"
+          ],
+          "sure": true
+        },
+        {
+          "date": "2026-12-19",
+          "endDate": "2027-01-06",
+          "kind": "holiday",
+          "sure": true
+        }
+      ],
+      "not": [
+        {
+          "date": "2027-01-07",
+          "note": "school as usual"
+        }
+      ],
+      "maxDays": 20
+    }
+  }
+}

@@ -22,9 +22,19 @@ const SESSION_TTL_MS = 6 * 60 * 60 * 1000;
 export interface SessionStore {
   load(key: string): Promise<string | null>;
   save(key: string, state: string): Promise<void>;
+  /** Forget one session (after logging out). */
+  remove(key: string): Promise<void>;
 }
 
-type Saved = Record<string, { state: string; savedAt: number }>;
+/** `by`: which WilmAI program saved it ("cli", "mcp", "home"), so a parent can see who started a session. */
+type Saved = Record<string, { state: string; savedAt: number; by?: string }>;
+
+let savedBy = "cli";
+
+/** Name this program in the sessions it saves (the MCP server says "mcp"). */
+export function nameSessionOwner(name: string): void {
+  savedBy = name;
+}
 
 function sessionsPath(): string {
   return resolve(dirname(getConfigPath()), "wilmai-sessions.json");
@@ -54,17 +64,36 @@ export const fileSessionStore: SessionStore = {
     for (const [k, entry] of Object.entries(all)) {
       if (now - entry.savedAt > SESSION_TTL_MS) delete all[k];
     }
-    all[key] = { state, savedAt: now };
-    const path = sessionsPath();
-    await mkdir(dirname(path), { recursive: true, mode: 0o700 });
-    // Temp file + rename: a parallel command never reads half a file.
-    const tmp = `${path}.${process.pid}.${randomBytes(4).toString("hex")}.tmp`;
-    await writeFile(tmp, JSON.stringify(all), { encoding: "utf-8", mode: 0o600 });
-    await rename(tmp, path);
+    all[key] = { state, savedAt: now, by: savedBy };
+    await writeAll(all);
+  },
+
+  async remove(key) {
+    const all = await readAll();
+    if (!(key in all)) return;
+    delete all[key];
+    await writeAll(all);
   },
 };
 
-/** Forget every saved session (after removing logins or clearing the config). */
+async function writeAll(all: Saved): Promise<void> {
+  const path = sessionsPath();
+  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+  // Temp file + rename: a parallel command never reads half a file.
+  const tmp = `${path}.${process.pid}.${randomBytes(4).toString("hex")}.tmp`;
+  await writeFile(tmp, JSON.stringify(all), { encoding: "utf-8", mode: 0o600 });
+  await rename(tmp, path);
+}
+
+/** When one login's session was saved, and by which program (null when there's none to try). */
+export async function sessionInfo(key: string): Promise<{ savedAt: number; by: string | null } | null> {
+  if (process.env.WILMAI_NO_SESSION_CACHE === "1") return null;
+  const entry = (await readAll())[key];
+  if (!entry || typeof entry.state !== "string" || Date.now() - entry.savedAt > SESSION_TTL_MS) return null;
+  return { savedAt: entry.savedAt, by: typeof entry.by === "string" ? entry.by : null };
+}
+
+/** Forget every saved session (after clearing the config). */
 export async function clearSessions(): Promise<void> {
   await rm(sessionsPath(), { force: true });
 }

@@ -17,6 +17,7 @@ export const INSTRUCTIONS = `Read-only access to Finland's Wilma school system f
 - Message and news lists return ids; use wilma_read_message / wilma_read_news for full text. Bulletins can link attachments; fetch them with wilma_get_news_attachment.
 - Teachers' feedback ("forgot books", "did well") and absences are lesson notes: wilma_lesson_notes for recent days, wilma_lesson_notes_summary for counts. Course and report-card grades are in wilma_gradebook.
 - If a tool says the user isn't logged in, relay the login link or instructions to the user exactly; never ask the user to type their Wilma password into the chat.
+- Wilma allows one session per account, so each WilmAI login logs the user out of Wilma in their browser. If they want to use Wilma in the browser, call wilma_logout and then call Wilma tools only when they ask again.
 - If a result ends with an "Update note", answer the question first, then pass the note on in one sentence.`;
 
 export const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false } as const;

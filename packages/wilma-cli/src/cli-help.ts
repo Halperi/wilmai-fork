@@ -87,8 +87,15 @@ const COMMAND_HELP: Record<string, CommandHelp> = {
   },
   accounts: {
     usage: ["wilma accounts", "wilma accounts remove <number|Wilma name|username>"],
-    about: "Saved Wilma logins, numbered (one per Wilma the children use); remove one.",
+    about: "Saved Wilma logins, numbered (one per Wilma the children use). `remove` deletes one and ends its Wilma session; the other logins keep theirs.",
     examples: ["wilma accounts", "wilma accounts remove 2"],
+  },
+  logout: {
+    usage: ["wilma logout [<number|Wilma name|username>]"],
+    about:
+      "End WilmAI's Wilma session, as Wilma's own Log out does, so you can use Wilma in the browser (Wilma allows one session per account). Every saved login by default, or one by its number from `wilma accounts`. The logins stay saved: the next command logs in again, and that ends your Wilma session in the browser. To delete the logins as well, use `wilma config clear`.",
+    examples: ["wilma logout", "wilma logout 2"],
+    output: '{ status: "ok", logins: [{ wilma, username, session: "ended" | "none" }], hint }. "none": there was no open session to end.',
   },
   "find-school": {
     usage: ["wilma find-school <city or school>"],
@@ -119,6 +126,7 @@ const OVERVIEW: [string, string][] = [
   ["students", "the children"],
   ["login", "log in (opens a page in the browser)"],
   ["accounts", "saved logins; accounts remove <n>"],
+  ["logout", "end WilmAI's Wilma session (the logins stay saved)"],
   ["find-school <query>", "find a Wilma address by city or school"],
   ["mcp", "MCP server for AI assistants"],
   ["update", "update the CLI"],

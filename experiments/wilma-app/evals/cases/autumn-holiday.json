@@ -1,0 +1,60 @@
+{
+  "id": "autumn-holiday",
+  "added": "2026-10-08",
+  "why": "A holiday is one bar across its days; the first school day after it is an ordinary day, not an event.",
+  "tags": [
+    "holiday",
+    "range",
+    "no-step"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 701,
+      "published": "2026-09-28T09:00",
+      "from": "Rehtori Esimerkki",
+      "title": "Syysloma viikolla 43",
+      "pupils": [
+        0
+      ],
+      "text": "Syysloma on 19.–23.10. Koulu alkaa jälleen maanantaina 26.10. lukujärjestyksen mukaan. Iltapäiväkerho on suljettu loman ajan."
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 701,
+        "needs_action": false
+      }
+    ],
+    "action": [
+      {
+        "item": 701,
+        "none": true
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-19",
+          "endDate": "2026-10-23",
+          "kind": "holiday",
+          "sure": true
+        }
+      ],
+      "not": [
+        {
+          "date": "2026-10-26",
+          "note": "school as usual"
+        }
+      ]
+    }
+  }
+}

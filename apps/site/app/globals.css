@@ -1287,6 +1287,719 @@ main {
   }
 }
 
+/* ---------- WilmAI Home (/en/home, /fi/home) ---------- */
+
+.home-back {
+  display: inline-block;
+  margin-bottom: 28px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.home-back:hover {
+  color: var(--ink);
+}
+
+.home-beta {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 1.5px solid var(--teal-deep);
+  border-radius: 999px;
+  background: var(--note-teal);
+  color: var(--teal-deep);
+  font: 700 12px var(--font-body), sans-serif;
+  letter-spacing: 0;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.home-tagline {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  font-size: clamp(22px, 3.6vw, 30px);
+  letter-spacing: -0.02em;
+  margin: 22px auto 0;
+  max-width: 700px;
+}
+
+.home-requirements {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-top: 16px;
+}
+
+.home-preview {
+  margin: 44px auto 0;
+  max-width: 960px;
+}
+
+.home-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 8px 10px 0 rgba(27, 43, 52, 0.12);
+}
+
+.home-preview figcaption {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-top: 16px;
+}
+
+/* A few short lines, read at a glance. */
+.home-story p {
+  max-width: 680px;
+  font-size: 20px;
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+.home-story p:first-child {
+  font-weight: 600;
+}
+
+.home-soon {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--marker);
+  font: 700 11px var(--font-body), sans-serif;
+  vertical-align: 2px;
+}
+
+.home-note-body {
+  font-size: 15px;
+  line-height: 1.5;
+  color: rgba(27, 43, 52, 0.8);
+}
+
+/* The three AI choices, drawn like the app's own choice tiles. */
+.home-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.home-choice {
+  display: flex;
+  flex-direction: column;
+  padding: 22px;
+  background: #fff;
+  border: 1.5px solid var(--rule);
+  border-radius: 14px;
+}
+
+.home-choice-openai {
+  border: 2px solid var(--ink);
+  box-shadow: 4px 5px 0 var(--marker);
+}
+
+.home-choice-local {
+  background: var(--note-teal);
+  border-color: var(--teal);
+}
+
+.home-choice-badge {
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(27, 43, 52, 0.07);
+  font: 700 12px var(--font-body), sans-serif;
+}
+
+.home-choice-openai .home-choice-badge {
+  background: var(--marker);
+}
+
+.home-choice-local .home-choice-badge {
+  background: #fff;
+  color: var(--teal-deep);
+}
+
+.home-choice h3 {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  margin: 14px 0 8px;
+}
+
+.home-choice p {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.home-choice .home-choice-detail {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.home-choice p + .home-choice-detail {
+  margin-top: 16px;
+}
+
+.home-list {
+  padding-left: 22px;
+  max-width: 760px;
+}
+
+.home-list li {
+  margin-bottom: 10px;
+  padding-left: 4px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.home-feedback {
+  margin-top: 18px;
+  font-size: 15px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.home-feedback a,
+.home-download-note a,
+.home-key-steps a,
+.home-choice-link,
+.faq details p a {
+  font-weight: 700;
+  color: var(--teal-deep);
+}
+
+.home-feedback a:hover,
+.home-download-note a:hover,
+.home-key-steps a:hover,
+.home-choice-link:hover,
+.faq details p a:hover {
+  color: var(--ink);
+}
+
+.home-choice-link {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+/* Getting an OpenAI API key, step by step */
+#openai-key {
+  scroll-margin-top: 24px;
+}
+
+.home-key-steps {
+  max-width: 880px;
+  gap: 26px;
+}
+
+.home-key-steps + .home-download-note {
+  max-width: 880px;
+  margin-top: 8px;
+}
+
+/* Text on the left, a small sketch of the page on the right; on phones the sketch follows the text */
+.home-key-step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  gap: 10px 32px;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .home-key-step {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .home-key-step .key-visual {
+    max-width: 280px;
+  }
+}
+
+.key-visual {
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 3px 4px 0 rgba(27, 43, 52, 0.1);
+  overflow: hidden;
+  font: 500 12px/1.3 var(--font-body), sans-serif;
+  color: var(--ink);
+  transform: rotate(0.6deg);
+}
+
+.home-key-step:nth-child(even) .key-visual {
+  transform: rotate(-0.6deg);
+}
+
+.kv-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1.5px solid var(--rule);
+  background: rgba(27, 43, 52, 0.03);
+}
+
+.kv-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rule);
+}
+
+.kv-url {
+  flex: 1;
+  min-width: 0;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(27, 43, 52, 0.06);
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kv-app {
+  gap: 6px;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.kv-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.kv-center {
+  align-items: center;
+}
+
+.kv-center .kv-btn {
+  width: 70%;
+}
+
+.kv-title {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.kv-label {
+  font-weight: 700;
+}
+
+.kv-btn {
+  padding: 5px 10px;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.kv-small {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+/* What to click */
+.kv-hit {
+  background: var(--marker);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.kv-chips,
+.kv-tiles {
+  display: flex;
+  gap: 6px;
+}
+
+.kv-chip {
+  padding: 3px 10px;
+  border: 1.5px solid var(--rule);
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.kv-chip.kv-hit,
+.kv-chip.kv-on {
+  border-color: var(--ink);
+}
+
+/* Permissions: All is OpenAI's default, so it's only marked, not something to click */
+.kv-perms .kv-chip {
+  padding: 2px 7px;
+  font-size: 10.5px;
+}
+
+.kv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* A switch, off */
+.kv-toggle {
+  position: relative;
+  flex: none;
+  width: 28px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--rule);
+}
+
+.kv-toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.kv-key {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1.5px dashed var(--rule);
+  border-radius: 8px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kv-note {
+  color: var(--teal-deep);
+  font-weight: 700;
+  font-size: 11.5px;
+}
+
+.kv-tile {
+  flex: 1;
+  padding: 6px 4px;
+  border: 1.5px solid var(--rule);
+  border-radius: 8px;
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kv-tile.kv-on {
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--marker);
+}
+
+.home-download {
+  scroll-margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px;
+  background: var(--note-yellow);
+  border: 2px solid var(--ink);
+  border-radius: 18px;
+  text-align: center;
+}
+
+.section.home-download h2 {
+  margin-top: -4px;
+}
+
+.home-download > p {
+  max-width: 560px;
+  line-height: 1.55;
+}
+
+.home-installer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  max-width: 560px;
+  padding: 18px 20px;
+  background: #fff;
+  border: 1.5px solid var(--rule);
+  border-radius: 12px;
+  text-align: left;
+}
+
+.home-installer h3 {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.home-installer h3 .home-beta {
+  margin-left: 6px;
+}
+
+.home-installer p {
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.home-installer .button {
+  flex: none;
+  font-size: 15px;
+  padding: 10px 16px;
+}
+
+.button.is-disabled,
+.button.is-disabled:hover {
+  cursor: default;
+  opacity: 0.7;
+  transform: none;
+  box-shadow: none;
+}
+
+.home-download-note {
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+/* WilmAI Home in the top bar, on every page; hidden on phones, where the bar is full. */
+.topbar-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 4px;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 5px;
+  transition: text-decoration-color 0.15s ease;
+}
+
+.topbar-home:hover,
+.topbar-home[aria-current="page"] {
+  text-decoration-color: var(--marker);
+}
+
+.topbar-beta {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--note-teal);
+  color: var(--teal-deep);
+  font: 700 11px var(--font-body), sans-serif;
+}
+
+/* The banner across the very top of the front page, above everything: WilmAI Home is new. */
+.home-banner {
+  display: block;
+  background: var(--ink);
+  color: #fff;
+  border-bottom: 3px solid var(--marker);
+}
+
+.home-banner-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.home-banner-shot {
+  flex: none;
+  width: 96px;
+  height: auto;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  transform: rotate(-3deg);
+  transition: transform 0.18s ease;
+}
+
+.home-banner:hover .home-banner-shot {
+  transform: rotate(0deg) scale(1.06);
+}
+
+.home-banner-badge {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px 4px 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--marker);
+  color: var(--ink);
+  font: 700 13px var(--font-body), sans-serif;
+}
+
+.home-banner-text b {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+}
+
+.home-banner-more {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.home-banner-cta {
+  flex: none;
+  margin-left: auto;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  color: var(--marker);
+  white-space: nowrap;
+}
+
+.home-banner-arrow {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+.home-banner:hover .home-banner-arrow {
+  transform: translateX(3px);
+}
+
+/* A light that sweeps across the badge now and then. */
+.home-banner-badge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.8) 50%, transparent 70%);
+  transform: translateX(-130%);
+  animation: home-shimmer 3.6s ease-in-out 1.2s infinite;
+}
+
+.home-sparkle {
+  width: 14px;
+  height: 14px;
+  fill: var(--ink);
+  animation: home-twinkle 2.4s ease-in-out infinite;
+}
+
+@keyframes home-shimmer {
+  0%,
+  55% {
+    transform: translateX(-130%);
+  }
+  100% {
+    transform: translateX(130%);
+  }
+}
+
+@keyframes home-twinkle {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.3) rotate(25deg);
+  }
+}
+
+/* The front page's card about Home, after the setup guides. */
+.home-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: center;
+  padding: 28px;
+  background: var(--note-teal);
+  border-radius: 18px;
+  box-shadow: 0 5px 12px rgba(27, 43, 52, 0.1);
+}
+
+.home-card-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 5px 6px 0 rgba(27, 43, 52, 0.14);
+  transform: rotate(-1deg);
+  transition: transform 0.18s ease;
+}
+
+.home-card-shot:hover img {
+  transform: rotate(0deg) translateY(-3px);
+}
+
+.home-card h2 .home-beta {
+  margin-left: 8px;
+}
+
+.home-card-copy > p:not(.eyebrow) {
+  margin: 12px 0 20px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.home-card .button {
+  display: inline-block;
+}
+
+@media (max-width: 640px) {
+  .topbar-home,
+  .home-banner-more,
+  .home-banner-cta-label {
+    display: none;
+  }
+
+  .home-banner-cta {
+    margin-left: 0;
+  }
+
+  .home-banner-inner {
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 16px;
+  }
+
+  .home-banner-shot {
+    width: 64px;
+  }
+}
+
+@media (max-width: 760px) {
+  .home-choices {
+    grid-template-columns: 1fr;
+  }
+
+  .home-card {
+    grid-template-columns: 1fr;
+    padding: 20px 18px;
+    gap: 22px;
+  }
+
+  .home-download {
+    padding: 24px 16px;
+  }
+
+  .home-installer {
+    flex-wrap: wrap;
+  }
+}
+
 /* ---------- Reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
@@ -1295,7 +2008,9 @@ main {
   }
 
   .marker::before,
-  .terminal-sticker {
+  .terminal-sticker,
+  .home-banner-badge::after,
+  .home-sparkle {
     animation: none;
   }
 

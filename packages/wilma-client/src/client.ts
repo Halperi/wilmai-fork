@@ -1,7 +1,11 @@
-import { WilmaSession, MfaRequiredError, APIError } from "./session.js";
+import { WilmaSession, MfaRequiredError, APIError, type SharedSession, type SessionEvent } from "./session.js";
 import type {
   Exam,
   GradebookEntry,
+  Invitation,
+  InvitationListing,
+  MessageRecipient,
+  StudentDetails,
   LessonNote,
   LessonNoteSummary,
   Message,
@@ -9,6 +13,7 @@ import type {
   NewsItem,
   NewsResource,
   OverviewData,
+  PastExam,
   Printout,
   StudentInfo,
   UpcomingExam,
@@ -17,36 +22,61 @@ import type {
 import { parseWilmaTimestamp } from "./parsers/dates.js";
 import { finnishDateString } from "./finnish-time.js";
 import { parseMessagesList, parseMessageDetailHtml, parseMessageDetailJson } from "./parsers/messages.js";
+import { parseInvitationListings } from "./parsers/invitations.js";
+import { parseRecipientsHtml, parseStudentDetailsHtml, recipientListSources } from "./parsers/recipients.js";
 import {
   parseNewsDetailHtml,
   parseNewsDetailJson,
   parseNewsList,
   parseNewsListHtml,
 } from "./parsers/news.js";
-import { addExamTimes, parseExamsHtml } from "./parsers/exams.js";
+import { addExamTimes, parseExamsHtml, parsePastExamsHtml } from "./parsers/exams.js";
 import { parseAttendanceHtml, summarizeLessonNotes } from "./parsers/attendance.js";
 import { parseGradebookHtml } from "./parsers/gradebook.js";
 import { parsePrintoutsHtml } from "./parsers/printouts.js";
 import { parseOverview } from "./parsers/overview.js";
 import { parseScheduleHtml, parseTimetableJson } from "./parsers/schedule.js";
 import { parseStudentsFromAccountsRoles, parseStudentsFromHome } from "./parsers/students.js";
-import type { Response } from "undici";
 import { NetworkError } from "./network-error.js";
-import { DOWNLOAD_TIMEOUT_MS, fetchExternalFile, isHtmlResponse } from "./external-fetch.js";
+import { DOWNLOAD_TIMEOUT_MS, getExternalFetcher, isHtmlResponse } from "./downloads.js";
+import { sessionOf } from "./internal.js";
+import type { WilmaTransport } from "./transport.js";
 
 export type MfaCallback = (formkey: string) => Promise<string>;
+
+export interface ClientOptions {
+  /** How requests are sent (default: undici on Node; required with the "core" entry point unless a default is set). */
+  transport?: WilmaTransport;
+  /**
+   * Log in again by itself when Wilma ends the session (default true). Every
+   * login ends the parent's other Wilma sessions (browser, phone), so an app
+   * the parent is looking at may prefer false: requests then fail with
+   * SessionEndedError and the app asks.
+   */
+  relogin?: boolean;
+  /**
+   * Share the session with the other WilmAI programs on this computer (the
+   * CLI, connectors, a desktop app) instead of each logging in and ending the
+   * others' sessions. See SharedSession.
+   */
+  sharedSession?: SharedSession;
+}
 
 export class WilmaClient {
   private session: WilmaSession;
 
   private constructor(session: WilmaSession) {
     this.session = session;
+    sessionOf.set(this, session);
   }
 
-  static async login(profile: WilmaProfile, onMfaRequired?: MfaCallback): Promise<WilmaClient> {
+  static async login(profile: WilmaProfile, onMfaRequired?: MfaCallback, options: ClientOptions = {}): Promise<WilmaClient> {
     const session = new WilmaSession(profile.baseUrl, {
       studentNumber: profile.studentNumber ?? null,
       debug: profile.debug ?? false,
+      transport: options.transport,
+      relogin: options.relogin,
+      shared: options.sharedSession,
     });
     session.setMfaCallback(onMfaRequired);
     try {
@@ -66,13 +96,32 @@ export class WilmaClient {
    * in. If Wilma has ended that session, the first request logs in again by
    * itself. Returns null when the saved state has no session.
    */
-  static resume(profile: WilmaProfile, state: string, onMfaRequired?: MfaCallback): WilmaClient | null {
+  static resume(profile: WilmaProfile, state: string, onMfaRequired?: MfaCallback, options: ClientOptions = {}): WilmaClient | null {
     const session = new WilmaSession(profile.baseUrl, {
       studentNumber: profile.studentNumber ?? null,
       debug: profile.debug ?? false,
+      transport: options.transport,
+      relogin: options.relogin,
+      shared: options.sharedSession,
     });
     session.setMfaCallback(onMfaRequired);
     return session.resumeState(state, profile.username, profile.password) ? new WilmaClient(session) : null;
+  }
+
+  /**
+   * A client on a saved session without any credentials: it never logs in.
+   * When Wilma ends the session, requests fail with SessionEndedError. For
+   * apps that don't keep the parent's password. Returns null when the saved
+   * state has no session.
+   */
+  static resumeSession(baseUrl: string, state: string, options: Omit<ClientOptions, "relogin"> & { debug?: boolean } = {}): WilmaClient | null {
+    const session = new WilmaSession(baseUrl, { debug: options.debug, transport: options.transport, relogin: false, shared: options.sharedSession });
+    return session.resumeState(state) ? new WilmaClient(session) : null;
+  }
+
+  /** The Wilma this client talks to, e.g. "https://example.inschool.fi". */
+  get origin(): string {
+    return this.session.origin;
   }
 
   /** This login's session (cookies) as a string, for WilmaClient.resume() in a later process. Treat it like a password. */
@@ -80,9 +129,30 @@ export class WilmaClient {
     return this.session.exportState();
   }
 
+  /**
+   * End this login's session in Wilma (its "Log out"), e.g. so the parent can
+   * use Wilma in the browser. Never logs in. Afterwards this client and its
+   * forStudent() clients don't log in again by themselves. Returns true when
+   * a live session was ended, false when there was none; throws (keeping the
+   * session) when Wilma can't be reached.
+   */
+  logout(): Promise<boolean> {
+    return this.session.logout();
+  }
+
+  /** Share the session with the other WilmAI programs on this computer from now on (see ClientOptions.sharedSession). */
+  useSharedSession(shared: SharedSession | undefined): void {
+    this.session.setShared(shared);
+  }
+
   /** Run a callback after every successful login, e.g. to save the new session. */
   onLogin(callback: (() => void) | undefined): void {
     this.session.onLogin(callback);
+  }
+
+  /** Be told when this client logs in, continues another program's session, or finds its session ended (see SessionEvent). */
+  onSessionEvent(callback: ((event: SessionEvent) => void) | undefined): void {
+    this.session.onSessionEvent(callback);
   }
 
   static async listStudents(profile: WilmaProfile, onMfaRequired?: MfaCallback): Promise<StudentInfo[]> {
@@ -175,6 +245,51 @@ export class WilmaClient {
       }
       return parseMessageDetailHtml(text, messageId);
     },
+
+    /**
+     * Who the parent can write to (Wilma's recipient list): the child, the
+     * other guardians, the child's own teachers, and the school's staff and
+     * teachers. Pass one to prepareMessage() in the write entry point.
+     */
+    recipients: async (): Promise<MessageRecipient[]> => {
+      const resp = await this.session.get("/messages/recipients");
+      const html = await resp.text();
+      const recipients = parseRecipientsHtml(html, resp.url);
+      // Lists Wilma loads when opened (the child's own teachers, one by one).
+      for (const [group, path] of recipientListSources(html, resp.url)) {
+        const list = await this.session.get(path);
+        for (const recipient of parseRecipientsHtml(await list.text(), list.url, { group })) {
+          if (!recipients.some((r) => r.composePath === recipient.composePath && r.group === recipient.group)) recipients.push(recipient);
+        }
+      }
+      return recipients;
+    },
+  };
+
+  student = {
+    /** The child's class and supervisors (class teacher, other supervisors), with their message links, from the front page. */
+    get: async (): Promise<StudentDetails> => {
+      const resp = await this.session.get("/");
+      return parseStudentDetailsHtml(await resp.text(), resp.url);
+    },
+  };
+
+  invitations = {
+    /** Event invitations (Tapahtumakutsut), newest first, with whether this family has answered. */
+    list: async (): Promise<InvitationListing[]> => {
+      const resp = await this.session.get("/messages/list/appointments");
+      const data = safeJson(await resp.text());
+      return parseInvitationListings(data, parseMessagesList(data, "appointments"));
+    },
+
+    /**
+     * One invitation's time slots and this family's choice; null when the
+     * message isn't an invitation. Like opening it in Wilma, this marks the
+     * message read.
+     */
+    get: async (messageId: number): Promise<Invitation | null> => {
+      return (await this.messages.get(messageId)).invitation ?? null;
+    },
   };
 
   news = {
@@ -227,7 +342,7 @@ export class WilmaClient {
           // Wilma handed the file off to another site: fetch it there, without Wilma credentials.
           const location = response.headers.get("location");
           await response.body?.cancel();
-          const external = location ? await fetchExternalFile(new URL(location, url).href) : null;
+          const external = location ? await getExternalFetcher()(new URL(location, url).href) : null;
           return external
             ? { resource, response: external, status: "fetched" }
             : { resource, response: null, status: "not_a_file" };
@@ -236,10 +351,10 @@ export class WilmaClient {
           await response.body?.cancel();
           return { resource, response: null, status: "not_a_file" };
         }
-        return { resource, response: response as unknown as Response, status: "fetched" };
+        return { resource, response, status: "fetched" };
       }
 
-      const response = await fetchExternalFile(resource.url);
+      const response = await getExternalFetcher()(resource.url);
       if (!response) {
         return { resource, response: null, status: "not_a_file" };
       }
@@ -283,6 +398,26 @@ export class WilmaClient {
       const text = await resp.text();
       return parseExamsHtml(text);
     },
+
+    /**
+     * Past exams with their grades (Kokeet > Menneet), newest first. Wilma
+     * shows this school year by default; `from` (YYYY-MM-DD, to `to` or today)
+     * reaches further back, as far as the school keeps exams.
+     */
+    past: async (opts?: { from?: string; to?: string }): Promise<PastExam[]> => {
+      let path = "/exams/calendar/past";
+      if (opts?.from || opts?.to) {
+        const to = opts.to ?? finnishDateString();
+        const [y, m] = to.split("-").map(Number);
+        // Without a start, the school year `to` falls in (from 1 August).
+        const from = opts.from ?? `${m >= 8 ? y : y - 1}-08-01`;
+        const fi = (iso: string) => iso.split("-").reverse().map(Number).join(".");
+        // Wilma's own form: range -3 is "between these dates".
+        path += `?${new URLSearchParams({ range: "-3", first: fi(from), last: fi(to) })}`;
+      }
+      const resp = await this.session.get(path);
+      return parsePastExamsHtml(await resp.text());
+    },
   };
 
   attendance = {
@@ -298,10 +433,13 @@ export class WilmaClient {
       return notes.filter((note) => note.date >= from && note.date <= to);
     },
 
+    /** Every lesson note of this school year (Wilma's own "whole year" view): one request. */
+    schoolYear: async (): Promise<LessonNote[]> => parseAttendanceHtml(await this.attendancePage("range=-4")),
+
     /** How many lesson notes of each kind from `from` to `to` (default today); without `from`, this school year. */
     summary: async (opts?: { from?: string; to?: string }): Promise<LessonNoteSummary> => {
       if (!opts?.from) {
-        const notes = parseAttendanceHtml(await this.attendancePage("range=-4"));
+        const notes = await this.attendance.schoolYear();
         return summarizeLessonNotes(opts?.to ? notes.filter((note) => note.date <= opts.to!) : notes, null, opts?.to ?? null);
       }
       const to = opts.to ?? finnishDateString();
@@ -366,7 +504,7 @@ export class WilmaClient {
       const printout = (await this.printouts.list()).find((candidate) => candidate.id === id);
       if (!printout) throw new Error(`Printout "${id}" not found`);
       const response = await this.session.get(printout.path, undefined, { timeoutMs: DOWNLOAD_TIMEOUT_MS });
-      return { printout, response: response as unknown as Response };
+      return { printout, response };
     },
   };
 

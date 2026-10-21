@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.2.0 (unreleased)
+
+_Releases: wilma-cli 2.2.0, wilma-client 1.7.0; the `wilma` skill and plugin 2.2.0._
+
+**In short:** when you want to use Wilma in your browser, ask your assistant to log out of Wilma, or run `wilma logout`.
+
+### Added
+
+- **Log out: `wilma logout` and the `wilma_logout` tool.** Wilma allows one session per account, and every WilmAI login logs the parent out of Wilma in their browser. Logging out ends WilmAI's session the way Wilma's own Log out does (the front page's logout form posts its formkey to `/logout`) and deletes it from `wilmai-sessions.json`. The saved logins stay; the next command or tool call logs in again. It covers every login commands use; `wilma logout <number|Wilma name|username>` picks one saved login, numbered as in `wilma accounts` (`--student` is refused, since a session belongs to a login, not a child). It never logs in just to log out: a session Wilma has already ended needs nothing. If Wilma can't be reached, the session is kept and logging out can be tried again.
+- The tool is annotated as not read-only and idempotent. It also drops the MCP server's own copy of the session, so the next tool call starts a new one. The MCP instructions and the `wilma` skill tell assistants to call Wilma again only when the user asks.
+- client 1.7.0: `WilmaClient.logout()` (and `WilmaSession.logout()`) returns whether a live session was ended. Afterwards the client doesn't log in again by itself.
+- client 1.7.0: **`@wilm-ai/wilma-client/core`**, the client for any JavaScript runtime (a desktop app's web view, a browser extension). Requests go through a transport the app provides; the main entry point is core plus Node's defaults (undici). `relogin: false` and `WilmaClient.resumeSession()` (no password kept) never log in behind the parent's back: an ended session fails with `SessionEndedError` instead.
+- client 1.7.0: **event invitations**: `invitations.list()` with whether the family has answered, and `invitations.get()` with the time slots, including a slot the other guardian signed up for. `messages.get()` also says whether a thread is an open discussion (`discussion`), whether Wilma allows answering it (`canReply`), and carries an invitation's slots (`invitation`).
+- client 1.7.0: **past exams**: `exams.past()` reads Wilma's list of past exams (Kokeet > Menneet) with grades as Wilma writes them ("9½", "K", "19,5/24"), the verbal assessment, the teacher's notes and when a guardian saw the grade. Wilma shows this school year; `from`/`to` reach further back, as far as the school keeps exams. Exam grades from the front page (`overview.grades`) also carry `seen`.
+- client 1.7.0: invitations say whether Wilma offers "En osallistu" and whether the family chose it (`canDecline`, `declined`, per slot and for the invitation); a "no" counts as an answer.
+- client 1.7.0: **class and recipients**: `student.get()` reads the child's class, class teacher and other supervisors from the front page, with their message links; `messages.recipients()` lists everyone the parent can write to (the child's own teachers, staff and teachers per school, the child, the other guardian).
+- **One Wilma session for every WilmAI program on the computer.** Wilma keeps one session per account, so CLI commands, assistants' connectors and apps that each logged in ended each other's sessions. They now share the session file: when Wilma ends a session, the program first continues the newest session another one saved, and logs in only when that has ended too. A command no longer writes its older session over a newer one when it exits. Each saved session also names the program that saved it (`by`: `cli`, `mcp`), so an app can show which one started a session. client 1.7.0: `sharedSession` client option, `client.useSharedSession()`, and `client.onSessionEvent()`, which says when the client logged in, continued another program's session, or found its session ended.
+- client 1.7.0, experimental: **`@wilm-ai/wilma-client/write`** reports absences, answers messages (open discussions and private answers), writes new messages (to anyone from the recipient list), signs up for invitations or cancels, and says the family won't attend (`declineInvitation`, Wilma's "En osallistu", with `undo`). Each write reads Wilma's form first, posts it once, never retries after a login, and reads the result back. A separate entry point; the CLI and MCP server stay read-only.
+
+### Fixed
+
+- **Bulletin text reads like the bulletin.** Bulletins came through with the page's own layout: list items indented with tabs, lines holding only a non-breaking space, nested lists flattened. Bulletin bodies are now turned into text the way messages are: paragraphs kept, list items bulleted ("- ", "1. " in numbered lists) and nested ones indented, links written with their address (CLI, MCP tools and the client). Lists in messages lose the blank lines Wilma's page put between items.
+- **Message text keeps single line breaks.** Wilma's editor writes a line break followed by a newline in the page, and both were read as breaks, so messages showed an empty line wherever the writer had pressed Enter once (CLI, MCP tools and the client).
+- **Removing a login no longer logs the other logins out.** `wilma accounts remove` deleted every saved session, so each remaining login logged in again on the next command, which logged the parent out of Wilma in the browser (and, with two-step verification, needed a new code). It now ends the removed login's session in Wilma and forgets only that one. If Wilma can't be reached, the login is removed anyway and the result says `session: "not_ended"`.
+
 ## 2.1.2 (2026-10-06)
 
 _Releases: wilma-cli 2.1.2._

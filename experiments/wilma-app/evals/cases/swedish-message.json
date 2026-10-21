@@ -1,0 +1,67 @@
+{
+  "id": "swedish-message",
+  "added": "2026-10-08",
+  "why": "A message in Swedish: the trip ('tisdagen den 13 oktober … kl. 8.30') and the form's deadline ('senast fredag 9.10').",
+  "tags": [
+    "language",
+    "step",
+    "deadline",
+    "whose"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 6201,
+      "sent": "2026-10-07T13:00",
+      "from": "Klasslärare Exempel",
+      "subject": "Utflykt till Sveaborg",
+      "pupils": [
+        1
+      ],
+      "text": "Hej föräldrar!\nKlassen åker på utflykt till Sveaborg tisdagen den 13 oktober. Vi samlas vid skolan kl. 8.30 och är tillbaka ca kl. 14.\nLämna in tillståndsblanketten senast fredag 9.10, annars kan eleven inte följa med.\nHälsningar\nKlassläraren"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 6201,
+        "needs_action": true
+      }
+    ],
+    "action": [
+      {
+        "item": 6201,
+        "quote": "tillståndsblankett",
+        "deadline": "2026-10-09"
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-13",
+          "start": "08:30",
+          "kind": "trip",
+          "pupil": 1,
+          "sure": true
+        }
+      ],
+      "not": [
+        {
+          "date": "2026-10-13",
+          "pupil": 0
+        }
+      ]
+    }
+  }
+}

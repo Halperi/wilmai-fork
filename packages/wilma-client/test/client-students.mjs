@@ -64,6 +64,7 @@ try {
     studentNumber: "12345678",
     name: "Ada Example",
     href: "/!12345678/",
+    role: "guardian",
   }]);
   assert.equal(homeRequests, 0, "roles API should be preferred over homepage scraping");
 

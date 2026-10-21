@@ -1,0 +1,70 @@
+{
+  "id": "note-short-praise",
+  "added": "2026-10-08",
+  "why": "Short praise in a note, whatever the note's type is called.",
+  "tags": [
+    "note",
+    "tone"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "note",
+      "id": 5901,
+      "pupil": 0,
+      "date": "2026-10-07",
+      "start": "09:00",
+      "end": "09:45",
+      "subject": "Englanti",
+      "kind": "Positiivinen",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Hienoa työtä!"
+    },
+    {
+      "type": "note",
+      "id": 5902,
+      "pupil": 0,
+      "date": "2026-10-06",
+      "start": "12:15",
+      "end": "13:45",
+      "subject": "Kuvataide",
+      "kind": "Tiedoksi",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Erinomainen esitelmä tänään, kiitos!"
+    },
+    {
+      "type": "note",
+      "id": 5903,
+      "pupil": 0,
+      "date": "2026-10-05",
+      "start": "08:15",
+      "end": "09:45",
+      "subject": "Liikunta",
+      "kind": "Tuntihuomio",
+      "teacher": "Opettaja Esimerkki",
+      "text": "Aktiivinen ja reipas osallistuminen!"
+    }
+  ],
+  "expect": {
+    "tone": [
+      {
+        "item": 5901,
+        "tone": "praise"
+      },
+      {
+        "item": 5902,
+        "tone": "praise"
+      },
+      {
+        "item": 5903,
+        "tone": "praise"
+      }
+    ]
+  }
+}

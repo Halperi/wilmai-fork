@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e3f3ef"/>
+    </linearGradient>
+  </defs>
+  <!-- The website mascot (apps/site/public/wilmai-mascot.png) on a macOS icon plate.
+       Regenerate with: npx tauri icon desktop-assets/icon.svg -->
+  <!-- macOS icon grid: an 824 px plate with 100 px margins -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#plate)"/>
+  <rect x="100.5" y="100.5" width="823" height="823" rx="185" fill="none" stroke="#0b4a45" stroke-opacity="0.12" stroke-width="1"/>
+  <image x="132" y="120" width="760" height="760" xlink:href="../../../apps/site/public/wilmai-mascot.png"/>
+</svg>

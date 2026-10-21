@@ -1,0 +1,67 @@
+{
+  "id": "cross-duplicate-titles",
+  "added": "2026-10-09",
+  "why": "The same sports day from a bulletin ('Liikuntapäivä') and the class teacher ('ulkoilupäivää'): one event, not two.",
+  "tags": [
+    "cross-item",
+    "duplicate"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 7401,
+      "published": "2026-10-05T09:00",
+      "from": "Rehtori Esimerkki",
+      "title": "Liikuntapäivä",
+      "pupils": [
+        0
+      ],
+      "text": "Koko koulun liikuntapäivä on perjantaina 16.10. Koulupäivä on kaikilla klo 9.00–13.00."
+    },
+    {
+      "type": "message",
+      "id": 7402,
+      "sent": "2026-10-07T13:00",
+      "from": "Luokanvalvoja Esimerkki",
+      "subject": "Ensi viikon perjantai",
+      "pupils": [
+        0
+      ],
+      "text": "Hei 9C!\nEnsi viikon perjantaina 16.10. vietämme koko koulun ulkoilupäivää. Koulu alkaa klo 9 ja päättyy klo 13. Ottakaa mukaan juomapullo ja pukeutukaa sään mukaan.\nTerveisin\nLuokanvalvoja"
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-16",
+          "kind": [
+            "event",
+            "schedule"
+          ],
+          "pupil": 0,
+          "sure": true
+        }
+      ],
+      "atMost": [
+        {
+          "date": "2026-10-16",
+          "max": 1,
+          "pupil": 0,
+          "kind": [
+            "event",
+            "trip"
+          ],
+          "note": "the sports day once"
+        }
+      ]
+    }
+  }
+}

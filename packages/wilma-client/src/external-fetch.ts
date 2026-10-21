@@ -14,13 +14,14 @@
 import { lookup as dnsLookup, type LookupAddress } from "node:dns";
 import { BlockList, isIP } from "node:net";
 import { CookieJar } from "tough-cookie";
-import { Agent, fetch, Headers, type Response } from "undici";
+import { Agent, fetch, Headers } from "undici";
 import { APIError } from "./session.js";
 import { NetworkError } from "./network-error.js";
 import { IdleTimer, asNetworkError, watchBody } from "./timeouts.js";
 
-/** How long a download may stall (before answering, or mid-file) before it fails. */
-export const DOWNLOAD_TIMEOUT_MS = 60_000;
+import { DOWNLOAD_TIMEOUT_MS, isHtmlResponse } from "./downloads.js";
+
+export { DOWNLOAD_TIMEOUT_MS, isHtmlResponse };
 const MAX_REDIRECTS = 10;
 
 const EXTERNAL_USER_AGENT =
@@ -136,10 +137,6 @@ function guardedLookup(
 
 const guardedAgent = new Agent({ connect: { lookup: guardedLookup as never } });
 
-export function isHtmlResponse(response: { headers: { get(name: string): string | null } }): boolean {
-  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
-  return contentType.startsWith("text/html") || contentType.startsWith("application/xhtml");
-}
 
 // Some document hosts serve an HTML viewer page for a sharing URL but return
 // the file itself when a conventional download parameter is present. These are
@@ -213,7 +210,7 @@ async function fetchFollowingRedirects(initialUrl: URL): Promise<Response | null
       headers.set("Cookie", cookieHeader);
     }
 
-    let response: Response;
+    let response: Awaited<ReturnType<typeof fetch>>;
     try {
       idle.touch();
       response = await fetch(currentUrl, {

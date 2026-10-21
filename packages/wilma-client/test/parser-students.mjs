@@ -50,6 +50,18 @@ assert.equal(accountsRoles.length, 1);
 assert.equal(accountsRoles[0].studentNumber, "12345678");
 assert.equal(accountsRoles[0].name, "Ada Example");
 assert.equal(accountsRoles[0].href, "/!12345678/");
+assert.equal(accountsRoles[0].role, "guardian");
+
+// A student's own login: the roles list the student themself.
+const ownLogin = parseStudentsFromAccountsRoles({
+  payload: [
+    { name: "Account", type: "passwd", slug: "" },
+    { name: "Ada Example", type: "student", slug: "/!02345678" },
+  ],
+});
+assert.equal(ownLogin.length, 1);
+assert.equal(ownLogin[0].studentNumber, "02345678");
+assert.equal(ownLogin[0].role, "student");
 
 const accountsRolesRaw = parseStudentsFromAccountsRoles([
   { name: "Account", type: "passwd", slug: "" },

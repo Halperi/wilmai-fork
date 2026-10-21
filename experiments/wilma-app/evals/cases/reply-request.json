@@ -1,0 +1,59 @@
+{
+  "id": "reply-request",
+  "added": "2026-10-08",
+  "why": "Every guardian is asked to reply by a date ('vastaamaan tähän viestiin keskiviikkoon 14.10. mennessä'); the trip itself is in the calendar.",
+  "tags": [
+    "step",
+    "deadline",
+    "weekday-date"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 4301,
+      "sent": "2026-10-08T14:00",
+      "from": "Luokanvalvoja Esimerkki",
+      "subject": "Retkipäivän ruokailu",
+      "pupils": [
+        0
+      ],
+      "text": "Hei 9C:n huoltajat,\nluokkamme lähtee perjantaina 23.10. retkelle Nuuksioon. Pyydän jokaista huoltajaa vastaamaan tähän viestiin keskiviikkoon 14.10. mennessä: syökö lapsenne retkellä koulun retkieväät vai ottaako omat eväät mukaan? Retkieväät tilataan keittiöltä vastausten perusteella.\nTerveisin\nLuokanvalvoja"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 4301,
+        "needs_action": true
+      }
+    ],
+    "action": [
+      {
+        "item": 4301,
+        "quote": "vastaamaan",
+        "deadline": "2026-10-14"
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-23",
+          "kind": "trip",
+          "pupil": 0,
+          "sure": true
+        },
+        {
+          "date": "2026-10-14",
+          "kind": "deadline"
+        }
+      ]
+    }
+  }
+}

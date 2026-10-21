@@ -1,0 +1,134 @@
+{
+  "$comment": "The ways the app can read, by name. A new model is a new entry (its id must be in READING_MODELS, src/luna/client.ts). \"matrix\": true puts a config in `pnpm eval --matrix`. \"checks\" turns on the experiments with more of the decisions (Settings.lunaChecks).",
+  "luna-low": {
+    "label": "Luna, low reasoning, one pass",
+    "readingStrategy": "fixed",
+    "readingModel": "gpt-6-luna",
+    "readingEffort": "low",
+    "matrix": true
+  },
+  "luna-medium": {
+    "label": "Luna, medium reasoning, one pass, no extra checks",
+    "readingStrategy": "fixed",
+    "readingModel": "gpt-6-luna",
+    "readingEffort": "medium",
+    "matrix": true
+  },
+  "gated": {
+    "label": "Gate, then Luna medium",
+    "readingStrategy": "gated",
+    "readingModel": "gpt-6-luna",
+    "readingEffort": "medium",
+    "matrix": true
+  },
+  "gated-sol": {
+    "label": "Gate, then Luna medium; Sol for the hard ones",
+    "readingStrategy": "gated",
+    "readingModel": "gpt-6-luna",
+    "readingEffort": "medium",
+    "escalateToSol": true,
+    "matrix": true
+  },
+  "sol": {
+    "label": "Sol 6.1, one pass",
+    "readingStrategy": "fixed",
+    "readingModel": "gpt-6.1-sol",
+    "readingEffort": "low",
+    "matrix": true
+  },
+  "tiered": {
+    "label": "Gate, Luna low then medium when unsure",
+    "readingStrategy": "tiered",
+    "readingModel": "gpt-6-luna",
+    "readingEffort": "low"
+  },
+  "jev-decides": {
+    "label": "Jev decides, Luna medium reads (needs JEV_API_KEY)",
+    "decider": "jev",
+    "readingStrategy": "fixed",
+    "readingModel": "gpt-6-luna",
+    "readingEffort": "medium"
+  },
+  "choices": {
+    "label": "Luna medium; dates, whose and 'the family's' as choices",
+    "readingStrategy": "fixed",
+    "readingModel": "gpt-6-luna",
+    "readingEffort": "medium",
+    "checks": {
+      "choices": true
+    }
+  },
+  "fields": {
+    "label": "Luna medium; time, deadline and kind checked on their own",
+    "readingStrategy": "fixed",
+    "readingModel": "gpt-6-luna",
+    "readingEffort": "medium",
+    "checks": {
+      "fields": true
+    }
+  },
+  "cross": {
+    "label": "Luna medium; later items asked about earlier events",
+    "readingStrategy": "fixed",
+    "readingModel": "gpt-6-luna",
+    "readingEffort": "medium",
+    "checks": {
+      "crossItem": true
+    }
+  },
+  "checks-all": {
+    "label": "The app: Luna medium; choices, field checks and items together",
+    "readingStrategy": "fixed",
+    "readingModel": "gpt-6-luna",
+    "readingEffort": "medium",
+    "checks": {
+      "choices": true,
+      "fields": true,
+      "crossItem": true
+    },
+    "matrix": true
+  },
+  "clef-qwen4-q4": {
+    "label": "Local: Clef-flash Q4 decides, Qwen3.5 4B Q4 thinks and extracts",
+    "localDecisions": true,
+    "localReading": true,
+    "localThink": true,
+    "readingStrategy": "fixed",
+    "readingModel": "gpt-6-luna",
+    "readingEffort": "medium",
+    "checks": {
+      "choices": true,
+      "fields": true,
+      "crossItem": true
+    }
+  },
+  "clef-qwen9-q8-q4": {
+    "label": "Local Medium: Clef-flash Q8 decides, Qwen3.5 9B Q4 thinks and extracts",
+    "localProfile": "medium",
+    "localDecisions": true,
+    "localReading": true,
+    "localThink": true,
+    "readingStrategy": "fixed",
+    "readingModel": "gpt-6-luna",
+    "readingEffort": "medium",
+    "checks": {
+      "choices": true,
+      "fields": true,
+      "crossItem": true
+    }
+  },
+  "clef-qwen4-q4-fast": {
+    "label": "Local: Clef-flash Q4, Qwen3.5 4B Q4 without thinking",
+    "localDecisions": true,
+    "localReading": true,
+    "localThink": false,
+    "readingStrategy": "fixed",
+    "readingModel": "gpt-6-luna",
+    "readingEffort": "medium",
+    "checks": {
+      "choices": true,
+      "fields": true,
+      "crossItem": true
+    }
+  }
+}

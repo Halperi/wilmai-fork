@@ -1,0 +1,57 @@
+{
+  "id": "whole-school-event",
+  "added": "2026-10-08",
+  "why": "A whole-school sports day is every pupil's.",
+  "tags": [
+    "whose"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    },
+    {
+      "name": "Veeti Esimerkki",
+      "class": "7G"
+    }
+  ],
+  "items": [
+    {
+      "type": "news",
+      "id": 4901,
+      "published": "2026-10-08T08:30",
+      "from": "Liikunnanopettaja Esimerkki",
+      "title": "Liikuntapäivä",
+      "pupils": [
+        0,
+        1
+      ],
+      "text": "Koko koulun liikuntapäivä on perjantaina 16.10. Koulupäivä on kaikilla klo 9.00–13.00, ja lounas syödään klo 11 alkaen. Pukeutukaa ulkoiluun sopiviin vaatteisiin ja ottakaa juomapullo mukaan. Lajit valitaan luokittain liikunnanopettajan kanssa."
+    }
+  ],
+  "expect": {
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-16",
+          "kind": [
+            "event",
+            "schedule"
+          ],
+          "pupil": 0,
+          "sure": true
+        },
+        {
+          "date": "2026-10-16",
+          "kind": [
+            "event",
+            "schedule"
+          ],
+          "pupil": 1,
+          "sure": true
+        }
+      ]
+    }
+  }
+}

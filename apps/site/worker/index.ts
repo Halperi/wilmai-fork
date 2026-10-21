@@ -1,7 +1,8 @@
 /*
  * wilm.ai on Cloudflare. The site itself is static files (`next build` writes
  * them to out/) served straight from Cloudflare; this Worker only answers
- * "/", which sends the visitor to /en or /fi, and two addresses under /api/
+ * "/", which sends the visitor to /en or /fi (and /home and /app to
+ * /en/home or /fi/home, WilmAI Home's page), and two addresses under /api/
  * (run_worker_first in wrangler.jsonc): /api/stats, the live numbers in the
  * page (npm downloads and GitHub stars), and /api/badge/downloads, the same
  * download count as a shields.io badge for the GitHub README. A daily cron job
@@ -28,6 +29,9 @@ interface Env {
 }
 
 const LANGS = ["en", "fi"] as const;
+
+/** Addresses without a language, and where they go in it. The desktop app links to /app. */
+const LANDINGS: Record<string, string> = { "/": "", "/home": "/home", "/app": "/home" };
 
 /** The language picked with the EN/FI toggle, else the browser's, else English. */
 export function preferredLang(request: Request): string {
@@ -123,8 +127,9 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/stats") return statsResponse(env);
     if (url.pathname === "/api/badge/downloads") return downloadsBadge(env);
-    if (url.pathname !== "/") return env.ASSETS.fetch(request);
-    url.pathname = `/${preferredLang(request)}`;
+    const landing = LANDINGS[url.pathname.replace(/(.)\/$/, "$1")];
+    if (landing === undefined) return env.ASSETS.fetch(request);
+    url.pathname = `/${preferredLang(request)}${landing}`;
     return new Response(null, {
       status: 307,
       headers: {

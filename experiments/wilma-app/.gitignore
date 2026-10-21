@@ -1,0 +1,19 @@
+dist/
+dist-tauri/
+node_modules/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/resources/local-ai/
+.env*
+.release/
+# Leftovers from the removed Electron and Chrome extension builds
+dist-desktop/
+dist-extension/
+
+# The eval suite: results and this machine's key references stay here
+evals/results/
+evals/keys.env
+# Cases built from real school messages stay on this computer, out of the public repository, and so do the
+# baseline scores (they cover those cases too). evals/cases holds the made-up ones.
+evals/private/
+evals/baselines/

@@ -1,0 +1,55 @@
+{
+  "id": "book-a-time",
+  "added": "2026-10-08",
+  "why": "Book a meeting time by a date; the meetings 'viikoilla 45–46' aren't a two-week event.",
+  "tags": [
+    "step",
+    "deadline",
+    "week-number",
+    "trap"
+  ],
+  "today": "2026-10-08",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 4501,
+      "sent": "2026-10-08T16:00",
+      "from": "Luokanvalvoja Esimerkki",
+      "subject": "Arviointikeskustelut",
+      "pupils": [
+        0
+      ],
+      "text": "Hei!\nSyksyn arviointikeskustelut käydään viikoilla 45–46. Varatkaa aika keskusteluun Wilman Tapahtumakalenterista 23.10. mennessä. Keskustelu kestää 20 minuuttia, ja siihen osallistuvat oppilas, huoltaja ja luokanvalvoja.\nTerveisin\nLuokanvalvoja"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 4501,
+        "needs_action": true
+      }
+    ],
+    "action": [
+      {
+        "item": 4501,
+        "quote": "Varatkaa",
+        "deadline": "2026-10-23"
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-23",
+          "kind": "deadline"
+        }
+      ],
+      "maxDays": 3
+    }
+  }
+}
