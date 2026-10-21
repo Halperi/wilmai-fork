@@ -95,10 +95,11 @@ The Mac release needs two different signatures:
    key for every beta fix: losing it breaks updates for everyone who installed
    the app.
 
-Generate the updater key with Tauri's interactive `signer generate`, into a
-private location outside this repository. Store the private key and its
-password in 1Password, check that they can be recovered, and add only the public
-key to the repository. No production key has been generated yet.
+The updater key was generated on 22 October 2026 with Tauri's interactive
+`signer generate`, into `~/.tauri/wilmai-home.key` (encrypted with its
+password). The key file and its password are in 1Password, Personal vault
+(my.1password.com), "WilmAI Home updater key": `private key` and `credential`.
+Only the public key is in the repository (`src-tauri/updater.pub`).
 
 The release command reads these environment variables. It never writes secret
 values into config files or prints them:
@@ -112,6 +113,39 @@ values into config files or prints them:
 A 1Password Developer Environment can hand these to the release process. Tauri
 reads inherited environment variables, not `.env` files, so a mounted file alone
 isn't enough. Never commit a private key or a mount.
+
+## A beta without Apple's and Microsoft's certificates
+
+Until the Developer ID and a Windows signing service exist, releases are signed
+only for updates. That's how 0.1.0 went out (22 October 2026): macOS asks for
+"Open Anyway" the first time and Windows for "Run anyway" (the Home page says
+how), and from then on new versions install inside the app, checked against the
+updater key. One `op read` of the key's password covers a whole release:
+
+```sh
+export TAURI_SIGNING_PRIVATE_KEY=~/.tauri/wilmai-home.key
+export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="$(op read --account my.1password.com 'op://Personal/WilmAI Home updater key/credential')"
+CONF='{"bundle":{"createUpdaterArtifacts":true,"macOS":{"signingIdentity":"-"}},"plugins":{"updater":{"pubkey":"<src-tauri/updater.pub>","endpoints":["https://wilm.ai/app/latest.json"]}}}'
+pnpm tauri build --bundles app,dmg --config "$CONF"     # the DMG, and the .app.tar.gz with its .sig for updates
+PATH="/opt/homebrew/opt/llvm/bin:$PATH" pnpm tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc --bundles nsis --config "$CONF"
+```
+
+Package the Windows installer in the container (above), name the assets with
+`assetName` (`…-macos-arm64.dmg`, `…-macos-arm64.app.tar.gz`,
+`…-windows-x64.exe`), and sign the Windows installer for updates: the bundler's
+own signing step comes after the makensis that fails here.
+
+```sh
+env -u TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PATH=~/.tauri/wilmai-home.key pnpm tauri signer sign WilmAI-Home-<v>-beta-windows-x64.exe
+pnpm home:feed darwin-aarch64=<…>.app.tar.gz.sig windows-x86_64=<…>.exe.sig    # writes apps/site/public/app/latest.json
+```
+
+Then a `home-v<version>` pre-release on GitHub (`--prerelease --latest=false`,
+so the CLI keeps "Latest") with the DMG, the `.app.tar.gz`, the installer and
+SHA256SUMS; the download URLs in `apps/site/lib/home-release.json`; and a push
+of `main`, which deploys the page and the feed together. Raise the version in
+package.json, Cargo.toml, tauri.conf.json and home-release.json first, and
+write `docs/releases/<version>.md`: its first paragraph is the update notice.
 
 ## Prepare the Mac release
 

@@ -43,9 +43,9 @@ export const FI_FORMS: Record<string, string> = {
   "Back to the inbox": "Takaisin saapuneisiin",
 
   // SignIn
-  "Your children's school, *sorted*.": "Lastesi kouluasiat *järjestyksessä*.",
-  "One page for every child: today's lessons, the messages that need you, and what's coming up.":
-    "Yksi sivu kaikille lapsillesi: päivän tunnit, sinua odottavat viestit ja tulevat asiat.",
+  "School, *sorted*.": "Kouluasiat *järjestyksessä*.",
+  "Today's lessons, the messages that need you, and what's coming up, for a student or the whole family.":
+    "Päivän tunnit, sinua odottavat viestit ja tulevat asiat, oppilaalle itselleen tai koko perheelle.",
   "It reads the same Wilma you already use, and it runs on this computer.": "Se lukee samaa Wilmaa, jota jo käytät, ja toimii tällä tietokoneella.",
   "It reads the same Wilma you already use, and it runs in this browser.": "Se lukee samaa Wilmaa, jota jo käytät, ja toimii tässä selaimessa.",
   "Stays on this computer.": "Pysyy tällä tietokoneella.",
