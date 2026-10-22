@@ -1793,6 +1793,88 @@ main {
   border: 2px solid var(--ink);
   box-shadow: 2px 2px 0 var(--marker);
 }
+/* On Windows, Edge's download warning comes before the first start: two small boxes above it */
+.fs-win-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fs-sub {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.fs-edge .kv-body {
+  gap: 6px;
+  padding: 10px 12px;
+  font-size: 11.5px;
+}
+
+.fs-edge-file {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.fs-edge-file > span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fs-edge-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fs-edge-menu {
+  display: flex;
+  flex-direction: column;
+  align-self: flex-end;
+  min-width: 60%;
+  border: 1.5px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.fs-edge-menu > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+}
+
+.fs-edge-menu > span + span {
+  color: var(--ink-soft);
+}
+
+.fs-edge-title {
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+
+.fs-edge-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.fs-edge-keep {
+  padding: 1px 6px;
+  border-radius: 6px;
+  text-decoration: underline;
+}
+
+.fs-edge-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 
 .home-download {
   scroll-margin-top: 24px;

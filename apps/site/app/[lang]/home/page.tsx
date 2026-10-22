@@ -187,7 +187,7 @@ export default async function WilmAIHomePage({ params }: Props) {
         <p>{t.get.windowsNote}</p>
         <div className="first-starts">
           <FirstStartVisual kind="mac" title={t.get.firstMac} />
-          <FirstStartVisual kind="windows" title={t.get.firstWindows} />
+          <FirstStartVisual kind="windows" title={t.get.firstWindows} steps={t.get.windowsSteps} />
         </div>
         {macDownload && windowsDownload ? null : <p className="home-download-note">{t.get.pending}</p>}
         <p className="home-download-note">
