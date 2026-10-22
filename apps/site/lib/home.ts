@@ -204,7 +204,7 @@ const en: HomeCopy = {
       },
       {
         q: "Where is my data?",
-        a: "On your computer. Messages, timetables and AI answers are stored in the app so it opens instantly. There is no WilmAI server. Your Wilma password isn't kept, unless you turn on staying signed in; then it's kept on your computer, scrambled."
+        a: "On your computer. Messages, timetables and AI answers are stored in the app so it opens instantly. There is no WilmAI server. Your Wilma password goes only to your school's Wilma; the app can remember it on your computer, scrambled, so signing in again takes one click."
       },
       {
         q: "Why isn't it a website?",
@@ -389,7 +389,7 @@ const fi: HomeCopy = {
       },
       {
         q: "Missä tietoni ovat?",
-        a: "Omalla tietokoneellasi. Viestit, lukujärjestykset ja tekoälyn vastaukset tallennetaan sovellukseen, jotta se aukeaa heti. WilmAI-palvelinta ei ole. Wilma-salasanaasi ei säilytetä, ellet ota kirjautuneena pysymistä käyttöön; silloin se säilytetään tietokoneellasi peitettynä."
+        a: "Omalla tietokoneellasi. Viestit, lukujärjestykset ja tekoälyn vastaukset tallennetaan sovellukseen, jotta se aukeaa heti. WilmAI-palvelinta ei ole. Wilma-salasanasi menee vain koulusi Wilmaan; sovellus voi muistaa sen tietokoneellasi peitettynä, jotta uudelleen kirjautuminen on yksi klikkaus."
       },
       {
         q: "Miksi tämä ei ole verkkosivusto?",

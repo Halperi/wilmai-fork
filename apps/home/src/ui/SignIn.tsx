@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { useApp } from "../data/store";
+import { getState, updateSettings, useApp } from "../data/store";
 import type { Viewer } from "../data/model";
 import { useLocalEdition } from "../data/edition";
 import { UpdatesCard } from "./Update";
 import { go } from "./shared";
-import { SignInAgainError, cliAccounts, signInDemo, signInWithCli, signInWithPassword, type CliAccount } from "../data/engine";
+import { PasswordRefusedError, SignInAgainError, cliAccounts, signInDemo, signInWithCli, signInWithPassword, type CliAccount } from "../data/engine";
 import { Brand, Icon } from "./bits";
 import { TENANTS, searchTenants, type Tenant } from "../data/tenants";
 import { isDesktopApp } from "../wilma/transport";
@@ -25,13 +25,17 @@ function marked(text: string, wrap: (part: string) => ReactNode): ReactNode {
 export function SignIn() {
   const localEdition = useLocalEdition();
   const reason = useApp((s) => s.signedOutReason);
+  // Signed out by Wilma, or started again: the login the app knows, and its password when it's remembered.
+  const known = useApp((s) => (s.snapshot?.account.via === "password" ? s.snapshot.account : null));
+  const remembered = useApp((s) => s.settings.wilmaPassword);
+  const [remember, setRemember] = useState(() => getState().settings.rememberPassword !== false);
   const [cli, setCli] = useState<CliAccount[]>([]);
   const [query, setQuery] = useState("");
   const [tenant, setTenant] = useState<Tenant | null>(() => {
-    const saved = localStorage.getItem("wilmai.tenant");
-    return saved ? (TENANTS.find((t) => t.url === saved) ?? null) : null;
+    const saved = known?.baseUrl ?? localStorage.getItem("wilmai.tenant");
+    return saved ? (TENANTS.find((t) => t.url.replace(/\/$/, "") === saved.replace(/\/$/, "")) ?? null) : null;
   });
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(known?.username ?? "");
   const [password, setPassword] = useState("");
   // Who signs in: chosen here. Until it's touched, a school address ("…@edu.city.fi") suggests a student, anything else a guardian.
   const [role, setRole] = useState<Viewer | null>(null);
@@ -87,10 +91,25 @@ export function SignIn() {
     }
     void run("password", async () => {
       const next = await signInWithPassword(tenant.url, username.trim(), password, undefined, false, who);
+      // Wilma took the password (a code may still follow): kept for one click next time, unless not wanted here.
+      updateSettings(remember ? { rememberPassword: true, wilmaPassword: password } : { rememberPassword: false, wilmaPassword: "", staySignedIn: false });
       setPassword("");
       if (next) setMfa(() => next.mfa);
     });
   };
+
+  /** One click: the known login with the remembered password. A refused one is forgotten (it was changed in Wilma). */
+  const signInAgain = () =>
+    void run("again", async () => {
+      if (!known) return;
+      try {
+        const next = await signInWithPassword(known.baseUrl, known.username, remembered);
+        if (next) setMfa(() => next.mfa);
+      } catch (err) {
+        if (err instanceof PasswordRefusedError) updateSettings({ wilmaPassword: "", staySignedIn: false });
+        throw err;
+      }
+    });
 
   const host = tenant ? new URL(tenant.url).host : null;
 
@@ -113,7 +132,7 @@ export function SignIn() {
           <li>
             <Icon name="lock" />
             <span>
-              {marked(t("*Your password goes only to your school's Wilma*, and isn't saved."), (part) => <b>{part}</b>)}
+              {marked(t("*Your password goes only to your school's Wilma.* The app remembers it here, scrambled, so signing in again is one click."), (part) => <b>{part}</b>)}
             </span>
           </li>
           <li>
@@ -129,6 +148,20 @@ export function SignIn() {
         {isDesktopApp ? <UpdatesCard compact /> : null}
         <h2 id="signin-h">{t("Sign in with Wilma")}</h2>
         {reason ? <div className="notice err">{reason}</div> : null}
+
+        {known && remembered && tenant && !mfa ? (
+          <div className="alt">
+            <button className="btn btn-primary continue-as" disabled={Boolean(busy)} onClick={signInAgain}>
+              <Icon name="lock" />
+              <span>
+                {busy === "again" ? t("Signing in…") : t("Sign in as {name}", { name: known.username })}
+                <small>{known.tenantName ?? tenant.name}</small>
+              </span>
+            </button>
+            <small>{t("With the password remembered on this computer.")}</small>
+            <div className="or">{t("or sign in another way")}</div>
+          </div>
+        ) : null}
 
         {cli.length && !mfa ? (
           <div className="alt">
@@ -189,8 +222,15 @@ export function SignIn() {
               <div className="field" style={{ marginBottom: 0 }}>
                 <label htmlFor="pass">{t("Password")}</label>
                 <input id="pass" className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
-                <span className="help">{t("Sent only to {host}. Not saved.", { host: host ?? "" })}</span>
+                <span className="help">{t("Sent only to {host}.", { host: host ?? "" })}</span>
               </div>
+              <label className="remember">
+                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+                <span>
+                  {t("Remember on this computer")}
+                  <small>{t("Signing in again is then one click. Kept scrambled, not encrypted: leave this off on a shared computer.")}</small>
+                </span>
+              </label>
               <div className="field" style={{ marginBottom: 0 }}>
                 <span className="label" id="who-label">{t("Who uses this account")}</span>
                 <div role="group" aria-labelledby="who-label" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

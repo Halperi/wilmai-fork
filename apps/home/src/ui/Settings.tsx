@@ -98,9 +98,12 @@ export function Settings() {
           <li>
             <Icon name="lock" />
             <span>
-              {settings.staySignedIn && snap.account.via === "password" ? (
+              {snap.account.via === "password" && settings.wilmaPassword ? (
                 <>
-                  <b>{t("Your Wilma password is kept on this computer, scrambled,")}</b> {t("because Stay signed in is on. Turning it off removes it.")}
+                  <b>{t("Your Wilma password is remembered on this computer, scrambled,")}</b> {t("so signing in again is one click.")}{" "}
+                  <button type="button" className="linkish" onClick={() => updateSettings({ rememberPassword: false, staySignedIn: false, wilmaPassword: "" })}>
+                    {t("Forget it")}
+                  </button>
                 </>
               ) : (
                 <>
@@ -261,7 +264,8 @@ function StaySignedIn() {
   const turn = (on: boolean) => {
     if (on && needsPassword) return setAsking(true);
     setAsking(false);
-    updateSettings(on ? { staySignedIn: true } : { staySignedIn: false, wilmaPassword: "" });
+    // Off: a remembered password stays for one-click sign-in.
+    updateSettings(on ? { staySignedIn: true } : { staySignedIn: false, ...(settings.rememberPassword === false ? { wilmaPassword: "" } : {}) });
   };
   return (
     <>

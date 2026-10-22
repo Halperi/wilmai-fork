@@ -71,6 +71,23 @@ test("normal sign-out survives restart and reuses unchanged AI answers with no c
   } finally { overrideBridge(null); await signOut(); }
 });
 
+test("the Wilma password is remembered unless turned off, and a deliberate sign-out forgets it", async () => {
+  await resetApp();
+  installAccount();
+  const kept = () => localStorage.getItem("wilmai.wilmaPassword");
+  updateSettings({ ...DEFAULT_SETTINGS, wilmaPassword: "fictional-password" });
+  assert.ok(kept(), "remembered by default, without staying signed in");
+  assert.ok(!kept()!.includes("fictional-password"), "scrambled, not as typed");
+  updateSettings({ rememberPassword: false });
+  assert.equal(kept(), null, "not remembered when turned off");
+  updateSettings({ staySignedIn: true });
+  assert.ok(kept(), "staying signed in keeps it either way");
+  updateSettings({ staySignedIn: false, rememberPassword: true });
+  await signOut();
+  assert.equal(getState().settings.wilmaPassword, "");
+  assert.equal(kept(), null, "a deliberate sign-out forgets it");
+});
+
 test("sample family and two Wilma accounts keep overlapping item IDs and drafts separate", async () => {
   await resetApp();
   installAccount();

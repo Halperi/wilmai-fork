@@ -191,9 +191,17 @@ async function finishSignIn(
 }
 
 /** Wilma's refusals in words for the sign-in page. */
+/** Wilma refused the username and password (a remembered password is then forgotten: it was changed). */
+export class PasswordRefusedError extends Error {
+  constructor() {
+    super(t("Wilma didn't accept that username and password."));
+    this.name = "PasswordRefusedError";
+  }
+}
+
 function signInError(err: unknown): Error {
   if (err instanceof AuthenticationError && /OTP|MFA/i.test(err.message)) return new Error(t("Wilma didn't accept that code. Check the code in your authenticator app."));
-  if (err instanceof AuthenticationError) return new Error(t("Wilma didn't accept that username and password."));
+  if (err instanceof AuthenticationError) return new PasswordRefusedError();
   return err instanceof Error ? err : new Error(String(err));
 }
 

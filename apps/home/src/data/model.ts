@@ -286,7 +286,12 @@ export interface Settings {
    * the password kept below), backing off while Wilma is in use elsewhere. Off: the parent signs in (one click).
    */
   staySignedIn?: boolean;
-  /** The Wilma password for staying signed in, when the parent signed in with one (kept scrambled, only while it's on). */
+  /**
+   * Remember the Wilma password on this computer, so signing in again after Wilma ends the session is one click. On
+   * unless turned off when signing in (a shared computer). Staying signed in keeps it either way.
+   */
+  rememberPassword?: boolean;
+  /** The Wilma password, when the parent signed in with one and it's remembered (kept scrambled, not encrypted). */
   wilmaPassword: string;
   jevModel: string;
   /** Read new messages in the background so Jev can sort them (Wilma then shows them as read). */
@@ -296,6 +301,9 @@ export interface Settings {
   /** Look for a newer version on wilm.ai now and then (desktop app). */
   updateChecks: boolean;
 }
+
+/** Whether the Wilma password is kept on this computer after signing in. */
+export const keepsPassword = (s: Pick<Settings, "rememberPassword" | "staySignedIn">): boolean => s.rememberPassword !== false || Boolean(s.staySignedIn);
 
 /** Local processing needs explicit opt-in; older saved cloud keys retain OpenAI. */
 /** Who the app is for: the choice in Settings, else Wilma's role for the login, else a guardian. */

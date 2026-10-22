@@ -14,7 +14,7 @@ import { useSyncExternalStore } from "react";
 import { clear, del, get, set } from "idb-keyval";
 import { oldKeychain } from "../wilma/transport";
 import { t } from "../i18n";
-import { DEFAULT_SETTINGS, viewerOf, type AccountInfo, type JevRecord, type LocalState, type LunaRecord, type Settings, type Snapshot, type UsageBucket, type Viewer } from "./model";
+import { DEFAULT_SETTINGS, keepsPassword, viewerOf, type AccountInfo, type JevRecord, type LocalState, type LunaRecord, type Settings, type Snapshot, type UsageBucket, type Viewer } from "./model";
 import { normalizeAIBudget } from "./ai-budget";
 
 export interface SyncStatus {
@@ -236,8 +236,8 @@ function migrateAccountStorage() {
 function saveSettings() {
   const { jevKey, openaiKey, wilmaPassword, ...rest } = state.settings;
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(rest));
-  // The Wilma password only while staying signed in needs it.
-  if (wilmaPassword && rest.staySignedIn) localStorage.setItem(WILMA_PASSWORD, scramble(wilmaPassword));
+  // The Wilma password while it's remembered (one-click sign-in) or staying signed in needs it.
+  if (wilmaPassword && keepsPassword(rest)) localStorage.setItem(WILMA_PASSWORD, scramble(wilmaPassword));
   else localStorage.removeItem(WILMA_PASSWORD);
   if (jevKey) localStorage.setItem(JEV_KEY, scramble(jevKey));
   else localStorage.removeItem(JEV_KEY);
