@@ -293,6 +293,7 @@ export const FI_COMMON: Record<string, string> = {
   "Nothing for the calendar this day.": "Ei kalenteriin tänä päivänä.",
   "All day": "Koko päivä",
   "Not to the calendar": "Ei kalenteriin",
+  "From Wilma, via WilmAI Home": "Wilmasta WilmAI Homen kautta",
   Add: "Lisää",
   Dismiss: "Ohita",
   "In the calendar": "Kalenterissa",

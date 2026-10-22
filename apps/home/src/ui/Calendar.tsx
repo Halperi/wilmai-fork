@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from "react";
 import { loadWeek } from "../data/engine";
 import { getState, setCalendarDecision, setCalendarKind, useApp } from "../data/store";
 import { forChildren, type FeedItem } from "../data/feed";
-import { CAL_KIND_ORDER, DEFAULT_KINDS, allDay, calendarEvents, calendarPanelSource, calendarTitle, goesToCalendar, type CalEvent, type CalKind, type CalSource } from "../data/calendar";
+import { CAL_KIND_ORDER, DEFAULT_KINDS, allDay, calendarDecision, calendarEvents, calendarPanelSource, calendarTitle, goesToCalendar, type CalEvent, type CalKind, type CalSource } from "../data/calendar";
 import { addDays, dayName, dayWithDate, daysBetween, isoWeek, mondayOf, shortDate, today, weekday } from "../data/dates";
 import { knownLessons, lessonKey } from "../data/schedule";
 import type { Snapshot } from "../data/model";
@@ -375,7 +375,7 @@ function MonthGrid({
 function EventLine({ e, snap, onOpen, withDate = false }: { e: CalEvent; snap: Snapshot; onOpen: () => void; withDate?: boolean }) {
   const local = useApp((s) => s.local.calendar);
   const kids = e.children.map((n) => snap.children.find((c) => c.number === n)).filter((c) => c !== undefined);
-  const decided = local?.decisions[e.key];
+  const decided = calendarDecision(e, local);
   const syncs = goesToCalendar(e, local);
   const time = e.start ? (e.end ? `${e.start}–${e.end}` : e.start) : null;
   const span = e.endDate ? `${shortDate(e.date)}–${shortDate(e.endDate)}` : null;
@@ -392,10 +392,10 @@ function EventLine({ e, snap, onOpen, withDate = false }: { e: CalEvent; snap: S
       </button>
       {!e.sure ? (
         <p className="cal-line-act">
-          <button type="button" className="btn btn-primary btn-sm" onClick={() => setCalendarDecision(e.key, "yes")}>
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => setCalendarDecision(e, "yes")}>
             <Icon name="check" /> {t("Add")}
           </button>
-          <button type="button" className="btn btn-quiet btn-sm" onClick={() => setCalendarDecision(e.key, "no")}>
+          <button type="button" className="btn btn-quiet btn-sm" onClick={() => setCalendarDecision(e, "no")}>
             {t("Dismiss")}
           </button>
         </p>
@@ -403,7 +403,7 @@ function EventLine({ e, snap, onOpen, withDate = false }: { e: CalEvent; snap: S
         <p className="cal-line-act">
           {syncs ? null : <span className="chip">{t("Not to the calendar")}</span>}
           {decided === "yes" ? (
-            <button type="button" className="linkish" onClick={() => setCalendarDecision(e.key, null)}>
+            <button type="button" className="linkish" onClick={() => setCalendarDecision(e, null)}>
               {t("Undo")}
             </button>
           ) : null}

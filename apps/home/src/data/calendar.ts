@@ -54,6 +54,8 @@ export interface CalEvent {
   origin?: { key: string; quote: string };
   /** Jev's confidence, for a suggestion. */
   confidence?: number;
+  /** The keys of the same event from other sources (a twin, a repeat), so the parent's word on any of them counts. */
+  aliases?: string[];
 }
 
 export type CalSource = { kind: "day"; child: string; date: string; start: string | null } | { kind: "item"; key: string; line: string | null };
@@ -171,7 +173,8 @@ export function calendarEvents(
       const lesson = lessons.find((l) => l.date === exam.date && examForLesson(data, l) === exam) ?? null;
       const start = exam.time ?? lesson?.start ?? null;
       events.push({
-        key: `exam:${child.number}:${exam.examId}`,
+        // Wilma gives most exams an id; one without is known by its day and subject.
+        key: `exam:${child.number}:${exam.examId || `${exam.date}:${(exam.subjectCode || exam.subject || "").toLowerCase()}`}`,
         kind: "exam",
         children: [child.number],
         title: examTitle(exam),
@@ -259,10 +262,11 @@ export function calendarEvents(
 
   // 2. Messages, bulletins and teachers' lesson notes, as Luna read them.
   // Each source with what tells its exam from Wilma's own: a message's sender, a note's lesson (subject codes).
-  const read: { key: string; children: string[]; detail: string; source: (line: string | null) => CalSource; from?: string | null; subjects?: string[]; nextExam?: LunaEvent }[] = [];
+  // `said`: when the school said it (a message's time, a note's lesson), for which of two sources of one event comes first.
+  const read: { key: string; said: string; children: string[]; detail: string; source: (line: string | null) => CalSource; from?: string | null; subjects?: string[]; nextExam?: LunaEvent }[] = [];
   for (const item of items) {
     if (!item.text || item.kind === "note" || !item.children.some(wanted)) continue;
-    read.push({ key: item.key, children: order(item.children.filter(wanted)), detail: item.title, source: (line) => ({ kind: "item", key: item.key, line }), from: item.from });
+    read.push({ key: item.key, said: item.at.toISOString(), children: order(item.children.filter(wanted)), detail: item.title, source: (line) => ({ kind: "item", key: item.key, line }), from: item.from });
   }
   for (const child of kids) {
     for (const note of noteGroups(child.number, snap.perChild[child.number]?.notes ?? [])) {
@@ -270,6 +274,7 @@ export function calendarEvents(
       const exam = noteExamEvent(snap, note, luna[note.key]);
       read.push({
         key: note.key,
+        said: `${note.date}T${note.start ?? "00:00"}`,
         children: [child.number],
         detail: `${note.typeLabel} · ${note.subjects.join(", ")} · ${shortDate(note.date)}`,
         source: () => ({ kind: "day", child: child.number, date: note.date, start: note.start }),
@@ -278,12 +283,12 @@ export function calendarEvents(
       });
     }
   }
-  const keys = new Set<string>();
   const links = linkVerdicts(luna, T.superseded);
   /** Luna's events by id, as they went in (an event a later item repeats takes in its pupils instead). */
   const byId = new Map<string, CalEvent>();
   const repeated: { e: CalEvent; of: string }[] = [];
   for (const src of read) {
+    const first = events.length;
     const record = luna[src.key];
     // A deadline the guardian's step names is a deadline in the calendar, whether or not the reading listed it among the events.
     const step = record?.action;
@@ -325,11 +330,8 @@ export function calendarEvents(
       if (ev.kind === "exam" && children.every((n) => (snap.perChild[n]?.exams ?? []).some((x) => x.date === date && sameExam(x, ev, src)))) continue;
       // A changed day the timetable shows is the same day.
       if (ev.kind === "schedule" && !endDate && children.every((n) => oddDay.has(`${n}|${date}`))) continue;
-      let key = `${src.key}:${date}${endDate ? `-${endDate}` : ""}${ev.start ? `@${ev.start}` : ""}`;
-      while (keys.has(key)) key += "+";
-      keys.add(key);
       events.push({
-        key,
+        key: `${src.key}:${date}${endDate ? `-${endDate}` : ""}${ev.start ? `@${ev.start}` : ""}`,
         kind: ev.kind,
         children,
         title: ev.title,
@@ -351,6 +353,7 @@ export function calendarEvents(
       const of = links.repeats.get(src.key)?.find((r) => r.date === date && r.id !== id);
       if (of) repeated.push({ e: added, of: of.id });
     }
+    distinguish(events.slice(first));
   }
   // A later item's event that repeats an earlier one: the earlier one stays, for both items' pupils, sure if either is.
   for (const { e, of } of repeated) {
@@ -358,6 +361,7 @@ export function calendarEvents(
     if (!earlier || earlier === e) continue;
     earlier.children = order([...new Set([...earlier.children, ...e.children])]);
     earlier.sure ||= e.sure;
+    earlier.aliases = [...(earlier.aliases ?? []), e.key];
     events.splice(events.indexOf(e), 1);
   }
 
@@ -368,20 +372,55 @@ export function calendarEvents(
     for (let d = e.date; d <= (e.endDate ?? e.date); d = addDays(d, 1)) for (const n of e.children) if (oddDay.get(`${n}|${d}`) === "off") offDays.add(`day:${n}:${d}`);
   }
 
-  // 3. The parent's word, then one event for siblings' same event.
-  const decided = events
-    .filter((e) => !offDays.has(e.key))
-    .filter((e) => local?.decisions[e.key] !== "no")
-    .map((e) => (local?.decisions[e.key] === "yes" ? { ...e, sure: true } : e));
+  // 3. The same event from two places (a message and a bulletin, two siblings' messages) is one, sure if either is. It
+  // keeps the key of the first the school said (Wilma's own data, then the oldest item), so a later one doesn't change it.
+  const said = new Map(read.map((src) => [src.key, src.said]));
+  const saidAt = (e: CalEvent) => (e.origin ? (said.get(e.origin.key) ?? "~") : "");
+  const firstSaid = events.filter((e) => !offDays.has(e.key)).sort((a, b) => saidAt(a).localeCompare(saidAt(b)) || a.key.localeCompare(b.key));
   const merged: CalEvent[] = [];
-  // The same event from two places (a message and a bulletin, two siblings' messages) is one.
   const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
-  for (const e of decided) {
+  for (const e of firstSaid) {
     const twin = merged.find((m) => m.kind === e.kind && m.date === e.date && m.endDate === e.endDate && m.start === e.start && same(m.title, e.title));
-    if (twin) twin.children = order([...new Set([...twin.children, ...e.children])]);
-    else merged.push({ ...e });
+    if (!twin) {
+      merged.push({ ...e });
+      continue;
+    }
+    twin.children = order([...new Set([...twin.children, ...e.children])]);
+    twin.sure ||= e.sure;
+    twin.aliases = [...(twin.aliases ?? []), e.key, ...(e.aliases ?? [])];
   }
-  return merged.sort((a, b) => (a.date + (a.start ?? "")).localeCompare(b.date + (b.start ?? "")));
+  // 4. The parent's word, on any of the event's keys.
+  return merged
+    .flatMap((e) => {
+      const word = calendarDecision(e, local);
+      return word === "no" ? [] : [word === "yes" ? { ...e, sure: true } : e];
+    })
+    .sort((a, b) => (a.date + (a.start ?? "")).localeCompare(b.date + (b.start ?? "")));
+}
+
+/**
+ * One source's events that would share a key (one bulletin's two exams on a day) are told apart by their titles, all
+ * of them, so no key depends on which was read first.
+ */
+function distinguish(list: CalEvent[]): void {
+  const byKey = new Map<string, CalEvent[]>();
+  for (const e of list) byKey.set(e.key, [...(byKey.get(e.key) ?? []), e]);
+  for (const [key, same] of byKey) {
+    if (same.length < 2) continue;
+    const taken = new Set<string>();
+    for (const e of [...same].sort((a, b) => a.title.localeCompare(b.title) || a.kind.localeCompare(b.kind))) {
+      let k = `${key}~${e.title.toLowerCase().replace(/\s+/g, " ").trim()}`;
+      while (taken.has(k)) k += "+";
+      taken.add(k);
+      e.key = k;
+    }
+  }
+}
+
+/** The parent's word on an event, on any of its keys (the same event from another source counts); a dismissal wins. */
+export function calendarDecision(e: Pick<CalEvent, "key" | "aliases">, local: CalendarLocal | undefined): "yes" | "no" | undefined {
+  const words = [e.key, ...(e.aliases ?? [])].map((key) => local?.decisions[key]);
+  return words.includes("no") ? "no" : words.includes("yes") ? "yes" : undefined;
 }
 
 /**

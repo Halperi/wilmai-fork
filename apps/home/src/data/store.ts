@@ -16,6 +16,7 @@ import { oldKeychain } from "../wilma/transport";
 import { t } from "../i18n";
 import { DEFAULT_SETTINGS, keepsPassword, viewerOf, type AccountInfo, type JevRecord, type LocalState, type LunaRecord, type Settings, type Snapshot, type UsageBucket, type Viewer } from "./model";
 import { normalizeAIBudget } from "./ai-budget";
+import type { CalEvent } from "./calendar";
 
 export interface SyncStatus {
   running: boolean;
@@ -369,13 +370,14 @@ export function markOpened(key: string) {
   setState((s) => ({ local: { ...s.local, opened: { ...s.local.opened, [key]: Date.now() } } }));
 }
 
-/** Take ("yes") or dismiss ("no") a calendar suggestion, or forget the answer (null). */
-export function setCalendarDecision(key: string, decision: "yes" | "no" | null) {
+/** Take ("yes") or dismiss ("no") a calendar event, or forget the answer (null): kept on its key, and off its other keys (a twin's). */
+export function setCalendarDecision(e: Pick<CalEvent, "key" | "aliases">, decision: "yes" | "no" | null) {
   setState((s) => {
     const calendar = s.local.calendar ?? { decisions: {}, kinds: {} };
     const decisions = { ...calendar.decisions };
-    if (decision) decisions[key] = decision;
-    else delete decisions[key];
+    for (const alias of e.aliases ?? []) delete decisions[alias];
+    if (decision) decisions[e.key] = decision;
+    else delete decisions[e.key];
     return { local: { ...s.local, calendar: { ...calendar, decisions } } };
   });
 }

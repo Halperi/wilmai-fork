@@ -28,6 +28,7 @@ import { localReading, providerIdentity, usesLocalAI } from "../ai/config";
 import { releaseLocalModels } from "../ai/ollama";
 import { runJev } from "../jev/runner";
 import { subjectNamer } from "../data/schedule";
+import { hash } from "../data/hash";
 
 /** The reading's version: a change here reads everything again. */
 export const LUNA_EVENTS = "luna-reading@5";
@@ -657,16 +658,7 @@ async function readSource(src: LunaSource, hash: string): Promise<LunaRecord> {
   }
 }
 
-export function hash(value: unknown): string {
-  // FNV-1a: only to notice changed content, not for security.
-  let h = 0x811c9dc5;
-  const s = JSON.stringify(value);
-  for (let i = 0; i < s.length; i += 1) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return (h >>> 0).toString(16);
-}
+export { hash };
 
 /** How items are read: the tiered strategy's version, or the fixed model and effort (a change reads everything again). */
 const strategyKey = () => {
