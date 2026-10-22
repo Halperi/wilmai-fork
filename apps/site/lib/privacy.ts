@@ -54,8 +54,8 @@ const en: PrivacyCopy = {
       title: "This website, wilm.ai",
       paragraphs: [
         "The site is static pages served by Cloudflare. It has no analytics or advertising scripts and loads nothing from other sites; even the fonts come from wilm.ai.",
-        "Cloudflare handles each request, your IP address included, to deliver the page. The few addresses that run code at Cloudflare (sending you to your language, and the download and star counts) log their requests for three days, to catch errors.",
-        "I look only at totals that Cloudflare keeps anyway: how many times the pages were viewed, roughly how many visitors there were and from which countries, and how many update checks came in. They are counts, not people.",
+        "Cloudflare handles each request, your IP address included, to deliver the page. The few addresses that run code at Cloudflare (sending you to your language, the download buttons, and the download and star counts) log their requests for three days, to catch errors.",
+        "I look only at totals that Cloudflare keeps anyway: how many times the pages were viewed and the installers downloaded, roughly how many visitors there were and from which countries, and how many update checks came in. They are counts, not people.",
         "The download and star numbers on the pages are fetched by the site itself once a day. Your browser doesn't contact npm or GitHub for them."
       ]
     },
@@ -146,8 +146,8 @@ const fi: PrivacyCopy = {
       title: "Tämä sivusto, wilm.ai",
       paragraphs: [
         "Sivusto on staattisia sivuja, jotka Cloudflare toimittaa. Siinä ei ole analytiikka- eikä mainosskriptejä, eikä se lataa mitään muilta sivustoilta; fontitkin tulevat wilm.ai:sta.",
-        "Cloudflare käsittelee jokaisen pyynnön, myös IP-osoitteesi, toimittaakseen sivun. Ne harvat osoitteet, joissa Cloudflarella ajetaan koodia (kieleen ohjaus sekä lataus- ja tähtimäärät), kirjaavat pyyntönsä lokiin kolmeksi päiväksi virheiden löytämiseksi.",
-        "Katson vain kokonaismääriä, jotka Cloudflarella on joka tapauksessa: montako kertaa sivuja katsottiin, suunnilleen montako kävijää oli ja mistä maista, ja montako päivitystarkistusta tuli. Ne ovat lukumääriä, eivät ihmisiä.",
+        "Cloudflare käsittelee jokaisen pyynnön, myös IP-osoitteesi, toimittaakseen sivun. Ne harvat osoitteet, joissa Cloudflarella ajetaan koodia (kieleen ohjaus, latauspainikkeet sekä lataus- ja tähtimäärät), kirjaavat pyyntönsä lokiin kolmeksi päiväksi virheiden löytämiseksi.",
+        "Katson vain kokonaismääriä, jotka Cloudflarella on joka tapauksessa: montako kertaa sivuja katsottiin ja asennusohjelmia ladattiin, suunnilleen montako kävijää oli ja mistä maista, ja montako päivitystarkistusta tuli. Ne ovat lukumääriä, eivät ihmisiä.",
         "Sivujen lataus- ja tähtimäärät sivusto hakee itse kerran päivässä. Selaimesi ei ota niiden takia yhteyttä npm:ään eikä GitHubiin."
       ]
     },

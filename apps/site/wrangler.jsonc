@@ -12,13 +12,14 @@
   "assets": {
     "directory": "./out",
     "binding": "ASSETS",
-    // Only "/", /home, /app and /privacy (to the visitor's language) and the
-    // two /api addresses (stats, the README badge) run the Worker; every other
+    // Only "/", /home, /app and /privacy (to the visitor's language), the
+    // download buttons (/get/mac, /get/windows, to the current installer) and
+    // the two /api addresses (stats, the README badge) run the Worker; every other
     // path is a static file (free and served from the nearest Cloudflare
     // location), or the 404 page. Exact paths, not /api/*: with a wildcard, every bot probing
     // /api/.env and the like ran the Worker and opened a "Potential
     // vulnerability scan" issue.
-    "run_worker_first": ["/", "/home", "/app", "/privacy", "/api/stats", "/api/badge/downloads"],
+    "run_worker_first": ["/", "/home", "/app", "/privacy", "/get/mac", "/get/windows", "/api/stats", "/api/badge/downloads"],
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page"
   },

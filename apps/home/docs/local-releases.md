@@ -228,16 +228,18 @@ label stays until the app leaves beta.
 ## Downloads
 
 ```sh
-pnpm release:downloads
+pnpm release:downloads   # here, or `pnpm stats` from the repository's root
 ```
 
 Prints GitHub's download counts for every Home release: the Mac and Windows
 installers, and the Mac update archive, which only an installed app downloads
 when it updates itself (a Windows app updates with the installer, so those
 counts include updates). Replacing a file in a release starts its count from
-zero. Then, from Cloudflare's request analytics for
-wilm.ai (read with the `cf` CLI), per day: front page and Home page views and the update
-checks of installed apps. A running app checks at start and every 6 hours, so
+zero. Then, from Cloudflare's request analytics for wilm.ai (read with the
+`cf` CLI), per day: front page and Home page views, downloads from the site's
+buttons (`/get/mac`, `/get/windows`, which forward to the installers on
+GitHub), and the update checks of installed apps. A running app checks at
+start and every 6 hours, so
 about four checks a day are one app in use. Released apps check as
 `tauri-plugin-updater/…`, older and development builds as `WilmAI-Home/…`.
 

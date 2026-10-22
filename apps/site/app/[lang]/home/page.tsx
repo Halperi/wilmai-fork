@@ -167,8 +167,9 @@ export default async function WilmAIHomePage({ params }: Props) {
         <Image src="/wilmai-mascot.png" width={96} height={96} alt="" />
         <h2>{t.get.title}</h2>
         {[
-          { name: t.get.mac, detail: t.get.macDetail, url: macDownload },
-          { name: t.get.windows, detail: t.get.windowsDetail, url: windowsDownload }
+          // Through wilm.ai, which forwards to the installer on GitHub (worker/index.ts), so downloads count per day.
+          { name: t.get.mac, detail: t.get.macDetail, url: macDownload && "/get/mac" },
+          { name: t.get.windows, detail: t.get.windowsDetail, url: windowsDownload && "/get/windows" }
         ].map((installer) => (
           <div className="home-installer" key={installer.name}>
             <div>
@@ -176,7 +177,7 @@ export default async function WilmAIHomePage({ params }: Props) {
               <p>{installer.detail}</p>
             </div>
             {installer.url ? (
-              <a className="button primary" href={installer.url}>{t.hero.download} ↓</a>
+              <a className="button primary" href={installer.url} rel="nofollow">{t.hero.download} ↓</a>
             ) : (
               <span className="button secondary is-disabled" aria-disabled="true">{t.hero.coming}</span>
             )}
