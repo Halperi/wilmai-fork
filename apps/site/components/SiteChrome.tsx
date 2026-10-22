@@ -52,6 +52,7 @@ export function Footer({ t, lang }: { t: Dictionary; lang: Lang }) {
           {t.footer.issues}
         </a>
         <a href={`/${lang}/home`}>WilmAI Home</a>
+        <a href={`/${lang}/privacy`}>{t.footer.privacy}</a>
       </div>
       <p className="footer-disclaimer">{t.hero.disclaimer}</p>
       <span>{t.footer.licensed}</span>

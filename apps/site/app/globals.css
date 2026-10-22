@@ -1207,7 +1207,9 @@ main {
 
 .footer-links {
   display: flex;
-  gap: 26px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 26px;
 }
 
 .footer-links a {
@@ -1468,6 +1470,7 @@ main {
 .home-download-note a,
 .home-key-steps a,
 .home-choice-link,
+.privacy-section a,
 .faq details p a {
   font-weight: 700;
   color: var(--teal-deep);
@@ -1477,6 +1480,7 @@ main {
 .home-download-note a:hover,
 .home-key-steps a:hover,
 .home-choice-link:hover,
+.privacy-section a:hover,
 .faq details p a:hover {
   color: var(--ink);
 }
@@ -1789,10 +1793,6 @@ main {
   margin-right: auto;
 }
 
-.kv-tile.kv-on {
-  border: 2px solid var(--ink);
-  box-shadow: 2px 2px 0 var(--marker);
-}
 /* On Windows, Edge's download warning comes before the first start: two small boxes above it */
 .fs-win-steps {
   display: flex;
@@ -1875,6 +1875,10 @@ main {
   gap: 8px;
 }
 
+.kv-tile.kv-on {
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--marker);
+}
 
 .home-download {
   scroll-margin-top: 24px;
@@ -2198,4 +2202,38 @@ main {
   .disclaimer summary::after {
     transition: none;
   }
+}
+
+/* ---------- Privacy (/en/privacy, /fi/privacy) ---------- */
+
+.privacy-head h1 {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: clamp(32px, 5.5vw, 54px);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: 18px;
+}
+
+.privacy-lead {
+  max-width: 680px;
+  font-size: 20px;
+  line-height: 1.45;
+}
+
+.privacy-updated {
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.section.privacy-section {
+  margin-top: 56px;
+}
+
+.privacy-section p {
+  max-width: 720px;
+  margin-bottom: 12px;
+  line-height: 1.6;
+  color: var(--ink-soft);
 }

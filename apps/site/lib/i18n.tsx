@@ -82,7 +82,7 @@ export interface Dictionary {
   };
   faq: { eyebrow: string; title: string; items: FaqItem[] };
   closing: { eyebrow: string; text: string; signature: string };
-  footer: { docs: string; issues: string; licensed: string };
+  footer: { docs: string; issues: string; privacy: string; licensed: string };
 }
 
 const en: Dictionary = {
@@ -314,7 +314,7 @@ const en: Dictionary = {
     text: "Parents keep telling me the same thing: they've never been this up to date with what's happening at school. It brings more joy than you'd expect. I hope it does the same for your family.",
     signature: "— Antti"
   },
-  footer: { docs: "Docs", issues: "Issues", licensed: "MIT Licensed" }
+  footer: { docs: "Docs", issues: "Issues", privacy: "Privacy", licensed: "MIT Licensed" }
 };
 
 const fi: Dictionary = {
@@ -548,7 +548,7 @@ const fi: Dictionary = {
     text: "Vanhemmat kertovat minulle samaa: he eivät ole koskaan olleet näin hyvin perillä siitä, mitä koulussa tapahtuu. Se tuo yllättävän paljon iloa. Toivottavasti se tuo sitä myös teidän perheellenne.",
     signature: "— Antti"
   },
-  footer: { docs: "Ohjeet", issues: "Issues", licensed: "MIT-lisensoitu" }
+  footer: { docs: "Ohjeet", issues: "Issues", privacy: "Tietosuoja", licensed: "MIT-lisensoitu" }
 };
 
 export const dictionaries: Record<Lang, Dictionary> = { en, fi };

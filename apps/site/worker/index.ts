@@ -2,11 +2,11 @@
  * wilm.ai on Cloudflare. The site itself is static files (`next build` writes
  * them to out/) served straight from Cloudflare; this Worker only answers
  * "/", which sends the visitor to /en or /fi (and /home and /app to
- * /en/home or /fi/home, WilmAI Home's page), and two addresses under /api/
- * (run_worker_first in wrangler.jsonc): /api/stats, the live numbers in the
- * page (npm downloads and GitHub stars), and /api/badge/downloads, the same
- * download count as a shields.io badge for the GitHub README. A daily cron job
- * fetches the numbers and keeps them in KV.
+ * /en/home or /fi/home, WilmAI Home's page; /privacy to its language), and
+ * two addresses under /api/ (run_worker_first in wrangler.jsonc): /api/stats,
+ * the live numbers in the page (npm downloads and GitHub stars), and
+ * /api/badge/downloads, the same download count as a shields.io badge for the
+ * GitHub README. A daily cron job fetches the numbers and keeps them in KV.
  */
 
 import { githubStars } from "../lib/github-stars";
@@ -31,7 +31,7 @@ interface Env {
 const LANGS = ["en", "fi"] as const;
 
 /** Addresses without a language, and where they go in it. The desktop app links to /app. */
-const LANDINGS: Record<string, string> = { "/": "", "/home": "/home", "/app": "/home" };
+const LANDINGS: Record<string, string> = { "/": "", "/home": "/home", "/app": "/home", "/privacy": "/privacy" };
 
 /** The language picked with the EN/FI toggle, else the browser's, else English. */
 export function preferredLang(request: Request): string {
