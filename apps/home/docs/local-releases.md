@@ -238,7 +238,10 @@ counts include updates). Replacing a file in a release starts its count from
 zero. Then, from Cloudflare's request analytics for wilm.ai (read with the
 `cf` CLI), per day: front page and Home page views, downloads from the site's
 buttons (`/get/mac`, `/get/windows`, which forward to the installers on
-GitHub), and the update checks of installed apps. A running app checks at
+GitHub), counting browsers only (not known bots, crawlers, curl or scripts)
+and leaving out hours when someone scanned the site (at least 40% of the
+requests for pages that don't exist), and the update checks of installed
+apps. A running app checks at
 start and every 6 hours, so
 about four checks a day are one app in use. Released apps check as
 `tauri-plugin-updater/…`, older and development builds as `WilmAI-Home/…`.

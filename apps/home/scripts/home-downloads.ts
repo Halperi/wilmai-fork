@@ -27,16 +27,29 @@ console.log("Repeated downloads count again, and GitHub doesn't say who download
 // wilm.ai's account on Cloudflare (apps/site/wrangler.jsonc).
 const ACCOUNT = "055d00c523a88d6e0c0f4056c9fc1d75";
 const DAYS = 14;
-const query = `SELECT toDate(timestamp) AS day,
-  countIf(clientRequestPath IN ('/en', '/fi') AND edgeResponseStatus = 200) AS frontViews,
-  countIf(clientRequestPath IN ('/en/home', '/fi/home') AND edgeResponseStatus = 200) AS pageViews,
-  countIf(clientRequestPath = '/get/mac' AND edgeResponseStatus = 302) AS macDownloads,
-  countIf(clientRequestPath = '/get/windows' AND edgeResponseStatus = 302) AS windowsDownloads,
-  countIf(clientRequestPath = '/app/latest.json' AND userAgent LIKE 'tauri-plugin-updater/%') AS appChecks,
-  countIf(clientRequestPath = '/app/latest.json' AND userAgent LIKE 'WilmAI-Home/%') AS otherChecks
+// Views and downloads count a person's browser only: not a bot Cloudflare knows (search engines, AI crawlers, link
+// previews), a browser's user agent (curl and scripts don't send one), and none of the words other crawlers use.
+const BROWSER = [
+  "verifiedBotCategory = ''",
+  "userAgent LIKE 'Mozilla/%'",
+  ...["bot", "crawl", "spider", "headless", "preview"].map((word) => `lower(userAgent) NOT LIKE '%${word}%'`),
+].join(" AND ");
+// When it's busy, Cloudflare keeps one request in sampleInterval, so each row counts as that many. Counted per hour:
+// in an hour when someone scanned the site for weaknesses (many requests, at least 40% of them for pages that don't
+// exist), views and downloads are left out, as scanners pretend to be browsers and sampling multiplies them.
+const query = `SELECT toStartOfHour(timestamp) AS hour,
+  sum(sampleInterval) AS requests,
+  sumIf(sampleInterval, edgeResponseStatus = 404) AS notFound,
+  sumIf(sampleInterval, clientRequestPath IN ('/en', '/fi') AND edgeResponseStatus = 200 AND ${BROWSER}) AS frontViews,
+  sumIf(sampleInterval, clientRequestPath IN ('/en/home', '/fi/home') AND edgeResponseStatus = 200 AND ${BROWSER}) AS pageViews,
+  sumIf(sampleInterval, clientRequestPath = '/get/mac' AND edgeResponseStatus = 302 AND ${BROWSER}) AS macDownloads,
+  sumIf(sampleInterval, clientRequestPath = '/get/windows' AND edgeResponseStatus = 302 AND ${BROWSER}) AS windowsDownloads,
+  sumIf(sampleInterval, clientRequestPath = '/app/latest.json' AND userAgent LIKE 'tauri-plugin-updater/%') AS appChecks,
+  sumIf(sampleInterval, clientRequestPath = '/app/latest.json' AND userAgent LIKE 'WilmAI-Home/%') AS otherChecks
 FROM events.httpRequests
 WHERE clientRequestHttpHost = 'wilm.ai' AND timestamp > now() - INTERVAL ${DAYS} DAY
-GROUP BY day ORDER BY day LIMIT 100 FORMAT JSON`.replace(/\s+/g, " ");
+GROUP BY hour ORDER BY hour LIMIT 1000 FORMAT JSON`.replace(/\s+/g, " ");
+const scanned = (h: Record<string, string>) => Number(h.requests) >= 200 && Number(h.notFound) >= 0.4 * Number(h.requests);
 try {
   const out = execFileSync("cf", ["analytics", "sql", "post", "--scope-account-tag", ACCOUNT, "--query", query], {
     encoding: "utf8",
@@ -44,17 +57,33 @@ try {
     stdio: ["ignore", "pipe", "pipe"],
   });
   const rows = (JSON.parse(out.slice(out.indexOf("{"))) as { data?: Record<string, string>[]; result?: { data?: Record<string, string>[] } });
-  const data = rows.data ?? rows.result?.data ?? [];
-  console.log(`On wilm.ai, the last ${DAYS} days (Cloudflare, counts only):`);
-  console.table(data.map((r) => ({
-    day: r.day,
-    "front page views": Number(r.frontViews),
-    "Home page views": Number(r.pageViews),
-    "Mac downloads": Number(r.macDownloads),
-    "Windows downloads": Number(r.windowsDownloads),
-    "update checks": Number(r.appChecks),
-    "≈ apps running": Math.round(Number(r.appChecks) / 4),
-    "older builds' checks": Number(r.otherChecks),
+  const hours = rows.data ?? rows.result?.data ?? [];
+  const days = new Map<string, { front: number; home: number; mac: number; windows: number; checks: number; other: number; scans: number }>();
+  for (const h of hours) {
+    const day = h.hour.slice(0, 10);
+    const d = days.get(day) ?? { front: 0, home: 0, mac: 0, windows: 0, checks: 0, other: 0, scans: 0 };
+    if (scanned(h)) d.scans += 1;
+    else {
+      d.front += Number(h.frontViews);
+      d.home += Number(h.pageViews);
+      d.mac += Number(h.macDownloads);
+      d.windows += Number(h.windowsDownloads);
+    }
+    d.checks += Number(h.appChecks);
+    d.other += Number(h.otherChecks);
+    days.set(day, d);
+  }
+  console.log(`On wilm.ai, the last ${DAYS} days (Cloudflare, UTC days, counts only; views and downloads from browsers, not bots, scripts or scans):`);
+  console.table([...days].map(([day, d]) => ({
+    day,
+    "front page views": d.front,
+    "Home page views": d.home,
+    "Mac downloads": d.mac,
+    "Windows downloads": d.windows,
+    "update checks": d.checks,
+    "≈ apps running": Math.round(d.checks / 4),
+    "older builds' checks": d.other,
+    "scanned hours left out": d.scans,
   })));
   console.log("Downloads here are the site's buttons, since they went through wilm.ai; GitHub's totals above also count direct links and updates. A running app checks for updates at start and every 6 hours, about four times a day. Older and development builds check with their own name.");
 } catch (err) {
