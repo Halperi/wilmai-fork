@@ -27,6 +27,8 @@ export type Viewer = "guardian" | "student";
 
 export interface ThreadRec {
   content: string;
+  /** When the opening message was sent (the list's time can be the newest reply's); missing in threads read before. */
+  sentAt?: Date;
   recipients: string[] | null;
   replies: { id: number; sentAt: Date; senderName: string | null; content: string }[];
   collated: boolean;

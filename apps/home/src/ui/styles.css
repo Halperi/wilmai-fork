@@ -342,11 +342,23 @@ a { color: var(--pen); }
 .body time { background: var(--pen-soft); color: var(--pen); border-radius: 5px; padding: 0 4px; font-weight: 600; white-space: nowrap; }
 .body time.past { background: var(--paper-2); color: var(--ink-3); }
 .waiting { color: var(--ink-3); font-style: italic; }
-.replies { margin-top: 28px; display: flex; flex-direction: column; gap: 12px; }
-.bubble { background: var(--paper); border-radius: 14px; padding: 12px 16px; }
-.bubble .who { font-weight: 700; font-size: 14px; display: flex; gap: 8px; }
-.bubble .who span { color: var(--ink-3); font-weight: 500; }
-.bubble p { margin: 4px 0 0; white-space: pre-wrap; }
+/* A thread: every message alike (who, when, the text), oldest first, the newest marked; earlier ones can fold to a line. */
+.thread { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+.thread-head { display: flex; gap: 12px; align-items: baseline; font-size: 13px; color: var(--ink-3); }
+.thread-head .linkish { font-size: 13px; }
+.msg { background: var(--paper); border-radius: 14px; padding: 12px 16px; }
+.msg-last { box-shadow: inset 3px 0 0 var(--pen); }
+.msg-who { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 14px; margin-bottom: 6px; }
+.msg-who span { color: var(--ink-3); }
+.msg-latest { font-style: normal; font-weight: 700; color: var(--pen); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+.msg .body { font-size: 15.5px; }
+.msg-folded { all: unset; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; gap: 2px; background: var(--paper); border-radius: 12px; padding: 9px 16px; font-size: 14px; }
+.msg-folded:hover { background: var(--paper-2); }
+.msg-folded:focus-visible { outline: 2px solid var(--pen); }
+.msg-folded .msg-who { flex-wrap: nowrap; margin: 0; min-width: 0; }
+.msg-folded .msg-who b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg-folded .msg-who span { white-space: nowrap; }
+.msg-snippet { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .jev-card { margin-top: 34px; border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px 16px; }
 .jev-card h4 { margin: 0 0 10px; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center; gap: 8px; }
@@ -487,7 +499,7 @@ a { color: var(--pen); }
 }
 
 /* Times and dates: the display face (the body face's slashed zero reads as a strike-through in "10:00"). */
-.day-head .hours, .day-ticks, .row-when, .ag-entry .d, .ag-date, .day-note, .day-line .l, .week .les span, .week .hours span, .week .colhead small, .meta, .bubble .who span, .stats b {
+.day-head .hours, .day-ticks, .row-when, .ag-entry .d, .ag-date, .day-note, .day-line .l, .week .les span, .week .hours span, .week .colhead small, .meta, .msg-who span, .stats b {
   font-family: var(--display);
   font-variant-numeric: tabular-nums;
 }
@@ -1236,6 +1248,12 @@ button.gt-term[aria-pressed="true"], button.gt-now[aria-pressed="true"] { color:
 .rr-what span { color: var(--ink-2); }
 .rr .ex-chip { cursor: inherit; }
 .rr .ov-none { padding: 6px; }
+/* A recent note: the school's label and the subject on one line, the teacher's words (up to two lines) under it. */
+.rn-line { grid-template-columns: 72px auto minmax(0, 1fr) auto; align-items: baseline; }
+.rn-what { min-width: 0; display: flex; flex-direction: column; gap: 3px; font-size: 14px; }
+.rn-head { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+.rn-head .nk { font-size: 12.5px; }
+.rn-words { color: var(--ink); font-size: 13.5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* The family calendar: a month, a week to a row; what's coming, a day or an event's source beside it */
 .calendar-page { max-width: 1180px; }

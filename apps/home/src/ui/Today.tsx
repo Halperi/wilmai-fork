@@ -6,21 +6,24 @@
  *    whether there's homework, not what it is. Report an absence or write to
  *    a teacher from here.
  * 2. Needs you: the top three, one line each with the deadline.
- * 3. Recent results: exam grades from the last three weeks, the new ones
+ * 3. Recent notes: the teachers' lesson notes from the last three school
+ *    days, the new ones marked (an absence to explain is under Needs you).
+ * 4. Recent results: exam grades from the last three weeks, the new ones
  *    marked (not yet seen in Wilma or here).
- * 4. This week and next: exams, events and deadlines, schedule changes,
+ * 5. This week and next: exams, events and deadlines, schedule changes,
  *    always all three, the same as the Week's overview.
  */
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { absenceDay, isDemo, prepareAbsenceReport, preparedAgain, sendAbsenceReport, SESSION_CHANGED_NOTE } from "../data/engine";
 import type { AbsenceReportForm as AbsenceForm } from "@wilma-client/src/write";
-import { useApp, useViewer } from "../data/store";
-import { agenda, examsNeedingAttention, forChildren, needsYou, type AgendaEntry, type FeedItem } from "../data/feed";
+import { markOpened, useApp, useViewer } from "../data/store";
+import { agenda, examsNeedingAttention, forChildren, isNeedsYou, needsYou, type AgendaEntry, type FeedItem } from "../data/feed";
 import { intelligenceOn, type Child, type Snapshot } from "../data/model";
 import type { ScheduleLesson, UpcomingExam } from "@wilma-client/src/core";
 import { dueHomework, type DueHomework } from "../data/homework";
-import { dayTimes, examForLesson, formatMinutes, knownLessons, lessonKey, unusualDays, type DayTimes, type UnusualDay } from "../data/schedule";
-import { addDays, dayNameLong, daysBetween, dayWithDate, isoWeek, longDate, minutes, mondayOf, nowMinutes, shortDate, today, weekday } from "../data/dates";
+import { dayTimes, examForLesson, formatMinutes, knownLessons, lessonKey, subjectNamer, unusualDays, type DayTimes, type UnusualDay } from "../data/schedule";
+import { addDays, dayNameLong, daysBetween, dayWithDate, isoWeek, longDate, minutes, mondayOf, nowMinutes, relativeDay, shortDate, today, weekday } from "../data/dates";
+import { noteKind, useNoteKinds } from "../data/notes";
 import { readExamEntries } from "../data/calendar";
 import { language, plural, t, tx } from "../i18n";
 import { Icon, Mark, Tab, Tabs } from "./bits";
@@ -145,6 +148,7 @@ export function Today({ feed }: { feed: FeedItem[] }) {
               </div>
             </section>
           ) : null}
+          <RecentNotes items={items} snap={snap} />
           <RecentResults children={children} snap={snap} />
         </div>
 
@@ -170,6 +174,72 @@ export function Today({ feed }: { feed: FeedItem[] }) {
         </section>
       </div>
     </main>
+  );
+}
+
+/* ---------- Recent notes ---------- */
+
+/** The first of the last three school days (today counts when it is one). */
+function recentNotesFrom(now: string): string {
+  let day = now;
+  for (let left = 3; ; day = addDays(day, -1)) if (weekday(day) <= 4 && --left === 0) return day;
+}
+
+/** The teachers' notes from the last three school days for the children shown, newest first; one opens in Notes. */
+function RecentNotes({ items, snap }: { items: FeedItem[]; snap: Snapshot }) {
+  const kinds = useNoteKinds();
+  const from = recentNotesFrom(today());
+  // An absence to explain is already under Needs you.
+  const notes = items.filter((i) => i.kind === "note" && i.note && i.note.date >= from && !isNeedsYou(i));
+  const shown = notes.slice(0, 4);
+  return (
+    <>
+      <h2 className="eyebrow rr-eyebrow" id="notes-h">
+        {t("Recent notes")}
+        <button type="button" className="linkish rr-all" onClick={() => go("notes")}>
+          {t("Notes")} →
+        </button>
+      </h2>
+      <div className="card rr" aria-labelledby="notes-h">
+        {shown.length ? (
+          shown.map((item) => {
+            const note = item.note!;
+            const child = snap.children.find((c) => c.number === note.child);
+            const name = subjectNamer(snap.perChild[note.child]);
+            const subjects = [...new Set(note.subjects.map(name))].join(", ");
+            return (
+              <button
+                type="button"
+                key={item.key}
+                className={`rr-line rn-line c${(child?.color ?? 0) % 5}`}
+                onClick={() => {
+                  markOpened(item.key);
+                  go("notes", item.key);
+                }}
+              >
+                <span className="ov-day">{daysBetween(note.date, today()) <= 1 ? relativeDay(note.date) : shortDate(note.date)}</span>
+                {child ? <Tab child={child} /> : <span />}
+                <span className="rn-what">
+                  <span className="rn-head">
+                    <span className={`nk nk-${noteKind(note, kinds)}`}>{note.typeLabel}</span>
+                    {subjects ? <span> {subjects}</span> : null}
+                  </span>
+                  {note.note ? <q className="rn-words">{note.note}</q> : null}
+                </span>
+                {item.isNew ? <em className="lx-new">{tSense("New", "a note")}</em> : <span />}
+              </button>
+            );
+          })
+        ) : (
+          <p className="ov-none">{t("No notes in the last three school days.")}</p>
+        )}
+        {notes.length > shown.length ? (
+          <button type="button" className="linkish needs-more" onClick={() => go("notes")}>
+            {t("{n} more in Notes", { n: notes.length - shown.length })} →
+          </button>
+        ) : null}
+      </div>
+    </>
   );
 }
 

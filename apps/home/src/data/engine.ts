@@ -725,6 +725,7 @@ async function loadThread(id: number) {
           replyCount: message.replies?.length ?? current.replyCount,
           thread: {
             content: message.content ?? "",
+            sentAt: message.sentAt,
             recipients: message.recipients ?? null,
             replies: (message.replies ?? []).map((r) => ({ id: r.id, sentAt: r.sentAt, senderName: r.senderName, content: r.content })),
             collated: Boolean(message.discussion),

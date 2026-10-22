@@ -6,12 +6,12 @@ import { showToast } from "./Toast";
 import { slotState, type InvitationSlot as InviteSlot } from "@wilma-client/src/core";
 import { NEEDS_YOU, isNeedsYou, type FeedItem } from "../data/feed";
 import type { JevAnswer, Snapshot } from "../data/model";
-import { clock, dateOf, deadlineText, mentionedDates, relativeDay, shortDate, today, whenLong, whenShort } from "../data/dates";
+import { clock, dateOf, deadlineText, mentionedDates, relativeDay, shortDate, today, whenLong } from "../data/dates";
 import { KINDS, PUPIL_SCOPES, SCOPES, TRIAGE_PUPIL_QS } from "../jev/questions";
 import type { ReplyForm } from "@wilma-client/src/write";
 import { Icon, Mark, Tabs, TriageChips } from "./bits";
 import { go, jevReadingOpen } from "./shared";
-import { language, t, tx } from "../i18n";
+import { language, plural, t, tx } from "../i18n";
 
 /** "61%" / "61 %" */
 function percent(share: number): string {
@@ -195,6 +195,14 @@ export function Reader({
         ) : (
           <p className="waiting">{t("The teacher didn't write anything else.")}</p>
         )
+      ) : message?.thread?.replies.length ? (
+        <Thread
+          key={item.key}
+          opening={{ who: message.sender ?? t("Someone"), at: message.thread.sentAt ?? message.sentAt, text: message.thread.content }}
+          replies={message.thread.replies}
+          highlight={inPanel ? highlight : needs ? item.actionLine : null}
+          why={inPanel ? t("The calendar's date is read from this line") : undefined}
+        />
       ) : item.text !== null ? (
         <RichText
           text={item.text}
@@ -220,19 +228,6 @@ export function Reader({
 
       {item.invite && !inviteOnTop ? <InviteCard item={item} messageId={item.id!} /> : null}
 
-      {message?.thread?.replies.length ? (
-        <div className="replies">
-          {message.thread.replies.map((r, i) => (
-            <div className="bubble" key={`${i}-${r.sentAt.getTime()}`}>
-              <div className="who">
-                {r.senderName ?? t("Someone")} <span>{whenShort(r.sentAt)}</span>
-              </div>
-              <p>{r.content}</p>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
       {inPanel ? (
         <div className="dp-actions">
           <button className="btn btn-sm" onClick={() => go("inbox", item.key)}>
@@ -247,6 +242,78 @@ export function Reader({
 
       {item.triage && !inPanel ? <JevReading item={item} /> : null}
     </article>
+  );
+}
+
+/* ---------- Threads ---------- */
+
+type ThreadMessage = { who: string; at: Date; text: string };
+
+/** About a screenful of text: when the messages before the newest are longer, they fold to a line each. */
+const FOLD_AFTER = 900;
+
+/**
+ * A message with its replies, oldest first as in Wilma, each with who wrote it
+ * and when, the newest marked. When the earlier messages would push the newest
+ * out of view, they fold to a line each (a click opens one), so the newest
+ * shows first; the one holding the line the AI points to stays open.
+ */
+function Thread({
+  opening,
+  replies,
+  highlight,
+  why,
+}: {
+  opening: ThreadMessage;
+  replies: { sentAt: Date; senderName: string | null; content: string }[];
+  highlight: string | null;
+  why?: string;
+}) {
+  const messages: ThreadMessage[] = [opening, ...replies.map((r) => ({ who: r.senderName ?? t("Someone"), at: r.sentAt, text: r.content }))];
+  const last = messages.length - 1;
+  // A line per message of its own (who, when), about 80 characters' worth.
+  const fold = messages.slice(0, last).reduce((sum, m) => sum + m.text.length + 80, 0) > FOLD_AFTER;
+  const [opened, setOpened] = useState<number[]>([]);
+  const [all, setAll] = useState(false);
+  const isOpen = (i: number) => !fold || all || i === last || opened.includes(i) || Boolean(highlight && messages[i].text.includes(highlight));
+  return (
+    <section className="thread" aria-label={t("Messages in this thread")}>
+      <div className="thread-head">
+        <span>{plural(messages.length, "{n} message, oldest first", "{n} messages, oldest first")}</span>
+        {fold ? (
+          <button
+            type="button"
+            className="linkish"
+            onClick={() => {
+              setAll(!all);
+              setOpened([]);
+            }}
+          >
+            {all ? t("Fold the earlier ones") : t("Show all")}
+          </button>
+        ) : null}
+      </div>
+      {messages.map((m, i) =>
+        isOpen(i) ? (
+          <div className={`msg${i === last ? " msg-last" : ""}`} key={i}>
+            <div className="msg-who">
+              <b>{m.who}</b>
+              <span>{whenLong(m.at)}</span>
+              {i === last ? <em className="msg-latest">{t("Latest")}</em> : null}
+            </div>
+            <RichText text={m.text} anchor={dateOf(m.at)} highlight={highlight} why={why} />
+          </div>
+        ) : (
+          <button type="button" className="msg msg-folded" key={i} onClick={() => setOpened([...opened, i])} title={t("Show this message")}>
+            <span className="msg-who">
+              <b>{m.who}</b>
+              <span>{whenLong(m.at)}</span>
+            </span>
+            <span className="msg-snippet">{m.text.replace(/\s+/g, " ").trim()}</span>
+          </button>
+        )
+      )}
+    </section>
   );
 }
 

@@ -253,6 +253,25 @@ export function demoSnapshot(): Snapshot {
       ),
     }),
     message({
+      subject: `Kotitalouden ryhmätyö: leivonnaiset myyjäisiin`,
+      sender: "Aalto Riikka (AAR)",
+      sentAt: at(d(-6), "14:10"),
+      unreadInWilma: false,
+      children: [KIIA],
+      // A longer thread: the reader folds the earlier messages so the newest shows first.
+      thread: thread(
+        `Hei 8C:n huoltajat!\n\nKotitalouden tunneilla valmistamme ryhmissä leivonnaisia koulun joulumyyjäisiin. Jokainen ryhmä suunnittelee oman reseptinsä ja laskee sille kustannusarvion. Koulu hankkii raaka-aineet.\n\nKertokaa minulle, jos lapsellanne on ruoka-aineallergioita, jotka meidän pitää huomioida ryhmien suunnittelussa.\n\nRiikka Aalto\nkotitalous`,
+        {
+          replies: [
+            { id: 1, sentAt: at(d(-6), "18:40"), senderName: "Virtanen Mikko (Kiia Virtanen, 8C)", content: "Hei! Kiialla on pähkinäallergia, joten toivoisimme, ettei hänen ryhmänsä käytä pähkinöitä. Voiko hän tuoda omat ainekset, jos resepti vaatii jotain korvaavaa?" },
+            { id: 2, sentAt: at(d(-5), "08:05"), senderName: "Aalto Riikka (AAR)", content: "Kiitos tiedosta! Huomioimme allergian kaikissa ryhmissä, eli pähkinöitä ei käytetä tällä kertaa ollenkaan. Omia aineksia ei tarvitse tuoda, korvaavat hankitaan koulun puolesta." },
+            { id: 3, sentAt: at(d(-4), "20:15"), senderName: "Virtanen Mikko (Kiia Virtanen, 8C)", content: "Hienoa, kiitos! Kiia kertoi, että hänen ryhmänsä tekee kaurakeksejä. Tarvitaanko myyjäisiin vanhempia avuksi?" },
+            { id: 4, sentAt: at(d(-1), "15:30"), senderName: "Aalto Riikka (AAR)", content: "Apu on tervetullutta! Tarvitsemme kaksi aikuista myyntipöytään klo 17–18. Kerron tarkemmin ensi viikolla, kun aikataulu on vahvistunut." },
+          ],
+        }
+      ),
+    }),
+    message({
       subject: `Liikunta ulkona koko lokakuun`,
       sender: "Lehtonen Mikko (LEM)",
       sentAt: at(d(-6), "10:02"),
@@ -391,7 +410,10 @@ export function demoSnapshot(): Snapshot {
     note: text ?? null,
   });
 
+  // Today's note, or the last school day's at a weekend: Today shows the recent ones.
+  const lastSchoolDay = weekday(now) > 4 ? addDays(now, 4 - weekday(now)) : now;
   const kiiaNotes = [
+    note(lastSchoolDay, "08:15", "09:45", "Fysiikka", "Sinulta puuttui opiskeluvälineitä", "Jussi Korhonen", "Laskin jäi kotiin."),
     note(d(-3), "09:10", "10:40", "Englanti", "Positiivinen palaute", "Anna Nieminen", "Erinomainen esitelmä Skotlannista – selkeä ja rohkea esitys!"),
     note(lastMonday, "11:15", "12:45", "Kuvataide", "Selvittämätön poissaolo", "Eeva Lindholm"),
     note(d(-9), "08:15", "09:00", "Matematiikka", "Myöhästyminen", "Jussi Korhonen"),
