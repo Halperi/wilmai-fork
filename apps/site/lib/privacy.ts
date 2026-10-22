@@ -55,7 +55,7 @@ const en: PrivacyCopy = {
       paragraphs: [
         "The site is static pages served by Cloudflare. It has no analytics or advertising scripts and loads nothing from other sites; even the fonts come from wilm.ai.",
         "Cloudflare handles each request, your IP address included, to deliver the page. The few addresses that run code at Cloudflare (sending you to your language, and the download and star counts) log their requests for three days, to catch errors.",
-        "I look only at daily totals that Cloudflare keeps anyway: how many times the WilmAI Home page was viewed and how many update checks came in. They are counts, not people.",
+        "I look only at totals that Cloudflare keeps anyway: how many times the pages were viewed, roughly how many visitors there were and from which countries, and how many update checks came in. They are counts, not people.",
         "The download and star numbers on the pages are fetched by the site itself once a day. Your browser doesn't contact npm or GitHub for them."
       ]
     },
@@ -94,7 +94,7 @@ const en: PrivacyCopy = {
       id: "gdpr",
       title: "Personal data and your rights (GDPR)",
       paragraphs: [
-        "For this website and WilmAI Home's update checks, I'm the controller of the only personal data involved: the IP address and browser details in each request to wilm.ai. Cloudflare processes them for me under its Data Processing Addendum. I use them only to deliver the site and the updates and to keep both working and secure, which is my legitimate interest (GDPR Article 6(1)(f)). The site's logs are kept for three days and Cloudflare's own request statistics as its service sets; I look only at daily totals.",
+        "For this website and WilmAI Home's update checks, I'm the controller of the only personal data involved: the IP address and browser details in each request to wilm.ai. Cloudflare processes them for me under its Data Processing Addendum. I use them only to deliver the site and the updates and to keep both working and secure, which is my legitimate interest (GDPR Article 6(1)(f)). The site's logs are kept for three days and Cloudflare's own request statistics as its service sets; I look only at totals.",
         "Visitors in Finland are usually served from Cloudflare's data centres in the Nordics, but its logs and statistics can be kept elsewhere, the US included, and as a US company Cloudflare is subject to US law. Such transfers rely on the EU–US Data Privacy Framework, which Cloudflare takes part in, and on the EU's standard contractual clauses in its Data Processing Addendum.",
         "I'm not the controller of your Wilma login or your school data. The CLI and WilmAI Home process them on your own computer, at your direction, and I never receive them. When you send them on, to an AI assistant or to OpenAI with your own key, that service handles them under your own agreement with it. GitHub handles downloads under its own privacy statement.",
         "Nothing on my side makes automated decisions about you or profiles anyone.",
@@ -147,7 +147,7 @@ const fi: PrivacyCopy = {
       paragraphs: [
         "Sivusto on staattisia sivuja, jotka Cloudflare toimittaa. Siinä ei ole analytiikka- eikä mainosskriptejä, eikä se lataa mitään muilta sivustoilta; fontitkin tulevat wilm.ai:sta.",
         "Cloudflare käsittelee jokaisen pyynnön, myös IP-osoitteesi, toimittaakseen sivun. Ne harvat osoitteet, joissa Cloudflarella ajetaan koodia (kieleen ohjaus sekä lataus- ja tähtimäärät), kirjaavat pyyntönsä lokiin kolmeksi päiväksi virheiden löytämiseksi.",
-        "Katson vain päivittäisiä kokonaismääriä, jotka Cloudflarella on joka tapauksessa: montako kertaa WilmAI Homen sivua katsottiin ja montako päivitystarkistusta tuli. Ne ovat lukumääriä, eivät ihmisiä.",
+        "Katson vain kokonaismääriä, jotka Cloudflarella on joka tapauksessa: montako kertaa sivuja katsottiin, suunnilleen montako kävijää oli ja mistä maista, ja montako päivitystarkistusta tuli. Ne ovat lukumääriä, eivät ihmisiä.",
         "Sivujen lataus- ja tähtimäärät sivusto hakee itse kerran päivässä. Selaimesi ei ota niiden takia yhteyttä npm:ään eikä GitHubiin."
       ]
     },
@@ -186,7 +186,7 @@ const fi: PrivacyCopy = {
       id: "gdpr",
       title: "Henkilötiedot ja oikeutesi (GDPR)",
       paragraphs: [
-        "Tämän sivuston ja WilmAI Homen päivitystarkistusten osalta olen rekisterinpitäjä ainoille niissä liikkuville henkilötiedoille: jokaisen wilm.ai:hin tulevan pyynnön IP-osoitteelle ja selaimen tiedoille. Cloudflare käsittelee niitä puolestani tietojenkäsittelyehtojensa (Data Processing Addendum) mukaisesti. Käytän niitä vain sivuston ja päivitysten toimittamiseen sekä niiden toiminnan ja turvallisuuden varmistamiseen, mikä on oikeutettu etuni (tietosuoja-asetuksen 6 artiklan 1 kohdan f alakohta). Sivuston lokit säilyvät kolme päivää ja Cloudflaren omat pyyntötilastot sen palvelun mukaisesti; itse katson vain päivittäisiä kokonaismääriä.",
+        "Tämän sivuston ja WilmAI Homen päivitystarkistusten osalta olen rekisterinpitäjä ainoille niissä liikkuville henkilötiedoille: jokaisen wilm.ai:hin tulevan pyynnön IP-osoitteelle ja selaimen tiedoille. Cloudflare käsittelee niitä puolestani tietojenkäsittelyehtojensa (Data Processing Addendum) mukaisesti. Käytän niitä vain sivuston ja päivitysten toimittamiseen sekä niiden toiminnan ja turvallisuuden varmistamiseen, mikä on oikeutettu etuni (tietosuoja-asetuksen 6 artiklan 1 kohdan f alakohta). Sivuston lokit säilyvät kolme päivää ja Cloudflaren omat pyyntötilastot sen palvelun mukaisesti; itse katson vain kokonaismääriä.",
         "Suomesta tulevat kävijät saavat sivut yleensä Cloudflaren Pohjoismaiden datakeskuksista, mutta sen lokit ja tilastot voidaan säilyttää muuallakin, myös Yhdysvalloissa, ja yhdysvaltalaisena yhtiönä Cloudflare on Yhdysvaltain lain alainen. Siirrot perustuvat EU:n ja Yhdysvaltojen väliseen tietosuojakehykseen (Data Privacy Framework), johon Cloudflare on sitoutunut, sekä sen tietojenkäsittelyehtojen EU:n vakiosopimuslausekkeisiin.",
         "En ole Wilma-tunnustesi enkä koulutietojen rekisterinpitäjä. Komentorivi ja WilmAI Home käsittelevät niitä omalla koneellasi sinun ohjauksessasi, enkä saa niitä koskaan. Kun lähetät niitä eteenpäin, tekoälyavustajalle tai omalla avaimellasi OpenAI:lle, palvelu käsittelee niitä sinun ja sen välisen sopimuksen mukaisesti. GitHub käsittelee lataukset oman tietosuojaselosteensa mukaisesti.",
         "En tee sinusta automaattisia päätöksiä enkä profiloi ketään.",

@@ -2,7 +2,7 @@
  * How many people get and use WilmAI Home, from counts that exist anyway; nothing in the app tracks anyone:
  * - GitHub's download counts for every Home release: the installers, and the Mac update archive, which only an
  *   installed app downloads when it updates itself (on Windows, the app updates with the installer);
- * - on wilm.ai (Cloudflare's request analytics, read with the `cf` CLI): Home page views, and the update checks
+ * - on wilm.ai (Cloudflare's request analytics, read with the `cf` CLI): front page and Home page views, and the update checks
  *   every installed app makes (at start, then every 6 hours), so about four a day for each app that's running.
  *   These are counts per day; no address or anything else about a person is read.
  */
@@ -27,6 +27,7 @@ console.log("Repeated downloads count again, and GitHub doesn't say who download
 const ACCOUNT = "055d00c523a88d6e0c0f4056c9fc1d75";
 const DAYS = 14;
 const query = `SELECT toDate(timestamp) AS day,
+  countIf(clientRequestPath IN ('/en', '/fi') AND edgeResponseStatus = 200) AS frontViews,
   countIf(clientRequestPath IN ('/en/home', '/fi/home') AND edgeResponseStatus = 200) AS pageViews,
   countIf(clientRequestPath = '/app/latest.json' AND userAgent LIKE 'tauri-plugin-updater/%') AS appChecks,
   countIf(clientRequestPath = '/app/latest.json' AND userAgent LIKE 'WilmAI-Home/%') AS otherChecks
@@ -44,6 +45,7 @@ try {
   console.log(`On wilm.ai, the last ${DAYS} days (Cloudflare, counts only):`);
   console.table(data.map((r) => ({
     day: r.day,
+    "front page views": Number(r.frontViews),
     "Home page views": Number(r.pageViews),
     "update checks": Number(r.appChecks),
     "≈ apps running": Math.round(Number(r.appChecks) / 4),

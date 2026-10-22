@@ -236,7 +236,7 @@ installers, and the Mac update archive, which only an installed app downloads
 when it updates itself (a Windows app updates with the installer, so those
 counts include updates). Replacing a file in a release starts its count from
 zero. Then, from Cloudflare's request analytics for
-wilm.ai (read with the `cf` CLI), per day: Home page views and the update
+wilm.ai (read with the `cf` CLI), per day: front page and Home page views and the update
 checks of installed apps. A running app checks at start and every 6 hours, so
 about four checks a day are one app in use. Released apps check as
 `tauri-plugin-updater/…`, older and development builds as `WilmAI-Home/…`.
