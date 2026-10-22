@@ -5,7 +5,7 @@ import { answerInvitation, declineInvitation, isDemo, isSessionEnded, openMessag
 import { showToast } from "./Toast";
 import { slotState, type InvitationSlot as InviteSlot } from "@wilma-client/src/core";
 import { NEEDS_YOU, isNeedsYou, type FeedItem } from "../data/feed";
-import type { JevAnswer, Snapshot } from "../data/model";
+import type { JevAnswer, MessageRec, Snapshot } from "../data/model";
 import { clock, dateOf, deadlineText, mentionedDates, relativeDay, shortDate, today, whenLong } from "../data/dates";
 import { KINDS, PUPIL_SCOPES, SCOPES, TRIAGE_PUPIL_QS } from "../jev/questions";
 import type { ReplyForm } from "@wilma-client/src/write";
@@ -198,8 +198,9 @@ export function Reader({
       ) : message?.thread?.replies.length ? (
         <Thread
           key={item.key}
-          opening={{ who: message.sender ?? t("Someone"), at: message.thread.sentAt ?? message.sentAt, text: message.thread.content }}
+          opening={{ who: message.sender ?? t("Someone"), at: openedAt(message), text: message.thread.content }}
           replies={message.thread.replies}
+          anchor={anchor}
           highlight={inPanel ? highlight : needs ? item.actionLine : null}
           why={inPanel ? t("The calendar's date is read from this line") : undefined}
         />
@@ -247,7 +248,18 @@ export function Reader({
 
 /* ---------- Threads ---------- */
 
-type ThreadMessage = { who: string; at: Date; text: string };
+type ThreadMessage = { who: string; at: Date | null; text: string };
+
+/**
+ * When a thread's opening message was sent. A thread read before that time was kept (it's read again at the
+ * next check) has the list's time, which can be the newest reply's: then none, rather than a wrong one.
+ */
+function openedAt(message: MessageRec): Date | null {
+  const thread = message.thread!;
+  if (thread.sentAt) return thread.sentAt;
+  const first = thread.replies[0]?.sentAt;
+  return !first || message.sentAt <= first ? message.sentAt : null;
+}
 
 /** About a screenful of text: when the messages before the newest are longer, they fold to a line each. */
 const FOLD_AFTER = 900;
@@ -261,11 +273,14 @@ const FOLD_AFTER = 900;
 function Thread({
   opening,
   replies,
+  anchor,
   highlight,
   why,
 }: {
   opening: ThreadMessage;
   replies: { sentAt: Date; senderName: string | null; content: string }[];
+  /** The item's day, for dates in a message without a time of its own. */
+  anchor: string;
   highlight: string | null;
   why?: string;
 }) {
@@ -298,16 +313,16 @@ function Thread({
           <div className={`msg${i === last ? " msg-last" : ""}`} key={i}>
             <div className="msg-who">
               <b>{m.who}</b>
-              <span>{whenLong(m.at)}</span>
+              {m.at ? <span>{whenLong(m.at)}</span> : null}
               {i === last ? <em className="msg-latest">{t("Latest")}</em> : null}
             </div>
-            <RichText text={m.text} anchor={dateOf(m.at)} highlight={highlight} why={why} />
+            <RichText text={m.text} anchor={m.at ? dateOf(m.at) : anchor} highlight={highlight} why={why} />
           </div>
         ) : (
           <button type="button" className="msg msg-folded" key={i} onClick={() => setOpened([...opened, i])} title={t("Show this message")}>
             <span className="msg-who">
               <b>{m.who}</b>
-              <span>{whenLong(m.at)}</span>
+              {m.at ? <span>{whenLong(m.at)}</span> : null}
             </span>
             <span className="msg-snippet">{m.text.replace(/\s+/g, " ").trim()}</span>
           </button>

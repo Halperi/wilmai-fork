@@ -679,8 +679,9 @@ async function runSync() {
       .filter((n) => !n.detail && (n.pinned || (n.published && daysBetween(dateOf(n.published), now) <= 45)))
       .sort((a, b) => (b.published?.getTime() ?? 0) - (a.published?.getTime() ?? 0))
       .slice(0, 20);
+    // A thread read before its opening message's own time was kept is read once more, for that time.
     const messages = Object.values(s.messages)
-      .filter((m) => !m.thread && (allowUnread || !m.unreadInWilma) && daysBetween(dateOf(m.sentAt), now) <= 120)
+      .filter((m) => (!m.thread || (m.thread.replies.length > 0 && !m.thread.sentAt)) && (allowUnread || !m.unreadInWilma) && daysBetween(dateOf(m.sentAt), now) <= 120)
       .sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime())
       .slice(0, 30);
     if (news.length || messages.length) step(t("Reading new messages and bulletins"));
