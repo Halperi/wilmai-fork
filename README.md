@@ -21,7 +21,7 @@ An MCP server, a CLI and agent skills. Ask Claude, ChatGPT, Codex, OpenClaw, Gro
 <a href="https://wilm.ai/en/home"><img src="assets/readme-home-top.png" alt="WilmAI Home's Today with a made-up sample family: each child's school day, today and tomorrow." width="100%"></a>
 
 **WilmAI Home, the desktop app**<br>
-Wilma rethought with AI built in, for students and parents: every child's school in one app, and a notification when something needs you. Beta, for Mac and Windows.
+A fast, modern Wilma app for students and parents: lessons, messages, homework, exams and grades in one view, a notification when something needs you, and AI if you want it. Free and open, now in beta, for Mac and Windows.
 
 **[Download WilmAI Home →](https://wilm.ai/en/home#download)** · [More](#wilmai-home-the-desktop-app)
 
@@ -195,7 +195,7 @@ Working on WilmAI or releasing it: [DEVELOPING.md](DEVELOPING.md). Tests: [TESTI
 
 ## WilmAI Home, the desktop app
 
-**Wilma, rethought with AI built in.** WilmAI Home is a desktop app for students and parents, in beta: messages, timetables, homework, exams and grades for every child in one app, a notification when something new needs you, and optional AI that reads each new message and picks out what needs you and by when.
+**School, sorted.** WilmAI Home is a fast, modern Wilma app for students and parents, free and open, now in beta: messages, timetables, homework, exams and grades for every child in one view, a notification when something new needs you, and optional AI that reads each new message and picks out what needs you and by when.
 
 **[Download for Mac or Windows](https://wilm.ai/en/home#download)** · [What it does](https://wilm.ai/en/home) · [Releases](https://github.com/aikarjal/wilmai/releases?q=home-v)
 

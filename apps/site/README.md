@@ -12,17 +12,21 @@ static files and served by Cloudflare Workers.
 - `components/HomeCard.tsx` — Home's card on the front page, after the setup guides; with the top bar's
   "WilmAI Home" link and an FAQ answer, that's how people find it. The front page's hero stays about
   assistants.
-- `public/home-today-en.png`, `public/home-today-fi.png` — the app's Today in its light theme with the
-  made-up sample family, never real children's data, the whole page with no scroll bar. To retake them: run
-  the app in a browser (`pnpm dev` in `apps/home`) and open it in a fresh browser profile with the light
-  colour scheme, the language's locale, Helsinki's time zone and 2× pixels, with the clock frozen on a
-  school-day morning (Playwright's `page.clock.setFixedTime`, e.g. a Wednesday at 09:40): the sample family is
-  built around today, so a weekend shows no school. Choose the sample family, then No AI in Settings (so the
-  menu's "Choose AI" cue is gone), open Today in a window 1305 wide and exactly as tall as the page
-  (`document.documentElement.scrollHeight`, 1134 now), hide the menu's corner (`.nav-foot`, `.nav-version`:
-  in a browser it says "Only in this browser") and capture the window. The page's `<Image>` sizes and the
-  Open Graph size follow the picture. The banner's `home-thumb-*.png` are its top 1305×870 at 480×320, and
-  the main README's `assets/readme-home-top.png` its top 1305×372 at 2×.
+- `public/home-today-*.png`, `public/home-student-*.png`, `public/home-parent-*.png` — the app in its light theme
+  with the made-up sample family, never real children's data: Today for the hero (the whole page, no scroll
+  bar), and for the two-column section a student's Today (Kiia only) and a parent's Week (both children). To
+  retake them: run the app in a browser (the `wilma-app-review` launch config, or `pnpm dev` in `apps/home`) and
+  open it in a fresh browser profile with the light colour scheme, the language's locale, Helsinki's time zone
+  and 2× pixels, with the clock frozen on a school-day morning (Playwright's `page.clock.setFixedTime`, e.g.
+  Wednesday 21 Oct 2026 at 09:40): the sample family is built around today, so a weekend shows no school.
+  Choose "Look around with a sample family" (never a saved login), then No AI in Settings (so the menu's
+  "Choose AI" cue is gone), and hide the menu's corner (`.nav-foot`, `.nav-version`: in a browser it says
+  "Only in this browser"). In a window 1305 wide and as tall as the page (`document.documentElement.scrollHeight`):
+  Today whole (1318 now), and the Week's top 816. For the student, set `viewAs: "student"` in the app's saved
+  `local` state (IndexedDB `keyval-store`; Settings hides "Who uses this account" for the sample family),
+  reload, pick Kiia, and take Today's top 816. The page's `<Image>` sizes and the Open Graph size follow the
+  pictures. The banner's `home-thumb-*.png` are Today's top 1305×870 at 480×320, and the main README's
+  `assets/readme-home-top.png` its top 1305×372 at 2×.
 - `public/_headers` — security and cache headers
 - `public/_redirects` — `/get/claude` (the Claude Desktop extension) and `/changes` (release notes, linked from the update notices)
 - `public/og-en.png`, `public/og-fi.png` — the share images (what a link shows in WhatsApp, Facebook and the like), made from `og/card.html`: open it with `?lang=en` or `?lang=fi` at 1200×630 and screenshot it. Its copy follows the hero; update both together

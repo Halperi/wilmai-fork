@@ -164,7 +164,8 @@ main {
   margin-bottom: 22px;
 }
 
-.taped-note::before {
+.taped-note::before,
+.home-next::before {
   content: "";
   position: absolute;
   top: -9px;
@@ -1363,20 +1364,119 @@ main {
   font-weight: 600;
 }
 
-.home-soon {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--marker);
-  font: 700 11px var(--font-body), sans-serif;
-  vertical-align: 2px;
+/* Students and parents side by side: a card each, with its own screenshot. */
+.home-audiences {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  align-items: start;
 }
 
-.home-note-body {
-  font-size: 15px;
+.home-audience {
+  padding: 22px 22px 24px;
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 5px 6px 0 var(--note-teal);
+}
+
+.home-audience-parent {
+  box-shadow: 5px 6px 0 var(--marker);
+}
+
+.home-audience-label {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--note-teal);
+  color: var(--teal-deep);
+  font: 700 12px var(--font-body), sans-serif;
+}
+
+.home-audience-parent .home-audience-label {
+  background: var(--note-yellow);
+  color: var(--ink);
+}
+
+.home-audience h3 {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: clamp(22px, 2.6vw, 28px);
+  letter-spacing: -0.02em;
+  margin: 12px 0 16px;
+}
+
+.home-audience-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1.5px solid var(--rule);
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.home-audience-points {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.home-audience-points li {
+  position: relative;
+  padding-left: 26px;
+  font-size: 15.5px;
   line-height: 1.5;
-  color: rgba(27, 43, 52, 0.8);
+}
+
+.home-audience-points li::before {
+  content: "✓";
+  position: absolute;
+  left: 2px;
+  top: 0;
+  font-weight: 800;
+  color: var(--teal);
+}
+
+/* What comes next, taped to the page like the hero's note. */
+.home-next {
+  position: relative;
+  max-width: 540px;
+  margin: 56px auto 0;
+  padding: 26px 28px 22px;
+  background: var(--note-yellow);
+  transform: rotate(-1.2deg);
+  box-shadow: 0 5px 14px rgba(27, 43, 52, 0.14);
+  text-align: center;
+}
+
+.home-next-label {
+  font-family: var(--font-hand), cursive;
+  font-size: 21px;
+  line-height: 1;
+  color: var(--teal-deep);
+  margin: 0 0 8px;
+}
+
+.home-next h3 {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+}
+
+.home-next p:last-child {
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .home-audiences {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* The three AI choices, drawn like the app's own choice tiles. */

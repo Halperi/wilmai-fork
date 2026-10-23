@@ -198,9 +198,10 @@ const en: Dictionary = {
         q: "Is there an app of its own, without an assistant?",
         a: (
           <p>
-            Yes, in beta: <Link href="/en/home">WilmAI Home</Link>, a desktop app for students and
-            parents, with AI built in, for Mac and Windows. You use it yourself, it notifies you when something
-            needs you, and it can also reply to teachers and sign you up for things.
+            Yes: <Link href="/en/home">WilmAI Home</Link>, a fast desktop Wilma app for students and
+            parents, for Mac and Windows, free and open, now in beta. You use it yourself, with AI if you want
+            it. It notifies you when something needs you, and it can also reply to teachers and sign you up for
+            things.
           </p>
         )
       },
@@ -431,9 +432,10 @@ const fi: Dictionary = {
         q: "Onko WilmAI:sta omaa sovellusta, ilman avustajaa?",
         a: (
           <p>
-            On, beta-vaiheessa: <Link href="/fi/home">WilmAI Home</Link>, työpöytäsovellus oppilaille
-            ja vanhemmille, johon tekoäly on rakennettu sisään, Macille ja Windowsille. Käytät sitä itse, se
-            ilmoittaa, kun jokin vaatii sinua, ja sillä voi myös vastata opettajille ja ilmoittautua.
+            On: <Link href="/fi/home">WilmAI Home</Link>, nopea Wilma-työpöytäsovellus oppilaille ja
+            vanhemmille, Macille ja Windowsille, ilmainen ja avoin, nyt beetana. Käytät sitä itse, tekoälyn
+            kanssa, jos haluat. Se ilmoittaa, kun jokin vaatii sinua, ja sillä voi myös vastata opettajille ja
+            ilmoittautua.
           </p>
         )
       },

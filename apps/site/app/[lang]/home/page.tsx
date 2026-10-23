@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     alternates: { canonical: `/${lang}/home`, languages: { en: "/en/home", fi: "/fi/home", "x-default": "/en/home" } },
-    openGraph: { title, description, url: `/${lang}/home`, images: [{ url: `/home-today-${lang}.png`, width: 2610, height: 2268, alt: homeCopy[lang].hero.sample }] },
+    openGraph: { title, description, url: `/${lang}/home`, images: [{ url: `/home-today-${lang}.png`, width: 2610, height: 2636, alt: homeCopy[lang].hero.sample }] },
     twitter: { title, description, images: [`/home-today-${lang}.png`] }
   };
 }
@@ -53,9 +53,41 @@ export default async function WilmAIHomePage({ params }: Props) {
         <p className="home-requirements">{t.hero.requirements}</p>
         <figure className="home-preview">
           {/* The app in its light theme with the sample family; how to retake it is in the site's README. */}
-          <Image src={`/home-today-${lang}.png`} alt={t.hero.sample} width={1305} height={1134} priority />
+          <Image src={`/home-today-${lang}.png`} alt={t.hero.sample} width={1305} height={1318} priority />
           <figcaption>{t.hero.sample}</figcaption>
         </figure>
+      </section>
+
+      <section className="section" id="features">
+        <div className="section-head">
+          <p className="eyebrow">{t.audiences.eyebrow}</p>
+          <h2>{t.audiences.title}</h2>
+        </div>
+        <div className="home-audiences">
+          {([["student", t.audiences.students], ["parent", t.audiences.parents]] as const).map(([who, audience]) => (
+            <article className={`home-audience home-audience-${who}`} key={who}>
+              <p className="home-audience-label">{audience.label}</p>
+              <h3>{audience.title}</h3>
+              {/* A student's Today (one child) and a parent's Week (both), the sample family; see the site's README. */}
+              <Image
+                className="home-audience-shot"
+                src={`/home-${who}-${lang}.png`}
+                alt={audience.alt}
+                width={1305}
+                height={816}
+                sizes="(max-width: 760px) 100vw, 560px"
+              />
+              <ul className="home-audience-points">
+                {audience.points.map((point) => <li key={point}>{point}</li>)}
+              </ul>
+            </article>
+          ))}
+        </div>
+        <aside className="home-next">
+          <p className="home-next-label">{t.next.label}</p>
+          <h3>{t.next.title}</h3>
+          <p>{t.next.text}</p>
+        </aside>
       </section>
 
       <section className="section">
@@ -65,24 +97,6 @@ export default async function WilmAIHomePage({ params }: Props) {
         </div>
         <div className="home-story">
           {t.why.lines.map((line) => <p key={line}>{line}</p>)}
-        </div>
-      </section>
-
-      <section className="section" id="features">
-        <div className="section-head">
-          <p className="eyebrow">{t.features.eyebrow}</p>
-          <h2>{t.features.title}</h2>
-        </div>
-        <div className="cards">
-          {t.features.items.map((item) => (
-            <div className={`note note-${item.color}`} key={item.title}>
-              <h3>
-                {item.title}
-                {item.soon ? <span className="home-soon">{item.soon}</span> : null}
-              </h3>
-              <p className="home-note-body">{item.body}</p>
-            </div>
-          ))}
         </div>
       </section>
 

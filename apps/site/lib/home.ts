@@ -10,7 +10,8 @@ export const homeRelease = release;
 export const macDownload = release.downloads.find((d) => d.id === "macos-arm64")?.url ?? null;
 export const windowsDownload = release.downloads.find((d) => d.id === "windows-x64")?.url ?? null;
 
-interface Feature { title: string; body: string; soon?: string; color: "yellow" | "teal" | "blue" | "pink" }
+/** One side of the page's two-column section: what the app is like for a student, or for a parent. */
+interface Audience { label: string; title: string; points: string[]; alt: string }
 interface Choice { title: string; badge: string; body: string; detail: string; link?: { label: string; href: string } }
 interface KeyStep { title: string; body: string; visual: "signin" | "credit" | "key" | "app"; link?: { label: string; href: string } }
 /** Words in the key steps' sketches (components/KeyVisual.tsx) that aren't OpenAI's own labels. */
@@ -32,8 +33,11 @@ export interface HomeCopy {
     requirements: string;
     sample: string;
   };
+  /** Students and parents side by side, each with a screenshot (public/home-student-*.png, home-parent-*.png). */
+  audiences: { eyebrow: string; title: string; students: Audience; parents: Audience };
+  /** The teaser for what comes next, as a taped note. */
+  next: { label: string; title: string; text: string };
   why: { eyebrow: string; title: string; lines: string[] };
-  features: { eyebrow: string; title: string; items: Feature[] };
   ai: { eyebrow: string; title: string; lead: string; choices: Choice[] };
   /** Getting an OpenAI API key, for someone who has never made one. Facts from OpenAI's help centre, 21 October 2026. */
   key: { eyebrow: string; title: string; lead: string; steps: KeyStep[]; note: string; visual: KeyVisualLabels };
@@ -68,55 +72,74 @@ export interface HomeCopy {
 
 const en: HomeCopy = {
   meta: {
-    title: "WilmAI Home — Wilma, rethought with AI built in",
+    title: "WilmAI Home — a fast, modern Wilma app for students and parents",
     description:
-      "A desktop app for students and parents: Wilma in one place, a notification when something needs you, and optional AI that picks out what matters. Beta, for Mac and Windows."
+      "A desktop app for Wilma: today's lessons, messages, homework, exams and grades in one view, a notification when something needs you, and AI if you want it. Free and open, now in beta, for Mac and Windows."
   },
   back: "WilmAI for AI assistants",
   hero: {
-    tapedNote: "A desktop app for students and parents. Beta.",
+    tapedNote: "A desktop app for students and parents.",
     disclaimerShort: "Independent project, not affiliated with Visma",
     disclaimer:
       "WilmAI Home is an independent hobby project by a parent. It is not affiliated with, endorsed by, or connected to Visma or the official Wilma service.",
-    tagline: "Wilma, rethought with AI built in.",
-    sub: "Messages, timetables, homework, exams and grades in one app, a notification when something new needs you, and AI that picks out what matters.",
+    tagline: "School, sorted.",
+    sub: "A fast, modern Wilma app for your computer. Today's lessons, messages, homework, exams and grades in one view, in seconds.",
     download: "Download",
     coming: "Download coming soon",
     more: "What it does",
-    requirements: "For Mac (Apple Silicon, macOS 13.3 or later) and Windows 10 or 11. Free.",
+    requirements: "For Mac (Apple Silicon, macOS 13.3 or later) and Windows 10 or 11. Free and open, now in beta.",
     sample: "The app with a made-up sample family."
+  },
+  audiences: {
+    eyebrow: "two ways to use it",
+    title: "Made for students and parents",
+    students: {
+      label: "For students",
+      title: "Everything in seconds",
+      points: [
+        "Your day at a glance: lessons, homework, coming exams and new messages on one screen.",
+        "Messages that read like messages: a thread in order, the newest marked, and a reply in a click.",
+        "Exams and grades: what's coming up, every result with its trend, and the report card.",
+        "A notification when something needs you, and the evening before a deadline. On Mac now, and on Windows from the next version.",
+        "Quick to get around: ⌘K or Ctrl+K finds any message or note, the keyboard moves through your inbox, and dark mode follows your computer."
+      ],
+      alt: "WilmAI Home for a student: one pupil's day, with lessons, homework, exams and messages."
+    },
+    parents: {
+      label: "For parents",
+      title: "All your children in one place",
+      points: [
+        "Every child side by side: timetables, homework, exams, grades and teachers' notes, without switching between children.",
+        "Act without opening Wilma: reply to teachers, sign up for parents' evenings, report an absence.",
+        "A notification when something needs you, and one click to sign back in when Wilma signs you out.",
+        "Supercharge it with AI, if you want: it reads every message, bulletin and teacher's note, and puts what needs you first, with the deadline."
+      ],
+      alt: "WilmAI Home for a parent: two children's week side by side."
+    }
+  },
+  next: {
+    label: "Coming next",
+    title: "Your family calendar",
+    text: "Exams, events and deadlines straight into Google Calendar, kept up to date as Wilma changes."
   },
   why: {
     eyebrow: "why it exists",
-    title: "What would Wilma be like with AI built in?",
+    title: "Wilma has everything. Finding it shouldn't take ten clicks.",
     lines: [
-      "Everything is in Wilma. Finding what matters takes digging.",
-      "WilmAI Home reads each new message for you and puts what needs you first.",
-      "Then you can act on it right there: reply, sign up, report an absence.",
+      "Messages, timetables, homework, exams and grades are all in Wilma, each behind its own page.",
+      "WilmAI Home puts them in one view that opens in a second, and you can act right there: reply, sign up, report an absence.",
       "I built it over a weekend. My family uses it every day."
-    ]
-  },
-  features: {
-    eyebrow: "for the whole family",
-    title: "What it does",
-    items: [
-      { title: "What needs you, first", body: "AI reads each new message, bulletin and teacher's note, picks out what needs you and by when, and highlights it. The rest is there when you want it.", color: "yellow" },
-      { title: "Notifications", body: "A notification when something new needs you, and the evening before a deadline. The app keeps checking from the menu bar when its window is closed. On Mac for now.", color: "teal" },
-      { title: "Stays signed in", body: "Wilma signs you out often. If you want, the app signs itself back in, so notifications keep coming.", color: "blue" },
-      { title: "Reply and sign up", body: "Answer teachers, write new messages, sign up for parents' evenings and report an absence, without opening Wilma.", color: "pink" },
-      { title: "All of school, side by side", body: "Timetables, homework, exams, grades and teachers' notes for all your children in one place.", color: "yellow" },
-      { title: "Google Calendar", soon: "coming next", body: "Exams, events and deadlines straight into your family's shared calendar.", color: "teal" }
     ]
   },
   ai: {
     eyebrow: "AI is optional",
-    title: "Three ways to use it",
-    lead: "You choose in Settings, and you can change your mind any time. The app starts with no AI.",
+    title: "AI, if you want it",
+    lead: "The app is complete without AI. Turn it on in Settings, and it reads everything new for you and puts what needs you first. You can change your mind any time.",
     choices: [
       {
         title: "No AI",
         badge: "Default",
-        body: "Everything Wilma has, in one app. But nothing picks out what needs you or by when, which is most of what the app is for, and notifications come only for what Wilma itself flags, like sign-ups.",
+        body: "Everything Wilma has, in one fast app. Nothing picks out what needs you or by when, and notifications come only for what Wilma itself flags, like sign-ups.",
         detail: "Free"
       },
       {
@@ -172,7 +195,7 @@ const en: HomeCopy = {
     items: [
       "It's a beta, and I built it on my own. Some things are missing, and some will break.",
       "For Mac (Apple Silicon, M1 or newer, and macOS 13.3 or later) and for Windows 10 or 11. Linux may come later.",
-      "On Windows, notifications and local AI aren't there yet.",
+      "On Windows, notifications come with the next version, and local AI isn't there yet.",
       "To check Wilma and notify you, the app needs to be running and the computer awake. Closing the window keeps it in the menu bar, or on Windows in the taskbar's notification area.",
       "AI can misread things, dates especially. Check anything important in the message itself.",
       "New versions arrive in the app, and you choose when to install them."
@@ -214,11 +237,11 @@ const en: HomeCopy = {
       },
       {
         q: "Why not a phone app?",
-        a: "I'd like to make one, and maybe I will. But a phone app has to go through the App Store, and Visma could ask for it to be taken down, because it uses Wilma without their permission. A desktop app needs no store. It's my way of showing what a modern Wilma with AI built in could look like."
+        a: "I'd like to make one, and maybe I will. But a phone app has to go through the App Store, and Visma could ask for it to be taken down, because it uses Wilma without their permission. A desktop app needs no store. It's my way of showing what a modern Wilma could look like."
       },
       {
         q: "How is it different from WilmAI for AI assistants?",
-        a: "WilmAI for assistants lets Claude, ChatGPT or another assistant read Wilma for you, and it only reads. WilmAI Home is an app you use yourself, with AI built in, and it can also send replies, sign-ups and absence reports. You can use either, or both."
+        a: "WilmAI for assistants lets Claude, ChatGPT or another assistant read Wilma for you, and it only reads. WilmAI Home is an app you use yourself, with AI or without, and it can also send replies, sign-ups and absence reports. You can use either, or both."
       }
     ]
   },
@@ -244,65 +267,84 @@ const en: HomeCopy = {
     signature: "— Antti",
     button: "Give feedback on GitHub"
   },
-  announce: { badge: "New", text: "WilmAI Home", more: ": a desktop app for students and parents, with AI built in", cta: "See the app" },
+  announce: { badge: "New", text: "WilmAI Home", more: ": a fast desktop Wilma app for students and parents", cta: "See the app" },
   card: {
     eyebrow: "new: a desktop app",
-    text: "Rather have an app of your own? WilmAI Home is Wilma rethought with AI built in, for students and parents: everything in one place, and a notification when something needs you. In beta, for Mac and Windows.",
+    text: "Rather have an app of your own? WilmAI Home is a fast, modern Wilma app for students and parents: everything in one view, a notification when something needs you, and AI if you want it. Free and open, now in beta, for Mac and Windows.",
     link: "Meet WilmAI Home"
   }
 };
 
 const fi: HomeCopy = {
   meta: {
-    title: "WilmAI Home — uudenlainen Wilma, johon tekoäly on rakennettu sisään",
+    title: "WilmAI Home — nopea ja moderni Wilma-sovellus oppilaille ja vanhemmille",
     description:
-      "Työpöytäsovellus oppilaille ja vanhemmille: Wilma yhdessä paikassa, ilmoitus, kun jokin vaatii sinua, ja vapaaehtoinen tekoäly, joka poimii olennaisen. Beta, Macille ja Windowsille."
+      "Wilma-työpöytäsovellus: päivän tunnit, viestit, läksyt, kokeet ja arvosanat yhdessä näkymässä, ilmoitus, kun jokin vaatii sinua, ja tekoäly, jos haluat. Ilmainen ja avoin, nyt beetana, Macille ja Windowsille."
   },
   back: "Tekoälyavustajien WilmAI",
   hero: {
-    tapedNote: "Työpöytäsovellus oppilaille ja vanhemmille. Beta.",
+    tapedNote: "Työpöytäsovellus oppilaille ja vanhemmille.",
     disclaimerShort: "Itsenäinen projekti, ei liity Vismaan",
     disclaimer:
       "WilmAI Home on vanhemman tekemä itsenäinen harrastusprojekti. Se ei ole Visman tai virallisen Wilma-palvelun tekemä, tukema tai hyväksymä.",
-    tagline: "Uudenlainen Wilma, johon tekoäly on rakennettu sisään.",
-    sub: "Viestit, lukujärjestykset, läksyt, kokeet ja arvosanat yhdessä sovelluksessa, ilmoitus, kun jokin uusi vaatii sinua, ja tekoäly, joka poimii olennaisen.",
+    tagline: "Kouluasiat järjestyksessä.",
+    sub: "Nopea ja moderni Wilma-sovellus tietokoneelle. Päivän tunnit, viestit, läksyt, kokeet ja arvosanat yhdessä näkymässä, sekunneissa.",
     download: "Lataa",
     coming: "Lataus tulossa pian",
     more: "Mitä se tekee",
-    requirements: "Macille (Apple Silicon, macOS 13.3 tai uudempi) ja Windows 10:lle tai 11:lle. Maksuton.",
+    requirements: "Macille (Apple Silicon, macOS 13.3 tai uudempi) ja Windows 10:lle tai 11:lle. Ilmainen ja avoin, nyt beetana.",
     sample: "Sovellus kuvitteellisen esimerkkiperheen tiedoilla."
+  },
+  audiences: {
+    eyebrow: "kaksi tapaa käyttää",
+    title: "Tehty oppilaille ja vanhemmille",
+    students: {
+      label: "Oppilaalle",
+      title: "Kaikki sekunneissa",
+      points: [
+        "Päivä yhdellä silmäyksellä: tunnit, läksyt, tulevat kokeet ja uudet viestit samassa näkymässä.",
+        "Viestit, joita on helppo lukea: keskustelu järjestyksessä, uusin merkittynä, ja vastaus yhdellä klikkauksella.",
+        "Kokeet ja arvosanat: mitä on tulossa, jokainen tulos ja sen suunta sekä todistus.",
+        "Ilmoitus, kun jokin vaatii sinua, ja määräajan edellisenä iltana. Macilla nyt, Windowsilla seuraavasta versiosta alkaen.",
+        "Nopea käyttää: ⌘K tai Ctrl+K löytää minkä tahansa viestin tai merkinnän, näppäimistöllä liikut viesteissä, ja tumma tila seuraa koneesi asetusta."
+      ],
+      alt: "WilmAI Home oppilaalle: yhden oppilaan päivä tunteineen, läksyineen, kokeineen ja viesteineen."
+    },
+    parents: {
+      label: "Vanhemmalle",
+      title: "Kaikki lapset yhdessä paikassa",
+      points: [
+        "Kaikki lapset rinnakkain: lukujärjestykset, läksyt, kokeet, arvosanat ja opettajien merkinnät, ilman lapsesta toiseen vaihtamista.",
+        "Hoida asiat avaamatta Wilmaa: vastaa opettajalle, ilmoittaudu vanhempainiltaan, ilmoita poissaolo.",
+        "Ilmoitus, kun jokin vaatii sinua, ja yksi klikkaus takaisin sisään, kun Wilma kirjaa sinut ulos.",
+        "Tehosta tekoälyllä, jos haluat: se lukee jokaisen viestin, tiedotteen ja opettajan merkinnän ja nostaa ensimmäiseksi sen, mikä vaatii sinua, määräaikoineen."
+      ],
+      alt: "WilmAI Home vanhemmalle: kahden lapsen viikko rinnakkain."
+    }
+  },
+  next: {
+    label: "Tulossa seuraavaksi",
+    title: "Perheen kalenteri",
+    text: "Kokeet, tapahtumat ja määräajat suoraan Google-kalenteriin, ja ne pysyvät ajan tasalla, kun Wilma muuttuu."
   },
   why: {
     eyebrow: "miksi tämä on olemassa",
-    title: "Millainen Wilma olisi, jos tekoäly olisi rakennettu sisään?",
+    title: "Wilmassa on kaikki. Sen löytämiseen ei pitäisi tarvita kymmentä klikkausta.",
     lines: [
-      "Wilmassa on kaikki. Olennaisen löytäminen vaatii kaivamista.",
-      "WilmAI Home lukee jokaisen uuden viestin puolestasi ja nostaa ensimmäiseksi sen, mikä vaatii sinua.",
-      "Sitten voit hoitaa asian heti: vastata, ilmoittautua tai ilmoittaa poissaolon.",
+      "Viestit, lukujärjestykset, läksyt, kokeet ja arvosanat ovat kaikki Wilmassa, kukin omalla sivullaan.",
+      "WilmAI Home kokoaa ne yhteen näkymään, joka aukeaa sekunnissa, ja voit hoitaa asiat saman tien: vastata, ilmoittautua tai ilmoittaa poissaolon.",
       "Tein sen viikonlopun aikana. Perheessäni sitä käytetään joka päivä."
-    ]
-  },
-  features: {
-    eyebrow: "koko perheelle",
-    title: "Mitä se tekee",
-    items: [
-      { title: "Tärkein ensin", body: "Tekoäly lukee jokaisen uuden viestin, tiedotteen ja opettajan merkinnän, poimii, mikä vaatii sinulta jotain ja mihin mennessä, ja nostaa sen esiin. Muu odottaa, kunnes haluat katsoa.", color: "yellow" },
-      { title: "Ilmoitukset", body: "Ilmoitus, kun jokin uusi vaatii sinua, ja määräajan edellisenä iltana. Sovellus tarkistaa Wilmaa valikkoriviltä, vaikka ikkuna olisi kiinni. Toistaiseksi Macilla.", color: "teal" },
-      { title: "Pysyy kirjautuneena", body: "Wilma kirjaa ulos usein. Halutessasi sovellus kirjautuu itse takaisin, joten ilmoitukset jatkuvat.", color: "blue" },
-      { title: "Vastaa ja ilmoittaudu", body: "Vastaa opettajalle, kirjoita uusi viesti, ilmoittaudu vanhempainiltaan ja ilmoita poissaolo avaamatta Wilmaa.", color: "pink" },
-      { title: "Kaikki yhdessä paikassa", body: "Kaikkien lasten lukujärjestykset, läksyt, kokeet, arvosanat ja opettajien merkinnät rinnakkain.", color: "yellow" },
-      { title: "Google-kalenteri", soon: "tulossa seuraavaksi", body: "Kokeet, tapahtumat ja määräajat suoraan perheen yhteiseen kalenteriin.", color: "teal" }
     ]
   },
   ai: {
     eyebrow: "tekoäly on vapaaehtoinen",
-    title: "Kolme vaihtoehtoa",
-    lead: "Valitset asetuksista ja voit vaihtaa milloin tahansa. Aluksi tekoäly ei ole käytössä.",
+    title: "Tekoäly, jos haluat",
+    lead: "Sovellus on valmis ilman tekoälyä. Kun otat sen asetuksista käyttöön, se lukee kaiken uuden puolestasi ja nostaa ensimmäiseksi sen, mikä vaatii sinua. Voit vaihtaa milloin tahansa.",
     choices: [
       {
         title: "Ei tekoälyä",
         badge: "Oletus",
-        body: "Kaikki, mitä Wilmassa on, yhdessä sovelluksessa. Mikään ei kuitenkaan poimi, mikä vaatii sinulta jotain ja mihin mennessä, ja juuri sitä varten sovellus on tehty. Ilmoitukset tulevat vain siitä, minkä Wilma itse merkitsee, kuten ilmoittautumisista.",
+        body: "Kaikki, mitä Wilmassa on, yhdessä nopeassa sovelluksessa. Mikään ei poimi, mikä vaatii sinulta jotain ja mihin mennessä, ja ilmoitukset tulevat vain siitä, minkä Wilma itse merkitsee, kuten ilmoittautumisista.",
         detail: "Maksuton"
       },
       {
@@ -358,7 +400,7 @@ const fi: HomeCopy = {
     items: [
       "Tämä on beta, jonka olen tehnyt yksin. Jotain puuttuu vielä, ja jotain menee rikki.",
       "Macille (Apple Silicon, M1 tai uudempi, ja macOS 13.3 tai uudempi) ja Windows 10:lle tai 11:lle. Linux voi tulla myöhemmin.",
-      "Windowsissa ilmoituksia ja paikallista tekoälyä ei vielä ole.",
+      "Windowsissa ilmoitukset tulevat seuraavassa versiossa, eikä paikallista tekoälyä vielä ole.",
       "Jotta sovellus voi tarkistaa Wilmaa ja ilmoittaa, sen pitää olla käynnissä ja tietokoneen hereillä. Kun suljet ikkunan, sovellus jää valikkoriville, Windowsissa tehtäväpalkin ilmoitusalueelle.",
       "Tekoäly voi lukea asioita väärin, varsinkin päivämääriä. Tarkista tärkeät asiat itse viestistä.",
       "Uudet versiot tulevat sovellukseen, ja päätät itse, milloin asennat ne."
@@ -400,11 +442,11 @@ const fi: HomeCopy = {
       },
       {
         q: "Miksi ei puhelinsovellusta?",
-        a: "Haluaisin tehdä sellaisen, ja ehkä teenkin. Puhelinsovellus on kuitenkin julkaistava App Storessa, ja Visma voisi vaatia sen poistamista, koska se käyttää Wilmaa ilman Visman lupaa. Työpöytäsovellus ei tarvitse sovelluskauppaa. Sillä näytän, millainen moderni Wilma voisi olla, kun tekoäly on rakennettu sisään."
+        a: "Haluaisin tehdä sellaisen, ja ehkä teenkin. Puhelinsovellus on kuitenkin julkaistava App Storessa, ja Visma voisi vaatia sen poistamista, koska se käyttää Wilmaa ilman Visman lupaa. Työpöytäsovellus ei tarvitse sovelluskauppaa. Sillä näytän, millainen moderni Wilma voisi olla."
       },
       {
         q: "Miten tämä eroaa tekoälyavustajien WilmAI:sta?",
-        a: "Avustajien WilmAI antaa Clauden, ChatGPT:n tai muun avustajan lukea Wilmaa puolestasi, ja se vain lukee. WilmAI Home on sovellus, jota käytät itse ja johon tekoäly on rakennettu sisään, ja se osaa myös lähettää vastauksia, ilmoittautumisia ja poissaoloilmoituksia. Voit käyttää kumpaa tahansa tai molempia."
+        a: "Avustajien WilmAI antaa Clauden, ChatGPT:n tai muun avustajan lukea Wilmaa puolestasi, ja se vain lukee. WilmAI Home on sovellus, jota käytät itse, tekoälyn kanssa tai ilman, ja se osaa myös lähettää vastauksia, ilmoittautumisia ja poissaoloilmoituksia. Voit käyttää kumpaa tahansa tai molempia."
       }
     ]
   },
@@ -430,10 +472,10 @@ const fi: HomeCopy = {
     signature: "— Antti",
     button: "Anna palautetta GitHubissa"
   },
-  announce: { badge: "Uutta", text: "WilmAI Home", more: ": työpöytäsovellus oppilaille ja vanhemmille, tekoäly sisäänrakennettuna", cta: "Katso sovellus" },
+  announce: { badge: "Uutta", text: "WilmAI Home", more: ": nopea Wilma-työpöytäsovellus oppilaille ja vanhemmille", cta: "Katso sovellus" },
   card: {
     eyebrow: "uutta: työpöytäsovellus",
-    text: "Haluaisitko mieluummin oman sovelluksen? WilmAI Home on uudenlainen Wilma oppilaille ja vanhemmille, ja tekoäly on rakennettu sisään: kaikki yhdessä paikassa ja ilmoitus, kun jokin vaatii sinua. Beta-vaiheessa, Macille ja Windowsille.",
+    text: "Haluaisitko mieluummin oman sovelluksen? WilmAI Home on nopea ja moderni Wilma-sovellus oppilaille ja vanhemmille: kaikki yhdessä näkymässä, ilmoitus, kun jokin vaatii sinua, ja tekoäly, jos haluat. Ilmainen ja avoin, nyt beetana, Macille ja Windowsille.",
     link: "Tutustu WilmAI Homeen"
   }
 };
