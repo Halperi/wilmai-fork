@@ -1,16 +1,16 @@
 {
-  "version": "0.1.2",
-  "notes": "Signing in again is one click: the app remembers your Wilma password on this computer. · Uudelleen kirjautuminen on yksi klikkaus: sovellus muistaa Wilma-salasanasi tällä koneella.",
-  "pub_date": "2026-10-22T14:22:01.792Z",
+  "version": "0.1.3",
+  "notes": "Notifications on Windows too. · Ilmoitukset nyt myös Windowsissa.",
+  "pub_date": "2026-10-23T11:22:03.755Z",
   "url": "https://wilm.ai/app",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQlZiY2R1UHBEbnVJamY5ajBIOEZNanMySUk1Y095RFUwSkw3VTkydWVJR3EwbU5DeVNWY3JiTWJCa2JKa0xQZ0lrZXRvVmUxNm80VHhQTVZWak9DdndNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjc4Njg5CWZpbGU6V2lsbUFJIEhvbWUuYXBwLnRhci5negl2ZXJzaW9uOjAuMS4yCjI2QXprMWtGeHVydHFWSDNVVFdtRlNYb3lTY05KZnhDTE9VNVNGZnpFRlREZ3NFTWhMY0paT1phdWFTbDJ6ajQ1L3FFUDYrTEhsbC8rZ1NjNUZ1eUFRPT0K",
-      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.2/WilmAI-Home-0.1.2-beta-macos-arm64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQmFocitRL1JFNEE2bTJ5OTlrUEhLRFErcTVRV1F4ZHZWSjl1SzNjMzdMaTh2S0FlZWhUb2oyaGNmQkZrUmFsWlBQalFOQnFlWlAyenFZSEY3M0ZJZlFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNzU0Mzg2CWZpbGU6V2lsbUFJIEhvbWUuYXBwLnRhci5negl2ZXJzaW9uOjAuMS4zCnk0aTM2UzRjZFpzeUtURzRLU2l0M1dudXpScy9HZXFKL3N5bCtyMCs1Q1dHSyt5OFp1T0NIYTRBTHJYVkxYOFBwc0lIVTIvbFdKS253Tk9raGpTZkNRPT0K",
+      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.3/WilmAI-Home-0.1.3-beta-macos-arm64.app.tar.gz"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQlVFSDBOSjdBa3B1b0hvR0daOU1kM3hvVE95TmlxRDFPa1ZMaThncHJ3SE54Z2d6TTNiNUtKaW9BQ1lrS09xWCsxb2FJUXZqaEZ2QlRTMnY0Q1o5cVF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjc4NzgxCWZpbGU6V2lsbUFJLUhvbWUtMC4xLjItYmV0YS13aW5kb3dzLXg2NC5leGUKUkUzdkhNa0NjWGYyRUdBWVkyMVJtVlRaOWcyNnBFTE1ZNGJNV0pUQ1drc2c3amZVcjN5QzRzRUtxV0ozenRYUXJUdEJjamxORFBtVUdBK3RmYTZiQWc9PQo=",
-      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.2/WilmAI-Home-0.1.2-beta-windows-x64.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQmM1OG90NFVOSDdSOWFJeEFFc3V6dnZDM0l2MzgzQzl3YnRkL25ib1lCak85eTlPdFBOTHMvRDZ1REN3ZlRuc2daUVgwWDNoaUljdXZSalFYU0ZlcUFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNzU0NDgyCWZpbGU6V2lsbUFJLUhvbWUtMC4xLjMtYmV0YS13aW5kb3dzLXg2NC5leGUKdnVENDJ5L2MrclE5amxsUEg5OXlKWUh5UkFRbHJJWXh1UkdPZ3RHVy9Rd280cGhXdkdQNXZlaFRieW1QcGFlczVGbENTTWhsTGR5V2N0UVJvL1BPQlE9PQo=",
+      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.3/WilmAI-Home-0.1.3-beta-windows-x64.exe"
     }
   }
 }
