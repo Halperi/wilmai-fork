@@ -100,7 +100,7 @@ const en: HomeCopy = {
         "Your day at a glance: lessons, homework, coming exams and new messages on one screen.",
         "Messages that read like messages: a thread in order, the newest marked, and a reply in a click.",
         "Exams and grades: what's coming up, every result with its trend, and the report card.",
-        "A notification when something needs you, and the evening before a deadline. On Mac now, and on Windows from the next version.",
+        "A notification when something needs you, and the evening before a deadline. On Mac and Windows.",
         "Quick to get around: ⌘K or Ctrl+K finds any message or note, the keyboard moves through your inbox, and dark mode follows your computer."
       ],
       alt: "WilmAI Home for a student: one pupil's day, with lessons, homework, exams and messages."
@@ -195,7 +195,7 @@ const en: HomeCopy = {
     items: [
       "It's a beta, and I built it on my own. Some things are missing, and some will break.",
       "For Mac (Apple Silicon, M1 or newer, and macOS 13.3 or later) and for Windows 10 or 11. Linux may come later.",
-      "On Windows, notifications come with the next version, and local AI isn't there yet.",
+      "On Windows, local AI isn't there yet.",
       "To check Wilma and notify you, the app needs to be running and the computer awake. Closing the window keeps it in the menu bar, or on Windows in the taskbar's notification area.",
       "AI can misread things, dates especially. Check anything important in the message itself.",
       "New versions arrive in the app, and you choose when to install them."
@@ -305,7 +305,7 @@ const fi: HomeCopy = {
         "Päivä yhdellä silmäyksellä: tunnit, läksyt, tulevat kokeet ja uudet viestit samassa näkymässä.",
         "Viestit, joita on helppo lukea: keskustelu järjestyksessä, uusin merkittynä, ja vastaus yhdellä klikkauksella.",
         "Kokeet ja arvosanat: mitä on tulossa, jokainen tulos ja sen suunta sekä todistus.",
-        "Ilmoitus, kun jokin vaatii sinua, ja määräajan edellisenä iltana. Macilla nyt, Windowsilla seuraavasta versiosta alkaen.",
+        "Ilmoitus, kun jokin vaatii sinua, ja määräajan edellisenä iltana. Macilla ja Windowsilla.",
         "Nopea käyttää: ⌘K tai Ctrl+K löytää minkä tahansa viestin tai merkinnän, näppäimistöllä liikut viesteissä, ja tumma tila seuraa koneesi asetusta."
       ],
       alt: "WilmAI Home oppilaalle: yhden oppilaan päivä tunteineen, läksyineen, kokeineen ja viesteineen."
@@ -400,7 +400,7 @@ const fi: HomeCopy = {
     items: [
       "Tämä on beta, jonka olen tehnyt yksin. Jotain puuttuu vielä, ja jotain menee rikki.",
       "Macille (Apple Silicon, M1 tai uudempi, ja macOS 13.3 tai uudempi) ja Windows 10:lle tai 11:lle. Linux voi tulla myöhemmin.",
-      "Windowsissa ilmoitukset tulevat seuraavassa versiossa, eikä paikallista tekoälyä vielä ole.",
+      "Windowsissa paikallista tekoälyä ei vielä ole.",
       "Jotta sovellus voi tarkistaa Wilmaa ja ilmoittaa, sen pitää olla käynnissä ja tietokoneen hereillä. Kun suljet ikkunan, sovellus jää valikkoriville, Windowsissa tehtäväpalkin ilmoitusalueelle.",
       "Tekoäly voi lukea asioita väärin, varsinkin päivämääriä. Tarkista tärkeät asiat itse viestistä.",
       "Uudet versiot tulevat sovellukseen, ja päätät itse, milloin asennat ne."
