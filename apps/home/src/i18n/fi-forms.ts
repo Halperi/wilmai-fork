@@ -231,6 +231,10 @@ export const FI_FORMS: Record<string, string> = {
     "Kun jokin uusi odottaa sinua, ja määräajan edellisenä iltana. Ilmoitusta napsauttamalla se aukeaa.",
   "WilmAI Home stays in the menu bar when you close its window and checks Wilma every ten minutes. Quit it from the menu bar icon.":
     "WilmAI Home jää valikkoriville, kun suljet sen ikkunan, ja tarkistaa Wilman kymmenen minuutin välein. Lopeta se valikkorivin kuvakkeesta.",
+  "WilmAI Home stays by the clock, in the taskbar's notification area, when you close its window, and checks Wilma every ten minutes. Quit it by right-clicking that icon.":
+    "WilmAI Home jää tehtäväpalkin ilmoitusalueelle kellon viereen, kun suljet sen ikkunan, ja tarkistaa Wilman kymmenen minuutin välein. Lopeta se napsauttamalla kuvaketta hiiren oikealla painikkeella.",
+  "WilmAI Home is still running and checks Wilma. Its icon is by the clock (maybe behind ^); right-click it to quit.":
+    "WilmAI Home on yhä käynnissä ja tarkistaa Wilmaa. Sen kuvake on kellon vieressä (ehkä ^-nuolen takana); lopeta se napsauttamalla kuvaketta hiiren oikealla painikkeella.",
   "Send a test notification": "Lähetä testi-ilmoitus",
   "Notifications work. This is how something that needs you will show.": "Ilmoitukset toimivat. Näin näkyy asia, joka odottaa sinua.",
   "by {date}": "viimeistään {date}",

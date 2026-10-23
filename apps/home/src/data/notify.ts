@@ -24,7 +24,7 @@ import { listen } from "@tauri-apps/api/event";
 import { getState, setState, subscribe } from "./store";
 import { buildFeed, isNeedsYou, needsYou, type FeedItem } from "./feed";
 import { addDays, dateOf, deadlineDay, shortDate } from "./dates";
-import { isDesktopApp } from "../wilma/transport";
+import { isDesktopApp, onWindows } from "../wilma/transport";
 import type { LocalState, Snapshot } from "./model";
 import { t } from "../i18n";
 
@@ -173,7 +173,12 @@ export function showWindow(): void {
 export function startNotifications(tick: () => void, checkNow: () => void, open: (key: string) => void): () => void {
   if (!isDesktopApp) return () => {};
   const stops = [subscribe(schedule)];
-  const listening = [listen("wilmai:tick", () => tick()), listen("wilmai:check", () => checkNow()), listen<string>("wilmai:open", (e) => open(e.payload))];
+  const listening = [
+    listen("wilmai:tick", () => tick()),
+    listen("wilmai:check", () => checkNow()),
+    listen<string>("wilmai:open", (e) => open(e.payload)),
+    listen("wilmai:hidden", () => tellWhereItWent()),
+  ];
   trayLabels();
   schedule();
   return () => {
@@ -183,3 +188,12 @@ export function startNotifications(tick: () => void, checkNow: () => void, open:
 }
 
 export const notificationsAvailable = isDesktopApp;
+
+/** The first time a Windows user closes the window, where the app went: Windows apps usually quit then. */
+function tellWhereItWent(): void {
+  const state = getState();
+  if (!onWindows || state.local.trayTold || state.settings.notify === false) return;
+  setState((s) => ({ local: { ...s.local, trayTold: Date.now() } }));
+  const body = t("WilmAI Home is still running and checks Wilma. Its icon is by the clock (maybe behind ^); right-click it to quit.");
+  void invoke("notify", { title: "WilmAI Home", body, key: null }).catch(() => {});
+}

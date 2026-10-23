@@ -8,7 +8,7 @@ import { go } from "./shared";
 import { AISettings } from "./AISettings";
 import { notificationsAvailable, testNotification } from "../data/notify";
 import { Icon } from "./bits";
-import { isDesktopApp } from "../wilma/transport";
+import { isDesktopApp, onWindows } from "../wilma/transport";
 import { t, tx } from "../i18n";
 import type { Settings as SettingsModel, Viewer } from "../data/model";
 import { runJev } from "../jev/runner";
@@ -76,7 +76,11 @@ export function Settings() {
               <span>{t("When something new needs you, and the evening before its deadline. Clicking a notification opens it.")}</span>
             </div>
           </label>
-          <p className="help-line">{t("WilmAI Home stays in the menu bar when you close its window and checks Wilma every ten minutes. Quit it from the menu bar icon.")}</p>
+          <p className="help-line">
+            {onWindows
+              ? t("WilmAI Home stays by the clock, in the taskbar's notification area, when you close its window, and checks Wilma every ten minutes. Quit it by right-clicking that icon.")
+              : t("WilmAI Home stays in the menu bar when you close its window and checks Wilma every ten minutes. Quit it from the menu bar icon.")}
+          </p>
           <button className="btn btn-sm" style={{ marginTop: 10 }} onClick={() => void testNotification()}>
             {t("Send a test notification")}
           </button>

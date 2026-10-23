@@ -67,6 +67,8 @@ async function native(command: string, args: Record<string, unknown>): Promise<u
 }
 
 export const isDesktopApp = "__TAURI_INTERNALS__" in globalThis;
+/** The desktop app on Windows, where it goes on in the notification area by the clock rather than the menu bar. */
+export const onWindows = isDesktopApp && /Windows/.test(globalThis.navigator?.userAgent ?? "");
 let reportWrites: Promise<unknown> = Promise.resolve();
 
 /** Write one of the experiment's reports to the app's data folder (desktop app); returns where. */

@@ -338,7 +338,12 @@ async fn secret_get(name: String) -> Result<Option<String>, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let context = tauri::generate_context!();
-    let builder = tauri::Builder::default().plugin(tauri_plugin_opener::init());
+    let builder = tauri::Builder::default();
+    // Windows starts a second copy when the app is opened again from the Start menu (its window only hides on close)
+    // or a notification is clicked in the notification centre: that copy hands over and quits, and this one shows.
+    #[cfg(windows)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| shell::show(app)));
+    let builder = builder.plugin(tauri_plugin_opener::init());
     // The updater deserializes a required public key during startup. Development
     // packages use the manual checker until real signing credentials are configured.
     let builder = if has_signed_updater(context.config()) {

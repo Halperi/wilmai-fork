@@ -51,3 +51,9 @@ tokio = { version = "1", features = ["macros", "rt"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 mac-notification-sys = "0.6.15"
+
+# Windows: notifications (the installer's Start menu shortcut gives the app its id), and one copy of the app: starting
+# it again (or a notification clicked later in the notification centre) brings the running one's window back.
+[target.'cfg(windows)'.dependencies]
+tauri-winrt-notification = "0.8"
+tauri-plugin-single-instance = "2"

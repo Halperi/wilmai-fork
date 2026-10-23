@@ -118,6 +118,8 @@ export interface LocalState {
   viewAs?: Viewer;
   /** Messages and bulletins pinned to the top of the inbox (key → when), only in this app. */
   pinned?: Record<string, number>;
+  /** When a Windows user was told, once, that closing the window leaves the app by the clock. */
+  trayTold?: number;
 }
 
 export interface CalendarLocal {
