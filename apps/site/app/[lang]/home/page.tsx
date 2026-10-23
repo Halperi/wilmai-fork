@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Footer, TopBar } from "../../../components/SiteChrome";
 import { KeyVisual } from "../../../components/KeyVisual";
 import { Installers } from "../../../components/Installers";
+import { HomeClip } from "../../../components/HomeClip";
 import { GITHUB_URL, githubStars } from "../../../lib/github-stars";
 import { homeCopy, homeRelease, macDownload, windowsDownload } from "../../../lib/home";
 import { dictionaries, isLang, type Lang } from "../../../lib/i18n";
@@ -52,8 +53,8 @@ export default async function WilmAIHomePage({ params }: Props) {
         </div>
         <p className="home-requirements">{t.hero.requirements}</p>
         <figure className="home-preview">
-          {/* The app in its light theme with the sample family; how to retake it is in the site's README. */}
-          <Image src={`/home-today-${lang}.png`} alt={t.hero.sample} width={1305} height={1318} priority />
+          {/* The app in use with the sample family; how to record it again is in the site's README. */}
+          <HomeClip lang={lang} label={t.hero.clip} />
           <figcaption>{t.hero.sample}</figcaption>
         </figure>
       </section>

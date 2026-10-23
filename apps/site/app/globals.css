@@ -1337,7 +1337,8 @@ main {
   max-width: 960px;
 }
 
-.home-preview img {
+.home-preview img,
+.home-preview video {
   display: block;
   width: 100%;
   height: auto;

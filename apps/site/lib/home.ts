@@ -32,6 +32,8 @@ export interface HomeCopy {
     more: string;
     requirements: string;
     sample: string;
+    /** The hero's clip, for screen readers. */
+    clip: string;
   };
   /** Students and parents side by side, each with a screenshot (public/home-student-*.png, home-parent-*.png). */
   audiences: { eyebrow: string; title: string; students: Audience; parents: Audience };
@@ -92,7 +94,8 @@ const en: HomeCopy = {
     coming: "Download coming soon",
     more: "What it does",
     requirements: "For Mac (Apple Silicon, macOS 13.3 or later) and Windows 10 or 11. Free and open, now in beta.",
-    sample: "The app with a made-up sample family."
+    sample: "The app with a made-up sample family.",
+    clip: "WilmAI Home in use: today's view, a message with times to sign up for, search, two children's week side by side, and grades."
   },
   audiences: {
     eyebrow: "two ways to use it",
@@ -299,7 +302,8 @@ const fi: HomeCopy = {
     coming: "Lataus tulossa pian",
     more: "Mitä se tekee",
     requirements: "Macille (Apple Silicon, macOS 13.3 tai uudempi) ja Windows 10:lle tai 11:lle. Ilmainen ja avoin, nyt beetana.",
-    sample: "Sovellus kuvitteellisen esimerkkiperheen tiedoilla."
+    sample: "Sovellus kuvitteellisen esimerkkiperheen tiedoilla.",
+    clip: "WilmAI Home käytössä: päivän näkymä, viesti, jossa on aikoja ilmoittautua, haku, kahden lapsen viikko rinnakkain ja arvosanat."
   },
   audiences: {
     eyebrow: "kaksi tapaa käyttää",
