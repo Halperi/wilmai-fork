@@ -1803,20 +1803,50 @@ main {
   text-overflow: ellipsis;
 }
 
-/* The first start on an unsigned installer, beside the download notes */
-.first-starts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+/* Installing an unsigned app: the steps after a download button is clicked (components/Installers.tsx), and folded
+   for anyone who wants to read them first. */
+.install-next,
+.install-help {
   width: 100%;
-  max-width: 620px;
+  max-width: 560px;
   text-align: left;
 }
 
-@media (max-width: 640px) {
-  .first-starts {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.install-next {
+  scroll-margin: 24px;
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px;
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+}
+
+.install-next h3 {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.install-next p,
+.install-help p {
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.install-help summary {
+  cursor: pointer;
+  width: fit-content;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.install-help > div {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .first-start {

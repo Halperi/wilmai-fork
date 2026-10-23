@@ -59,6 +59,10 @@ export interface HomeCopy {
     firstWindows: string;
     /** The two Windows steps' labels: the browser's download warning (Edge), then the first start. */
     windowsSteps: { download: string; start: string };
+    /** Above the installing steps, shown after a download button is clicked. */
+    started: string;
+    /** The steps for both, folded, for anyone who wants to read them first. */
+    howTo: string;
     pending: string;
     others: string;
     cliLink: string;
@@ -257,6 +261,8 @@ const en: HomeCopy = {
     firstMac: "On a Mac, the first time",
     firstWindows: "On Windows, the first time",
     windowsSteps: { download: "Downloading, in Edge", start: "Starting it" },
+    started: "Your download is starting. Next:",
+    howTo: "How installing works",
     pending: "The first downloads are on their way. They'll be here when they're ready.",
     others: "No Linux version yet.",
     cliLink: "WilmAI for AI assistants works there →"
@@ -462,6 +468,8 @@ const fi: HomeCopy = {
     firstMac: "Macilla ensimmäisellä kerralla",
     firstWindows: "Windowsissa ensimmäisellä kerralla",
     windowsSteps: { download: "Lataus Edgessä", start: "Käynnistys" },
+    started: "Lataus alkaa. Seuraavaksi:",
+    howTo: "Näin asennus menee",
     pending: "Ensimmäiset lataukset ovat tulossa. Ne ilmestyvät tähän, kun ne ovat valmiita.",
     others: "Linux-versiota ei vielä ole.",
     cliLink: "Tekoälyavustajien WilmAI toimii siinäkin →"

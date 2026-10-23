@@ -2,7 +2,7 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { Footer, TopBar } from "../../../components/SiteChrome";
 import { KeyVisual } from "../../../components/KeyVisual";
-import { FirstStartVisual } from "../../../components/FirstStartVisual";
+import { Installers } from "../../../components/Installers";
 import { GITHUB_URL, githubStars } from "../../../lib/github-stars";
 import { homeCopy, homeRelease, macDownload, windowsDownload } from "../../../lib/home";
 import { dictionaries, isLang, type Lang } from "../../../lib/i18n";
@@ -180,30 +180,16 @@ export default async function WilmAIHomePage({ params }: Props) {
       <section className="section home-download" id="download">
         <Image src="/wilmai-mascot.png" width={96} height={96} alt="" />
         <h2>{t.get.title}</h2>
-        {[
+        <Installers
           // Through wilm.ai, which forwards to the installer on GitHub (worker/index.ts), so downloads count per day.
-          { name: t.get.mac, detail: t.get.macDetail, url: macDownload && "/get/mac" },
-          { name: t.get.windows, detail: t.get.windowsDetail, url: windowsDownload && "/get/windows" }
-        ].map((installer) => (
-          <div className="home-installer" key={installer.name}>
-            <div>
-              <h3>{installer.name} {beta}</h3>
-              <p>{installer.detail}</p>
-            </div>
-            {installer.url ? (
-              <a className="button primary" href={installer.url} rel="nofollow">{t.hero.download} ↓</a>
-            ) : (
-              <span className="button secondary is-disabled" aria-disabled="true">{t.hero.coming}</span>
-            )}
-          </div>
-        ))}
+          installers={[
+            { kind: "mac", name: t.get.mac, detail: t.get.macDetail, url: macDownload && "/get/mac", note: t.get.macNote, visualTitle: t.get.firstMac },
+            { kind: "windows", name: t.get.windows, detail: t.get.windowsDetail, url: windowsDownload && "/get/windows", note: t.get.windowsNote, visualTitle: t.get.firstWindows, steps: t.get.windowsSteps }
+          ]}
+          beta={beta}
+          labels={{ download: t.hero.download, coming: t.hero.coming, started: t.get.started, howTo: t.get.howTo }}
+        />
         <p>{t.get.includes}</p>
-        <p>{t.get.macNote}</p>
-        <p>{t.get.windowsNote}</p>
-        <div className="first-starts">
-          <FirstStartVisual kind="mac" title={t.get.firstMac} />
-          <FirstStartVisual kind="windows" title={t.get.firstWindows} steps={t.get.windowsSteps} />
-        </div>
         {macDownload && windowsDownload ? null : <p className="home-download-note">{t.get.pending}</p>}
         <p className="home-download-note">
           {t.get.others} <a href={`/${lang}#quickstart`}>{t.get.cliLink}</a>
