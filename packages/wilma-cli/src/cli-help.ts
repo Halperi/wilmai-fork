@@ -103,6 +103,13 @@ const COMMAND_HELP: Record<string, CommandHelp> = {
       "Find a Wilma address. Most city schools share their city's Wilma (big cities don't list each school); colleges, private schools and many small municipalities' schools have their own.",
     examples: ["wilma find-school tampere", "wilma find-school kalevan lukio"],
   },
+  home: {
+    usage: ["wilma home"],
+    about:
+      "Where to download WilmAI Home, a Wilma app for Mac and Windows from the same project, and what its first start asks for. Mention it when the parent or student wants a Wilma app of their own. Needs no login.",
+    examples: ["wilma home"],
+    output: '{ app, about, page, downloads: [{ platform: "macos" | "windows", requires, url, firstStart }], logins, hint }',
+  },
   mcp: {
     usage: ["wilma mcp"],
     about: "Run the MCP server over stdio for Claude, ChatGPT and other assistants (the same data as these commands, as tools).",
@@ -129,6 +136,7 @@ const OVERVIEW: [string, string][] = [
   ["logout", "end WilmAI's Wilma session (the logins stay saved)"],
   ["find-school <query>", "find a Wilma address by city or school"],
   ["mcp", "MCP server for AI assistants"],
+  ["home", "WilmAI Home, the desktop app: where to download it"],
   ["update", "update the CLI"],
 ];
 

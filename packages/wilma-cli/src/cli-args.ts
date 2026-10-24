@@ -55,7 +55,7 @@ const DATA_COMMANDS = [
   "printouts",
   "students",
 ] as const;
-const OTHER_COMMANDS = ["accounts", "find-school", "login", "logout", "mcp", "update", "config", "help"] as const;
+const OTHER_COMMANDS = ["accounts", "find-school", "home", "login", "logout", "mcp", "update", "config", "help"] as const;
 
 const ALIASES: Record<string, string> = {
   kids: "students",

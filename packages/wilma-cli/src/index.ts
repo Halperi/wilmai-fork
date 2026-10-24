@@ -37,6 +37,7 @@ import { commandHelp, generalHelp } from "./cli-help.js";
 import { compactText, formatText, messageLine, newsLine } from "./cli-output.js";
 import { ENV_VARS, isMfaFailure, mfaCallbackFor, resolveAccounts, saveLogin, verifyLoginSession } from "./credentials.js";
 import { createUniqueDownloadFile } from "./downloads.js";
+import { HOME, homeText } from "./home.js";
 import { openBrowser, startLoginServer } from "./login-server.js";
 import { runMcpServer } from "./mcp.js";
 import { claimNotice, cliUpdateNotice, isNewerVersion, latestWithin, startUpdateCheck, updateChecksEnabled, type UpdateCheck } from "./update-check.js";
@@ -159,6 +160,9 @@ async function runCommand(argv: string[]) {
       return;
     case "find-school":
       await handleFindSchool(args.join(" "), out);
+      return;
+    case "home":
+      out.data(HOME, () => homeText());
       return;
     case "update":
       await handleUpdate();

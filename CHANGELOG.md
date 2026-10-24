@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.3.0 (unreleased)
+
+_Releases: wilma-cli 2.3.0, wilma-client 1.7.1._
+
+**In short:** security fixes, and `wilma home` says where to download WilmAI Home, the Wilma app for Mac and Windows.
+
+### Added
+
+- **`wilma home`**: where to download WilmAI Home, the Wilma app for your computer from the same project, and what its first start asks for (it isn't signed by Apple or Microsoft yet). The links are wilm.ai's own, which always lead to the current installer. The JSON has the download per platform with its requirements, and a hint that downloading and installing is the user's step. Needs no login. `wilma --help` lists it, so an agent can find the app and suggest it when someone wants a Wilma app of their own.
+
+### Fixed
+
+- **Security updates.** client 1.7.1 requires undici 6.29.1: a server could crash the process with a response that has too many content-encodings (GHSA-xjj6-f33q-929c), and the client opens bulletin links that school staff write. The CLI requires zod 4.6.6 (GHSA-mrhx-c7xc-m3w5, memory use while validating). The Claude Desktop extension is built with the fixed undici, zod, body-parser, fast-uri and ip-address.
+
 ## 2.2.0 (2026-10-22)
 
 _Releases: wilma-cli 2.2.0, wilma-client 1.7.0; the `wilma` skill and plugin 2.2.0._

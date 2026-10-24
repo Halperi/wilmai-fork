@@ -139,6 +139,14 @@ try {
   assert.match((await run(["notes", "--help"])).stdout, /Usage: wilma notes/);
   assert.match((await run([])).stdout, /Usage: wilma <command>/, "no command from a program: help, not a prompt");
 
+  // WilmAI Home: the overview names it, and `wilma home` says where to get it, without a login.
+  assert.match((await run(["--help"])).stdout, /home .*WilmAI Home/);
+  const home = await json(["home"], { env: { ...env, WILMAI_CONFIG_PATH: join(tempDirectory, "none.json") } });
+  assert.deepEqual(home.downloads.map((d) => [d.platform, d.url]), [["macos", "https://wilm.ai/get/mac"], ["windows", "https://wilm.ai/get/windows"]]);
+  assert.equal(home.page, "https://wilm.ai/home");
+  assert.match((await run(["home", "--text"])).stdout, /^WilmAI Home[\s\S]*https:\/\/wilm\.ai\/get\/windows/);
+  await jsonError(["home", "now"], "invalid_argument", /Unexpected "now" after home/, "home takes no arguments");
+
   // Every child by default; a strict --student narrows; text in Finnish time without terminal escapes.
   const all = await json(["messages"]);
   assert.deepEqual(all.students.map((s) => s.student.name), ["Daniella Korhonen", "Emilia Mattila"]);
