@@ -46,7 +46,7 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.12",
     "tough-cookie": "^4.1.4",
-    "undici": "^6.27.0"
+    "undici": "^6.29.1"
   },
   "devDependencies": {
     "typescript": "^5.6.3",
