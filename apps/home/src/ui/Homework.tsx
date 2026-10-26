@@ -27,6 +27,7 @@ import { DayStrip } from "./DayStrip";
 import { Icon, Tab } from "./bits";
 import { go, homeworkBySubject as bySubjectView, shortLabel, tSense, useChildFilter } from "./shared";
 import { plural, t } from "../i18n";
+import { useWilma } from "../data/phrases";
 
 /** Lessons that need no books: lunch, homeroom minutes, breaks. */
 const NO_BOOKS = /ruokailu|lounas|lunch|vartti|välitunti|tukiopetus|kerho/i;
@@ -55,6 +56,7 @@ function shortTask(hw: Hw, data: ChildData | undefined): { text: string; folded:
 }
 
 export function Homework() {
+  const w = useWilma();
   const snap = useApp((s) => s.snapshot)!;
   const { selected } = useChildFilter();
   const children = snap.children.filter((c) => !selected.length || selected.includes(c.number));
@@ -114,7 +116,7 @@ export function Homework() {
               {mine.length ? (
                 mine.map((h, i) => (
                   <button type="button" key={i} className="hw-chip" onClick={() => show(h)}>
-                    {h.item.subject}
+                    {w(h.item.subject)}
                   </button>
                 ))
               ) : (
@@ -151,7 +153,7 @@ export function Homework() {
             canOpen={() => true}
             describe={(d) => {
               const items = dueOn.get(d) ?? [];
-              return items.length ? items.map((h) => `${h.child.first}, ${h.item.subject}`).join("; ") : t("No homework due.");
+              return items.length ? items.map((h) => `${h.child.first}, ${w(h.item.subject)}`).join("; ") : t("No homework due.");
             }}
             picked={day}
             onPick={setDay}
@@ -184,6 +186,7 @@ const subjectShort = (hw: Hw) => courseKey(hw.item.subjectCode || hw.due?.subjec
 
 /** Every homework coming up in the two weeks, by the day it's due, the whole task at a glance (two lines). */
 function UpcomingList({ children, days, dueOn, onOpen }: { children: Child[]; days: string[]; dueOn: Map<string, Hw[]>; onOpen: (hw: Hw) => void }) {
+  const w = useWilma();
   const snap = useApp((s) => s.snapshot)!;
   const now = today();
   const ahead = days.filter((d) => d >= now && (dueOn.get(d) ?? []).length);
@@ -202,10 +205,10 @@ function UpcomingList({ children, days, dueOn, onOpen }: { children: Child[]; da
                     <li key={i}>
                       <button type="button" onClick={() => onOpen(h)}>
                         <b>
-                          {children.length > 1 ? <Tab child={h.child} /> : null} {h.item.subject}
+                          {children.length > 1 ? <Tab child={h.child} /> : null} {w(h.item.subject)}
                         </b>
                         <span className="hw-line-text two">
-                          <span>{task.text}</span>
+                          <span>{w(task.text)}</span>
                         </span>
                         {task.folded ? <span className="hw-tag">{t("+ for pupils who were away")}</span> : <span />}
                         <Icon name="right" className="icon hw-go" />
@@ -226,6 +229,7 @@ function UpcomingList({ children, days, dueOn, onOpen }: { children: Child[]; da
 
 /** One school day: per child, the subjects (what to pack) and one line per homework due. */
 function DayCard({ day, children, due, onOpen }: { day: string; children: Child[]; due: Hw[]; onOpen: (hw: Hw) => void }) {
+  const w = useWilma();
   const snap = useApp((s) => s.snapshot)!;
   const summary = children.map((c) => {
     const n = due.filter((h) => h.child === c).length;
@@ -258,9 +262,9 @@ function DayCard({ day, children, due, onOpen }: { day: string; children: Child[
                   return (
                     <li key={i}>
                       <button type="button" onClick={() => onOpen(h)}>
-                        <b>{h.item.subject}</b>
+                        <b>{w(h.item.subject)}</b>
                         <span className="hw-line-text two">
-                          <span>{task.text}</span>
+                          <span>{w(task.text)}</span>
                         </span>
                         {task.folded ? <span className="hw-tag">{t("+ for pupils who were away")}</span> : <span />}
                         <Icon name="right" className="icon hw-go" />
@@ -298,6 +302,7 @@ function BySubject({
   onOpen: (hw: Hw) => void;
   onLesson: (child: Child, lesson: ScheduleLesson) => void;
 }) {
+  const w = useWilma();
   const snap = useApp((s) => s.snapshot)!;
   const now = today();
   return (
@@ -352,7 +357,7 @@ function BySubject({
                   return (
                     <div className="hwm-row" role="row" key={row.name}>
                       <span role="rowheader" className="hwm-subject">
-                        {row.name}
+                        {w(row.name)}
                       </span>
                       {days.map((d, i) => {
                         const here = row.due.filter((h) => h.due!.date === d);
@@ -364,7 +369,7 @@ function BySubject({
                             key={d}
                             className={`${cls} due`}
                             onClick={() => onOpen(here[0])}
-                            aria-label={t("{subject}, homework for {day}", { subject: row.name, day: dayWithDate(d) })}
+                            aria-label={t("{subject}, homework for {day}", { subject: w(row.name), day: dayWithDate(d) })}
                           >
                             <i>{here.length > 1 ? here.length : ""}</i>
                           </button>
@@ -376,7 +381,7 @@ function BySubject({
                             key={d}
                             className={`${cls} lesson`}
                             onClick={() => onLesson(child, row.lessons.get(d)!)}
-                            aria-label={t("{subject} on {day}: show the day", { subject: row.name, day: dayWithDate(d) })}
+                            aria-label={t("{subject} on {day}: show the day", { subject: w(row.name), day: dayWithDate(d) })}
                           />
                         ) : (
                           <span role="cell" key={d} className={cls} />
@@ -384,7 +389,7 @@ function BySubject({
                       })}
                       {next ? (
                         <button type="button" role="cell" className="hwm-next" onClick={() => onOpen(next)}>
-                          <span>{shortTask(next, data).text}</span>
+                          <span>{w(shortTask(next, data).text)}</span>
                         </button>
                       ) : (
                         <span role="cell" className="hwm-next none" />
@@ -405,6 +410,7 @@ function BySubject({
 
 /** A homework in full, beside the page: the task, the part for pupils who were away (folded), when, and the teacher. */
 function HomeworkPanel({ hw, history, onOpen, onShowDay, onClose }: { hw: Hw; history: Hw[]; onOpen: (hw: Hw) => void; onShowDay: (lesson: ScheduleLesson) => void; onClose: () => void }) {
+  const w = useWilma();
   const data = useApp((s) => s.snapshot?.perChild[hw.child.number]);
   const { main, absentees } = splitAbsentees(hw.item.homework);
   const away = absentWhenGiven(data, hw.item);
@@ -420,19 +426,19 @@ function HomeworkPanel({ hw, history, onOpen, onShowDay, onClose }: { hw: Hw; hi
       }
       onClose={onClose}
     >
-      <h2 className="details-title">{hw.item.subject}</h2>
+      <h2 className="details-title">{w(hw.item.subject)}</h2>
       <p className="lesson-sub">
         {hw.due ? (hw.due.date >= now ? t("For {day}", { day: dayWithDate(hw.due.date) }) : t("Was for {day}", { day: shortDate(hw.due.date) })) : null}
         {hw.due ? " · " : ""}
         {t("set {day}", { day: shortDate(hw.item.date) })}
       </p>
-      <div className="hw-full">{absentees && !away ? main || t("Only instructions for pupils who were away") : hw.item.homework}</div>
+      <div className="hw-full">{absentees && !away ? w(main) || t("Only instructions for pupils who were away") : w(hw.item.homework)}</div>
       {absentees && !away ? (
         <div className="hw-absentees">
           <button type="button" className="linkish" onClick={() => setShowAbsentees(!showAbsentees)}>
             {showAbsentees ? t("Hide the instructions for pupils who were away") : t("Instructions for pupils who were away")}
           </button>
-          {showAbsentees ? <div className="hw-full muted">{absentees}</div> : null}
+          {showAbsentees ? <div className="hw-full muted">{w(absentees)}</div> : null}
         </div>
       ) : away && absentees ? (
         <p className="hw-away">{t("{name} was away from that lesson, so the instructions for pupils who were away apply too.", { name: hw.child.first })}</p>

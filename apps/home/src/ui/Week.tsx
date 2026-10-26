@@ -3,6 +3,7 @@ import type { ScheduleLesson } from "@wilma-client/src/core";
 import { useApp } from "../data/store";
 import { addDays, isoWeek, longDate, minutes, mondayOf, nowMinutes, shortDate, today, dayName } from "../data/dates";
 import { t } from "../i18n";
+import { useWilma } from "../data/phrases";
 import { forChildren, type FeedItem } from "../data/feed";
 import { DEFAULT_KINDS, allDay, calendarEvents, calendarTitle, type CalEvent } from "../data/calendar";
 import { dayTimes, examForLesson, lessonKey, unusualDays } from "../data/schedule";
@@ -24,6 +25,7 @@ const WEEKS_BACK = 16;
 const WEEKS_AHEAD = 6;
 
 export function Week({ feed }: { feed: FeedItem[] }) {
+  const w = useWilma();
   const snap = useApp((s) => s.snapshot)!;
   const { selected } = useChildFilter();
   const docked = useMedia(DOCK_QUERY);
@@ -148,11 +150,11 @@ export function Week({ feed }: { feed: FeedItem[] }) {
                         type="button"
                         key={e.key}
                         className={`wk-ev ${e.children.length === 1 ? `c${(first?.color ?? 0) % 5}` : "shared"} k-${e.kind}${e.sure ? "" : " suggested"}`}
-                        title={calendarTitle(e, snap.children)}
+                        title={calendarTitle({ ...e, title: w(e.title) }, snap.children)}
                         onClick={() => openEvent(e)}
                       >
                         {allDay(e) ? null : <time>{e.start}</time>}
-                        <span>{lanes > 1 ? calendarTitle(e, snap.children) : e.title}</span>
+                        <span>{lanes > 1 ? calendarTitle({ ...e, title: w(e.title) }, snap.children) : w(e.title)}</span>
                       </button>
                     );
                   })}
@@ -187,10 +189,10 @@ export function Week({ feed }: { feed: FeedItem[] }) {
                       left: `calc(${(lane / lanes) * 100}% + 3px)`,
                       width: `calc(${100 / lanes}% - 6px)`,
                     }}
-                    title={`${l.child.first}: ${l.start}–${l.end} ${l.subject}${l.room ? ` · ${l.room}` : ""}${l.teacher ? ` · ${l.teacher}` : ""}${exam ? ` · ${t("exam")}` : ""}`}
+                    title={`${l.child.first}: ${l.start}–${l.end} ${w(l.subject)}${l.room ? ` · ${l.room}` : ""}${l.teacher ? ` · ${l.teacher}` : ""}${exam ? ` · ${t("exam")}` : ""}`}
                   >
                     {/* The child is the box's colour and column (see the day's times above); the subject gets the room. */}
-                    <b>{l.subject}</b>
+                    <b>{w(l.subject)}</b>
                     <span>
                       {l.start}
                       {l.room ? ` · ${l.room}` : ""}

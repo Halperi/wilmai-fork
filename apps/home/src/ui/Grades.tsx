@@ -48,6 +48,7 @@ import { intelligenceOn, type Child } from "../data/model";
 import { Icon, Linked, Tab } from "./bits";
 import { go, gradesAcademicOnly, tSense, useChildFilter } from "./shared";
 import { language, plural, t } from "../i18n";
+import { useWilma } from "../data/phrases";
 
 const decimals = (n: number) => new Intl.NumberFormat(language() === "fi" ? "fi-FI" : "en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
@@ -297,6 +298,7 @@ function ExamCard({
   onToggle: (subject: string) => void;
   read: boolean;
 }) {
+  const w = useWilma();
   const markOf = useContext(MarkOf);
   const inPeriod = (e: PastExam) => isResultOrWaiting(e) && (!from || e.date >= from);
   // Subjects with exams in the period, the one with the newest exam first.
@@ -341,7 +343,7 @@ function ExamCard({
             return (
               <div className={`xs-group${isOpen ? " open" : ""}`} key={`${i}:${r.subject.name}`}>
                 <button type="button" className="xs-row" aria-expanded={isOpen} onClick={() => onToggle(r.subject.name)}>
-                  <span className="grade-subject">{r.subject.name}</span>
+                  <span className="grade-subject">{w(r.subject.name)}</span>
                   <span className="xs-latest">
                     <Mark exam={latest} big />
                     <small>
@@ -435,6 +437,7 @@ function ReportCard({
   onToggle: (subject: string) => void;
   loading: boolean;
 }) {
+  const w = useWilma();
   const subjects = all.filter((s) => !academic || isAcademic(s.name));
   // Newest term first, after the grade now.
   const terms = termsOf(subjects).reverse();
@@ -498,7 +501,7 @@ function ReportCard({
             return (
               <div className={`xs-group${isOpen ? " open" : ""}`} key={`${i}:${s.name}`}>
                 <button type="button" className={`grade-row${isConduct(s.name) ? " conduct" : ""}`} aria-expanded={isOpen} onClick={() => onToggle(s.name)}>
-                  <span className="grade-subject">{s.name}</span>
+                  <span className="grade-subject">{w(s.name)}</span>
                   <span className={`grade-now ${heat(s.grade)}`}>{s.grade ?? "–"}</span>
                   <Trend trend={trendOf(s)} />
                   {terms.map((x) => {
@@ -618,6 +621,7 @@ function SubjectTimeline({
   highlight: string | null;
   from?: string | null;
 }) {
+  const w = useWilma();
   const [whole, setWhole] = useState(false);
   const since = whole ? null : from;
   const all = exams.filter(isResultOrWaiting);
@@ -659,10 +663,10 @@ function SubjectTimeline({
                     <li key={key} data-result={key} className={highlight === key ? "highlight" : undefined}>
                       <span className="ov-day">{shortDate(e.date)}</span>
                       <span className="tl-what">
-                        <b>{e.name || e.subject}</b>
+                        <b>{w(e.name || e.subject)}</b>
                         {fresh.has(key) ? <em className="lx-new">{tSense("New", "a result")}</em> : null}
                         {e.grade ? null : <span className="tl-waiting">{t("No grade yet")}</span>}
-                        {e.verbalGrade ? <span className="tl-verbal">“{e.verbalGrade}”</span> : null}
+                        {e.verbalGrade ? <span className="tl-verbal">“{w(e.verbalGrade)}”</span> : null}
                         {e.info ? <Note text={e.info} /> : null}
                       </span>
                       <Mark exam={e} />
@@ -691,7 +695,8 @@ function SubjectTimeline({
 }
 
 /** What the teacher wrote about an exam: three lines, the rest on request. */
-function Note({ text }: { text: string }) {
+function Note({ text: original }: { text: string }) {
+  const text = useWilma()(original);
   const [all, setAll] = useState(false);
   const long = text.split("\n").length > 3 || text.length > 240;
   return (

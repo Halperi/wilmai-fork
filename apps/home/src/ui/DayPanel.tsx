@@ -22,6 +22,7 @@ import { DetailsPanel } from "./Details";
 import { Icon, Tab } from "./bits";
 import { examKey, go, tSense } from "./shared";
 import { t } from "../i18n";
+import { useWilma } from "../data/phrases";
 
 /** Which day is shown, and the lesson picked in it (lessonKey), if any. */
 export interface DayFocus {
@@ -46,6 +47,7 @@ function withLinks(text: string) {
 }
 
 export function DayPanel({ focus, onFocus, onClose }: { focus: DayFocus; onFocus: (focus: DayFocus) => void; onClose: () => void }) {
+  const w = useWilma();
   const snap = useApp((s) => s.snapshot);
   const jev = useApp((s) => s.jev);
   const luna = useApp((s) => s.luna);
@@ -127,10 +129,10 @@ export function DayPanel({ focus, onFocus, onClose }: { focus: DayFocus; onFocus
                   aria-pressed={focus.lesson === key}
                   style={{ top: y(l.start) + 6 + 1, height }}
                   onClick={() => onFocus({ ...focus, lesson: focus.lesson === key ? null : key })}
-                  title={`${l.start}–${l.end} ${l.subject}${l.room ? ` · ${l.room}` : ""}${l.teacher ? ` · ${l.teacher}` : ""}`}
+                  title={`${l.start}–${l.end} ${w(l.subject)}${l.room ? ` · ${l.room}` : ""}${l.teacher ? ` · ${l.teacher}` : ""}`}
                 >
                   <b>
-                    {l.subject}
+                    {w(l.subject)}
                     {exam ? <span className="dp-exam">{t("Exam")}</span> : null}
                     {homework ? <Icon name="book" className="icon dp-hw" label={t("Homework")} /> : null}
                   </b>
@@ -163,8 +165,8 @@ export function DayPanel({ focus, onFocus, onClose }: { focus: DayFocus; onFocus
                     <span className="ov-day">{h.lesson.start}</span>
                     <span />
                     <span className="ov-text">
-                      <b>{h.lesson.subject}</b>
-                      <span className="ov-sub">{h.item.homework}</span>
+                      <b>{w(h.lesson.subject)}</b>
+                      <span className="ov-sub">{w(h.item.homework)}</span>
                     </span>
                   </button>
                 </li>
@@ -181,13 +183,14 @@ export function DayPanel({ focus, onFocus, onClose }: { focus: DayFocus; onFocus
 
 /** The calendar's quoted exam instruction stays visible even when no timetable lesson holds it. */
 function ReadExamFacts({ exam }: { exam: CalEvent & { origin: NonNullable<CalEvent["origin"]> } }) {
+  const w = useWilma();
   const note = exam.origin.key.startsWith("note:");
   const bulletin = exam.origin.key.startsWith("n:");
   return (
     <article className="dp-read-exam">
-      <h3>{exam.title}<span className={`chip${exam.sure ? " chip-marker" : ""}`}>{t(exam.sure ? "Exam" : "Suggestion")}</span></h3>
+      <h3>{w(exam.title)}<span className={`chip${exam.sure ? " chip-marker" : ""}`}>{t(exam.sure ? "Exam" : "Suggestion")}</span></h3>
       {exam.start ? <p className="dp-read-exam-time">{t("exam starts {time}", { time: exam.start })}{exam.end ? `–${exam.end}` : ""}</p> : null}
-      <p className="dp-read-exam-quote">{withLinks(exam.origin.quote)}</p>
+      <p className="dp-read-exam-quote">{withLinks(w(exam.origin.quote))}</p>
       <button className="btn btn-sm" onClick={() => go(note ? "notes" : "inbox", exam.origin.key)}>
         {t(note ? "Open the note" : bulletin ? "Open the bulletin" : "Open the message")}
       </button>
@@ -197,13 +200,14 @@ function ReadExamFacts({ exam }: { exam: CalEvent & { origin: NonNullable<CalEve
 
 /** An exam on the day that no lesson holds, as a lesson's exam shows: when, the teacher, what it covers. */
 function ExamFacts({ exam, child }: { exam: UpcomingExam; child: Child }) {
+  const w = useWilma();
   return (
     <section className="dp-facts">
       <h3>
-        {exam.name || exam.subject}
+        {w(exam.name || exam.subject)}
         <span className="chip chip-marker">{t("Exam")}</span>
       </h3>
-      {exam.name && exam.name !== exam.subject ? <p className="lesson-sub">{exam.subject}</p> : null}
+      {exam.name && exam.name !== exam.subject ? <p className="lesson-sub">{w(exam.subject)}</p> : null}
       <dl className="lesson-facts">
         {exam.time ? (
           <>
@@ -220,7 +224,7 @@ function ExamFacts({ exam, child }: { exam: UpcomingExam; child: Child }) {
       </dl>
       <div className="dp-exam-topic">
         <span className="dp-label">{t("Covers")}</span>
-        {exam.topic ? <div className="lesson-topic clamped">{withLinks(exam.topic)}</div> : <p className="exam-none">{t("The teacher hasn't written what it covers.")}</p>}
+        {exam.topic ? <div className="lesson-topic clamped">{withLinks(w(exam.topic))}</div> : <p className="exam-none">{t("The teacher hasn't written what it covers.")}</p>}
       </div>
       <div className="dp-actions">
         <button className="btn btn-sm btn-primary" onClick={() => go("exams", examKey(child.number, exam))}>
@@ -236,6 +240,7 @@ function ExamFacts({ exam, child }: { exam: UpcomingExam; child: Child }) {
 
 /** One lesson's details under the timeline. */
 function LessonFacts({ lesson, child }: { lesson: ScheduleLesson; child: Child }) {
+  const w = useWilma();
   const data = useApp((s) => s.snapshot?.perChild[child.number]);
   const all = knownLessons(data);
   const exam = examForLesson(data, lesson);
@@ -250,10 +255,10 @@ function LessonFacts({ lesson, child }: { lesson: ScheduleLesson; child: Child }
   return (
     <section className="dp-facts">
       <h3>
-        {exam?.name || lesson.subject}
+        {w(exam?.name || lesson.subject)}
         {exam ? <span className="chip chip-marker">{t("Exam")}</span> : null}
       </h3>
-      {exam?.name && exam.name !== lesson.subject ? <p className="lesson-sub">{lesson.subject}</p> : null}
+      {exam?.name && exam.name !== lesson.subject ? <p className="lesson-sub">{w(lesson.subject)}</p> : null}
       <dl className="lesson-facts">
         <dt>{t("When")}</dt>
         <dd>
@@ -277,7 +282,7 @@ function LessonFacts({ lesson, child }: { lesson: ScheduleLesson; child: Child }
           <>
             <dt>{t("Homework")}</dt>
             <dd>
-              {homework.homework}
+              {w(homework.homework)}
               <small> · {t("set {day}", { day: shortDate(homework.date) })}</small>
             </dd>
           </>
@@ -285,15 +290,15 @@ function LessonFacts({ lesson, child }: { lesson: ScheduleLesson; child: Child }
         {given && given !== homework ? (
           <>
             <dt>{t("Given")}</dt>
-            <dd>{given.homework}</dd>
+            <dd>{w(given.homework)}</dd>
           </>
         ) : null}
         {notes.map((n, i) => (
           <Fragment key={i}>
             <dt>{tSense("Note", "lesson")}</dt>
             <dd>
-              <b>{n.typeLabel}</b>
-              {n.note ? `: ${n.note}` : null}
+              <b>{w(n.typeLabel)}</b>
+              {n.note ? `: ${w(n.note)}` : null}
               {n.teacher && n.teacher !== teacher ? <small> · {n.teacher}</small> : null}
             </dd>
           </Fragment>
@@ -303,7 +308,7 @@ function LessonFacts({ lesson, child }: { lesson: ScheduleLesson; child: Child }
         // What it covers, the full width of the panel and shortened; the whole of it is in Exams.
         <div className="dp-exam-topic">
           <span className="dp-label">{t("Covers")}</span>
-          {exam.topic ? <div className="lesson-topic clamped">{withLinks(exam.topic)}</div> : <p className="exam-none">{t("The teacher hasn't written what it covers.")}</p>}
+          {exam.topic ? <div className="lesson-topic clamped">{withLinks(w(exam.topic))}</div> : <p className="exam-none">{t("The teacher hasn't written what it covers.")}</p>}
         </div>
       ) : null}
       <div className="dp-actions">

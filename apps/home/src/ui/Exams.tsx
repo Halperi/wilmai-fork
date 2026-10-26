@@ -19,6 +19,7 @@ import { DayStrip } from "./DayStrip";
 import { Icon, Linked, Tab } from "./bits";
 import { examKey, go, shortLabel, tSense, useChildFilter } from "./shared";
 import { t } from "../i18n";
+import { useWilma } from "../data/phrases";
 
 /** "Today", "Tomorrow", "In 9 days". */
 function countdown(date: string): string {
@@ -182,6 +183,7 @@ function stripRows(upcoming: Upcoming[]): { start: string; rows: number; later: 
 }
 
 function ExamCard({ item, shown, highlight, onShowDay }: { item: Upcoming; shown: boolean; highlight: boolean; onShowDay: () => void }) {
+  const w = useWilma();
   const { child, exam, lesson, from } = item;
   const days = daysBetween(today(), exam.date);
   const time = exam.time ? (lesson && lesson.start === exam.time ? `${lesson.start}–${lesson.end}` : exam.time) : lesson ? `${lesson.start}–${lesson.end}` : null;
@@ -198,9 +200,9 @@ function ExamCard({ item, shown, highlight, onShowDay }: { item: Upcoming; shown
       <div className="exam-body">
         <div className="exam-title">
           <Tab child={child} full />
-          <h3>{exam.subject || exam.name}</h3>
+          <h3>{w(exam.subject || exam.name)}</h3>
         </div>
-        {exam.name && exam.name !== exam.subject ? <p className="exam-name">{exam.name}</p> : null}
+        {exam.name && exam.name !== exam.subject ? <p className="exam-name">{w(exam.name)}</p> : null}
         <div className="exam-meta">
           {lesson?.room ? <span>{t("Room {room}", { room: lesson.room })}</span> : null}
           {teacher ? <span>{teacher}</span> : null}
@@ -208,11 +210,11 @@ function ExamCard({ item, shown, highlight, onShowDay }: { item: Upcoming; shown
         {from ? (
           <div className="exam-from">
             <span>{from.kind === "note" ? t("From a teacher's note; Wilma's exam list doesn't have it.") : t("From a message; Wilma's exam list doesn't have it.")}</span>
-            <blockquote>{from.quote}</blockquote>
+            <blockquote>{w(from.quote)}</blockquote>
           </div>
         ) : exam.topic ? (
           <div className="exam-topic">
-            <Linked text={exam.topic} />
+            <Linked text={w(exam.topic)} />
           </div>
         ) : (
           <p className="exam-none">{t("The teacher hasn't written what it covers.")}</p>

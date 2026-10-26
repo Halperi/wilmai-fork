@@ -18,6 +18,7 @@ import type { Child } from "../data/model";
 import { Tab } from "./bits";
 import { go } from "./shared";
 import { plural, t } from "../i18n";
+import { useWilma } from "../data/phrases";
 
 /** One line: the day, the child, what, and where a click goes. */
 function Line({ date, child, onClick, children }: { date: string; child: Child | undefined; onClick?: () => void; children: ReactNode }) {
@@ -65,6 +66,7 @@ export function Glance({
   onLesson?: (c: Child, l: ScheduleLesson) => void;
   homework?: boolean;
 }) {
+  const w = useWilma();
   const snap = useApp((s) => s.snapshot)!;
   const [homeworkOpen, setHomeworkOpen] = useState(false);
   const now = today();
@@ -110,9 +112,9 @@ export function Glance({
             const child = childOf(e.child);
             return (
               <Line key={i} date={e.date} child={child} onClick={child && onExam ? () => onExam(child, e.date) : undefined}>
-                <b>{e.title}</b>
+                <b>{w(e.title)}</b>
                 {e.time ? <small> · {e.time}</small> : null}
-                {e.detail && e.detail !== e.title ? <span className="ov-sub">{e.detail}</span> : null}
+                {e.detail && e.detail !== e.title ? <span className="ov-sub">{w(e.detail)}</span> : null}
               </Line>
             );
           })}
@@ -122,7 +124,7 @@ export function Glance({
         <ul className="ov-list">
           {events.map((e, i) => (
             <Line key={i} date={e.date} child={childOf(e.child)} onClick={() => go("inbox", e.itemKey)}>
-              <b>{e.title}</b>
+              <b>{w(e.title)}</b>
               {e.time ? <small> · {e.time}</small> : null}
               <span className="ov-sub">{e.kind === "deadline" ? t("Deadline") : t("Event")}</span>
             </Line>
@@ -135,7 +137,7 @@ export function Glance({
             const lesson = lessonsOf(u.child).find((l) => l.date === u.date);
             const message = messageFor(u.child, u.date);
             const open = message ? () => go("inbox", message.itemKey) : lesson && onLesson ? () => onLesson(u.child, lesson) : undefined;
-            const sub = [u.usual ? t("Usually {time}", { time: u.usual }) : null, message ? t("Message: {title}", { title: message.title }) : null].filter(Boolean).join(" · ");
+            const sub = [u.usual ? t("Usually {time}", { time: u.usual }) : null, message ? t("Message: {title}", { title: w(message.title) }) : null].filter(Boolean).join(" · ");
             return (
               <Line key={`c${i}`} date={u.date} child={u.child} onClick={open}>
                 <b>{changeText(u)}</b>
@@ -145,7 +147,7 @@ export function Glance({
           })}
           {scheduleNotes.map((e, i) => (
             <Line key={`m${i}`} date={e.date} child={childOf(e.child)} onClick={() => go("inbox", e.itemKey)}>
-              <b>{e.title}</b>
+              <b>{w(e.title)}</b>
               <span className="ov-sub">{t("From a message")}</span>
             </Line>
           ))}
@@ -170,8 +172,8 @@ export function Glance({
             <ul className="ov-list ov-detail">
               {due.map((h, i) => (
                 <Line key={i} date={h.lesson.date} child={h.child} onClick={onLesson ? () => onLesson(h.child, h.lesson) : undefined}>
-                  <b>{h.lesson.subject}</b>
-                  <span className="ov-sub">{h.item.homework}</span>
+                  <b>{w(h.lesson.subject)}</b>
+                  <span className="ov-sub">{w(h.item.homework)}</span>
                 </Line>
               ))}
             </ul>

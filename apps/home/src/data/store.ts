@@ -54,6 +54,8 @@ export interface AppState {
   usage: Record<string, UsageBucket>;
   /** Items translated into the language chosen in Settings, by item key (data/translations.ts). */
   translations: Record<string, ItemTranslation>;
+  /** Wilma's short texts translated (data/phrases.ts), by language and text: for every account on this computer. */
+  phrases: Record<string, string>;
   /** The translations' background run, and the items being translated now. */
   translationStatus: { running: boolean; done: number; total: number; error: string | null; busy: string[] };
   settings: Settings;
@@ -137,6 +139,7 @@ let state: AppState = {
   luna: {},
   usage: {},
   translations: {},
+  phrases: {},
   translationStatus: { running: false, done: 0, total: 0, error: null, busy: [] },
   settings: loadSettings(),
   sync: { running: false, step: null, error: null, lastOk: null },
@@ -184,7 +187,7 @@ export function useApp<T>(select: (s: AppState) => T): T {
 }
 
 /* Persistence: debounced, per part, so a burst of sync steps is one write. */
-const dirty = new Set<"snapshot" | "local" | "jev" | "jevBaseline" | "luna" | "usage" | "translations">();
+const dirty = new Set<"snapshot" | "local" | "jev" | "jevBaseline" | "luna" | "usage" | "translations" | "phrases">();
 let timer: ReturnType<typeof setTimeout> | null = null;
 type AccountCache = Pick<AppState, "snapshot" | "local" | "jev" | "jevBaseline" | "luna"> & Partial<Pick<AppState, "translations">>;
 let accounts: Record<string, AccountCache> = {};
@@ -279,6 +282,7 @@ function schedulePersist(patch: Partial<AppState>) {
   if ("jevBaseline" in patch) dirty.add("jevBaseline");
   if ("usage" in patch) dirty.add("usage");
   if ("translations" in patch) dirty.add("translations");
+  if ("phrases" in patch) dirty.add("phrases");
   if (!dirty.size || timer) return;
   timer = setTimeout(() => {
     void flushPersisted();
@@ -295,14 +299,14 @@ export function flushPersisted(): Promise<void> {
   const values = parts.map((part) => [part, state[part]] as const);
   const savedAccounts = accounts;
   writes = writes.then(async () => {
-    // Usage and translations alone don't rewrite the accounts (a reset clears both): the next other change does.
-    await Promise.all([...values.map(([part, value]) => set(part, value)), ...(parts.some((p) => p !== "usage" && p !== "translations") ? [set("accounts", savedAccounts)] : [])]);
+    // Usage and translations alone don't rewrite the accounts (a reset clears them): the next other change does.
+    await Promise.all([...values.map(([part, value]) => set(part, value)), ...(parts.some((p) => p !== "usage" && p !== "translations" && p !== "phrases") ? [set("accounts", savedAccounts)] : [])]);
   }).catch(() => {}); // No IndexedDB in pure eval runs.
   return writes;
 }
 
 export async function loadPersisted(): Promise<{ session: SavedSession | null }> {
-  const [snapshot, local, jev, session, luna, usage, jevBaseline, savedAccounts, translations] = await Promise.all([
+  const [snapshot, local, jev, session, luna, usage, jevBaseline, savedAccounts, translations, phrases] = await Promise.all([
     get<Snapshot>("snapshot"),
     get<LocalState>("local"),
     get<Record<string, JevRecord>>("jev"),
@@ -312,7 +316,8 @@ export async function loadPersisted(): Promise<{ session: SavedSession | null }>
     get<Record<string, JevRecord>>("jevBaseline"),
     get<Record<string, AccountCache>>("accounts"),
     get<Record<string, ItemTranslation>>("translations"),
-  ]).catch(() => [undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined] as const);
+    get<Record<string, string>>("phrases"),
+  ]).catch(() => [undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined] as const);
   state = {
     ...state,
     snapshot: snapshot ?? null,
@@ -322,6 +327,7 @@ export async function loadPersisted(): Promise<{ session: SavedSession | null }>
     usage: usage ?? {},
     jevBaseline: jevBaseline ?? {},
     translations: translations ?? {},
+    phrases: phrases ?? {},
   };
   accounts = savedAccounts ?? {};
   rememberAccount(); // Migrate the existing installation without losing its AI results.
@@ -358,7 +364,7 @@ export async function forgetEverything() {
   }
   // A reset must not import a key from an earlier version on the next launch.
   localStorage.setItem(MOVED_KEY, "1");
-  setState({ settings: { ...DEFAULT_SETTINGS }, usage: {}, translations: {} });
+  setState({ settings: { ...DEFAULT_SETTINGS }, usage: {}, translations: {}, phrases: {} });
   await flushPersisted();
 }
 

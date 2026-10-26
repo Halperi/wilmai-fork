@@ -25,6 +25,7 @@ import { Reader } from "./Reader";
 import { Icon, Tab, Tabs } from "./bits";
 import { DOCK_QUERY, tSense, useChildFilter, useMedia } from "./shared";
 import { language, t } from "../i18n";
+import { useWilma } from "../data/phrases";
 
 const KIND: Record<CalKind, { one: string; many: string }> = {
   exam: { one: "Exam", many: "Exams" },
@@ -286,6 +287,7 @@ function MonthGrid({
   onPick: (d: string) => void;
   onOpen: (e: CalEvent) => void;
 }) {
+  const w = useWilma();
   const now = today();
   const colorOf = (e: CalEvent) => (e.children.length === 1 ? `c${(snap.children.find((c) => c.number === e.children[0])?.color ?? 0) % 5}` : "shared");
   const onDay = (d: string) => shown.filter((e) => e.date <= d && (e.endDate ?? e.date) >= d);
@@ -354,7 +356,7 @@ function MonthGrid({
                   onClick={() => onOpen(p.e)}
                 >
                   {allDay(p.e) ? null : <time>{p.e.start}</time>}
-                  <span>{calendarTitle(p.e, snap.children)}</span>
+                  <span>{calendarTitle({ ...p.e, title: w(p.e.title) }, snap.children)}</span>
                 </button>
               ))}
             {hidden.map((n, k) =>
@@ -373,20 +375,21 @@ function MonthGrid({
 
 /** One event in a list beside the calendar: when, whose, what and of which kind; opens where it comes from. A suggestion has "Add" and "Dismiss". */
 function EventLine({ e, snap, onOpen, withDate = false }: { e: CalEvent; snap: Snapshot; onOpen: () => void; withDate?: boolean }) {
+  const w = useWilma();
   const local = useApp((s) => s.local.calendar);
   const kids = e.children.map((n) => snap.children.find((c) => c.number === n)).filter((c) => c !== undefined);
   const decided = calendarDecision(e, local);
   const syncs = goesToCalendar(e, local);
   const time = e.start ? (e.end ? `${e.start}–${e.end}` : e.start) : null;
   const span = e.endDate ? `${shortDate(e.date)}–${shortDate(e.endDate)}` : null;
-  const facts = [withDate ? (span ?? time) : (span ?? time ?? t("All day")), kindOne(e.kind), kids.length > 1 ? kids.map((c) => c.first).join(", ") : null, e.detail];
+  const facts = [withDate ? (span ?? time) : (span ?? time ?? t("All day")), kindOne(e.kind), kids.length > 1 ? kids.map((c) => c.first).join(", ") : null, w(e.detail)];
   return (
     <li className={`cal-line${e.sure ? "" : " suggested"}`}>
       <button type="button" onClick={onOpen}>
         <span className="ov-day">{withDate ? shortDate(e.date) : (e.start ?? "")}</span>
         <Tab child={kids[0]} />
         <span className="ov-text">
-          <b>{e.title}</b>
+          <b>{w(e.title)}</b>
           <small>{facts.filter(Boolean).join(" · ")}</small>
         </span>
       </button>

@@ -36,6 +36,7 @@ import { examMark, markKey, markShade } from "../data/marks";
 import { AIBudgetWarning } from "./AIBudgetWarning";
 import { OpenAIBlocked } from "./OpenAIBlocked";
 import { useListed } from "../data/translations";
+import { useWilma } from "../data/phrases";
 
 /** The next school day (Mon–Fri) after a date. */
 function nextSchoolDay(iso: string): string {
@@ -45,6 +46,7 @@ function nextSchoolDay(iso: string): string {
 }
 
 export function Today({ feed }: { feed: FeedItem[] }) {
+  const w = useWilma();
   const snap = useApp((s) => s.snapshot)!;
   const settings = useApp((s) => s.settings);
   const jevStatus = useApp((s) => s.jevStatus);
@@ -142,7 +144,7 @@ export function Today({ feed }: { feed: FeedItem[] }) {
                 {pupilExams.map((item) => (
                   <a className="need" key={item.key} href={itemHref(item)}>
                     <Tabs snap={snap} numbers={item.children} />
-                    <span className="need-main"><Mark on>{item.pupilExam.title}</Mark><small>{item.pupilExam.quote}</small></span>
+                    <span className="need-main"><Mark on>{w(item.pupilExam.title)}</Mark><small>{w(item.pupilExam.quote)}</small></span>
                     <span className="need-when">{item.pupilExam.date ? dayWithDate(item.pupilExam.date) : t("Date not confirmed")}</span>
                   </a>
                 ))}
@@ -188,6 +190,7 @@ function recentNotesFrom(now: string): string {
 
 /** The teachers' notes from the last three school days for the children shown, newest first; one opens in Notes. */
 function RecentNotes({ items, snap }: { items: FeedItem[]; snap: Snapshot }) {
+  const w = useWilma();
   const kinds = useNoteKinds();
   const from = recentNotesFrom(today());
   // An absence to explain is already under Needs you.
@@ -207,7 +210,7 @@ function RecentNotes({ items, snap }: { items: FeedItem[]; snap: Snapshot }) {
             const note = item.note!;
             const child = snap.children.find((c) => c.number === note.child);
             const name = subjectNamer(snap.perChild[note.child]);
-            const subjects = [...new Set(note.subjects.map(name))].join(", ");
+            const subjects = [...new Set(note.subjects.map(name))].map(w).join(", ");
             return (
               <button
                 type="button"
@@ -222,10 +225,10 @@ function RecentNotes({ items, snap }: { items: FeedItem[]; snap: Snapshot }) {
                 {child ? <Tab child={child} /> : <span />}
                 <span className="rn-what">
                   <span className="rn-head">
-                    <span className={`nk nk-${noteKind(note, kinds)}`}>{note.typeLabel}</span>
+                    <span className={`nk nk-${noteKind(note, kinds)}`}>{w(note.typeLabel)}</span>
                     {subjects ? <span> {subjects}</span> : null}
                   </span>
-                  {note.note ? <q className="rn-words">{note.note}</q> : null}
+                  {note.note ? <q className="rn-words">{w(note.note)}</q> : null}
                 </span>
                 {item.isNew ? <em className="lx-new">{tSense("New", "a note")}</em> : <span />}
               </button>
@@ -248,6 +251,7 @@ function RecentNotes({ items, snap }: { items: FeedItem[]; snap: Snapshot }) {
 
 /** Exam grades from the last three weeks for the children shown, newest first; one opens in Grades. */
 function RecentResults({ children, snap }: { children: Child[]; snap: Snapshot }) {
+  const w = useWilma();
   const opened = useApp((s) => s.local.opened);
   const jev = useApp((s) => s.jev);
   const from = addDays(today(), -21);
@@ -273,8 +277,8 @@ function RecentResults({ children, snap }: { children: Child[]; snap: Snapshot }
                 <span className="ov-day">{shortDate(exam.date)}</span>
                 <Tab child={child} />
                 <span className="rr-what">
-                  <b>{exam.subject || exam.name}</b>
-                  {exam.name && exam.name !== exam.subject ? <span> · {exam.name}</span> : null}
+                  <b>{w(exam.subject || exam.name)}</b>
+                  {exam.name && exam.name !== exam.subject ? <span> · {w(exam.name)}</span> : null}
                   {isNewResult(child.number, exam, opened) ? <em className="lx-new">{tSense("New", "a result")}</em> : null}
                 </span>
                 <span className={`ex-chip ${markShade(mark)}${mark.kind === "grade" ? "" : " not-grade"}`}>{mark.text}</span>
@@ -368,6 +372,7 @@ function DayCell({
   /** Show the day beside, with this lesson picked (null: the day, with its homework). */
   onOpen: (lesson: string | null) => void;
 }) {
+  const w = useWilma();
   if (weekday(date) > 4) return <div className="sd-cell sd-quiet">{t("Weekend")}</div>;
   if (!times) {
     const off = odd.some((u) => u.kind === "off");
@@ -394,12 +399,12 @@ function DayCell({
         ))}
         {exams.map(({ exam, lesson }, i) => (
           <button type="button" key={`x${i}`} className="chip chip-marker" onClick={() => onOpen(lesson ? lessonKey(lesson) : null)}>
-            {t("Exam: {subject}", { subject: exam.subject || exam.name })}
+            {t("Exam: {subject}", { subject: w(exam.subject || exam.name) })}
           </button>
         ))}
         {events.map((e, i) => (
-          <a key={`e${i}`} className="chip chip-pen" href={hrefFor("inbox", e.itemKey)} title={e.title}>
-            {e.title}
+          <a key={`e${i}`} className="chip chip-pen" href={hrefFor("inbox", e.itemKey)} title={w(e.title)}>
+            {w(e.title)}
           </a>
         ))}
         {homework !== null ? (
@@ -435,6 +440,7 @@ function NeedLine({ item, snap, marked }: { item: FeedItem; snap: Snapshot; mark
 }
 
 function Summary({ needs, coming, snap }: { needs: number | null; coming: AgendaEntry[]; snap: Snapshot }) {
+  const w = useWilma();
   const exam = coming.find((e) => e.kind === "exam" && daysBetween(today(), e.date) <= 7);
   const child = exam ? snap.children.find((c) => c.number === exam.child) : null;
   if (needs === null && !exam) return null;
@@ -451,7 +457,7 @@ function Summary({ needs, coming, snap }: { needs: number | null; coming: Agenda
       ) : null}
       {exam && child ? (
         <a className="sum-link" href={hrefFor("exams")}>
-          {tx("{name} has a {exam} exam {day}.", { name: child.first, exam: <b>{exam.title}</b>, day: dayPhrase(exam.date) })}
+          {tx("{name} has a {exam} exam {day}.", { name: child.first, exam: <b>{w(exam.title)}</b>, day: dayPhrase(exam.date) })}
         </a>
       ) : null}
     </div>

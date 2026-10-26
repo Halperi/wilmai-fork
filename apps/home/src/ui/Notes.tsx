@@ -25,6 +25,7 @@ import { Icon, Tab } from "./bits";
 import { go, notesBySubject, tSense, useChildFilter } from "./shared";
 import { plural, t } from "../i18n";
 import { examSuperseded, noteExam } from "../data/note-exams";
+import { useWilma } from "../data/phrases";
 
 /** How far back the view looks; the chart and the list follow it. */
 type Period = "week" | "month" | "quarter" | "year";
@@ -291,6 +292,7 @@ function matrixOf(child: Child, notes: LessonNote[], name: (code: string) => str
  * A cell, a subject or a column heading shows only those notes below.
  */
 function NoteMatrix({ matrix, kinds, filter, many, onPick }: { matrix: Matrix; kinds: NoteKind[]; filter: Filter; many: boolean; onPick: (f: Filter) => void }) {
+  const w = useWilma();
   const { child, subjects, totals, total } = matrix;
   const max = Object.fromEntries(kinds.map((k) => [k, Math.max(1, ...subjects.map((s) => s.counts[k]))])) as Record<NoteKind, number>;
   const mine = filter.child === child.number || !filter.child;
@@ -324,7 +326,7 @@ function NoteMatrix({ matrix, kinds, filter, many, onPick }: { matrix: Matrix; k
                   aria-pressed={mine && filter.subject === s.name && !filter.kind}
                   onClick={() => onPick({ child: many ? child.number : null, subject: s.name, kind: null })}
                 >
-                  <span title={s.name}>{s.name}</span>
+                  <span title={w(s.name)}>{w(s.name)}</span>
                   <small>{s.total}</small>
                 </button>
                 {kinds.map((k) => {
@@ -356,6 +358,7 @@ function NoteMatrix({ matrix, kinds, filter, many, onPick }: { matrix: Matrix; k
 }
 
 function NoteRow({ row, many, highlight, baseUrl, teacherCode }: { row: Row; many: boolean; highlight: boolean; baseUrl: string; teacherCode: string | null }) {
+  const w = useWilma();
   const student = useViewer() === "student";
   const { child, group, kind, lessons, from, subjects } = row;
   const snap = useApp((s) => s.snapshot)!;
@@ -364,7 +367,7 @@ function NoteRow({ row, many, highlight, baseUrl, teacherCode }: { row: Row; man
   const exam = read && !examSuperseded(group.key, read, luna) ? read : null;
   const original = exam?.originalExamId === null || !exam ? null : snap.perChild[child.number]?.exams.find((x) => x.examId === exam.originalExamId);
   const range = from !== group.date;
-  const what = lessons > 2 || range ? plural(lessons, "{n} lesson", "{n} lessons") : subjects.join(", ");
+  const what = lessons > 2 || range ? plural(lessons, "{n} lesson", "{n} lessons") : subjects.map(w).join(", ");
   const time = !range && group.start ? `${group.start}${group.end && group.end !== group.start ? `–${group.end}` : ""}` : null;
   // Writing to the teacher about this note: the subject says which lesson and what was marked.
   const teacher = group.teachers[0] ?? null;
@@ -376,19 +379,19 @@ function NoteRow({ row, many, highlight, baseUrl, teacherCode }: { row: Row; man
       {many ? <Tab child={child} /> : <span />}
       <div className="note-main">
         <div className="note-line">
-          <span className={`nk nk-${kind}`}>{group.typeLabel}</span>
+          <span className={`nk nk-${kind}`}>{w(group.typeLabel)}</span>
           <span className="note-what">
             {what}
             {time ? <small> · {time}</small> : null}
           </span>
         </div>
-        {lessons > 2 && !range && subjects.length ? <small className="note-subjects">{subjects.join(", ")}</small> : null}
-        {group.note ? <q className="note-words">{group.note}</q> : null}
+        {lessons > 2 && !range && subjects.length ? <small className="note-subjects">{subjects.map(w).join(", ")}</small> : null}
+        {group.note ? <q className="note-words">{w(group.note)}</q> : null}
         {exam ? (
           <div className="note-exam">
             <span className="chip chip-marker">{t("Make-up exam")}</span>
             <span>{exam.date ? `${shortDate(exam.date)}${exam.start ? ` · ${exam.start}` : ""}` : t("Date not confirmed")}</span>
-            {original ? <small>{t("Missed exam: {title}", { title: original.name || original.subject })}</small> : null}
+            {original ? <small>{t("Missed exam: {title}", { title: w(original.name || original.subject) })}</small> : null}
           </div>
         ) : null}
         <small className="note-who">{group.teachers.join(", ")}</small>
