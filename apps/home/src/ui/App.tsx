@@ -101,6 +101,7 @@ function updated(ms: number): string {
 function Syncer() {
   const sync = useApp((s) => s.sync);
   const jev = useApp((s) => s.jevStatus);
+  const translating = useApp((s) => s.translationStatus);
   const demo = isDemo();
   const [, tick] = useState(0);
   useEffect(() => {
@@ -118,6 +119,11 @@ function Syncer() {
       {jev.running ? (
         <span className="chip chip-marker" title={t("This visit: {new} new to the AI, {changed} changed since it read them (details in Settings)", { new: jev.newItems, changed: jev.changedItems })}>
           <Icon name="spark" className="icon" /> {t("Sorting {done}/{total}", { done: jev.done, total: jev.total })}
+        </span>
+      ) : null}
+      {translating.running && translating.total ? (
+        <span className="chip" title={t("Translating what came in the last 30 days (Settings → Translating messages)")}>
+          <Icon name="translate" className="icon" /> {t("Translating {done}/{total}", { done: translating.done, total: translating.total })}
         </span>
       ) : null}
       <span className={`txt${sync.error ? " err" : ""}`}>{text}</span>

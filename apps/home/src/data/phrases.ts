@@ -15,6 +15,8 @@ const IN_ENGLISH: Record<TranslationLanguage, string> = { fi: "Finnish", sv: "Sw
 /** A batch: up to this many texts, or about this many characters. */
 const BATCH = 40;
 const BATCH_CHARS = 6000;
+/** Batches asked at once. */
+const PARALLEL = 3;
 /** After OpenAI refuses (the key, the monthly limit, no connection), asking again waits this long. */
 const PAUSE_MS = 5 * 60_000;
 
@@ -24,6 +26,7 @@ const waiting = new Map<string, { language: TranslationLanguage; text: string }>
 /** Asked for, or failed, while the app is open: not asked again. */
 const asked = new Set<string>();
 let timer: ReturnType<typeof setTimeout> | null = null;
+let inFlight = 0;
 let pausedUntil = 0;
 
 /** Worth translating: it has words, and they aren't already in the language (when that can be told). */
@@ -33,11 +36,22 @@ function ask(language: TranslationLanguage, text: string) {
   const key = phraseKey(language, text);
   if (asked.has(key) || waiting.has(key) || !worth(text, language)) return;
   waiting.set(key, { language, text });
-  timer ??= setTimeout(() => void send(), 400);
+  timer ??= setTimeout(pump, 300);
+}
+
+/** Send what's waiting, a batch at a time, up to PARALLEL at once (the texts first asked for go first). */
+function pump() {
+  timer = null;
+  while (inFlight < PARALLEL && waiting.size) {
+    inFlight += 1;
+    void send().finally(() => {
+      inFlight -= 1;
+      if (waiting.size) timer ??= setTimeout(pump, 0);
+    });
+  }
 }
 
 async function send() {
-  timer = null;
   const language = translationTarget(getState().settings);
   if (!language || Date.now() < pausedUntil) return waiting.clear();
   const batch: [string, string][] = [];
@@ -78,7 +92,6 @@ async function send() {
       if (err instanceof LunaError && !err.retryable) pausedUntil = Date.now() + PAUSE_MS;
     }
   }
-  if (waiting.size) timer ??= setTimeout(() => void send(), 400);
 }
 
 /**

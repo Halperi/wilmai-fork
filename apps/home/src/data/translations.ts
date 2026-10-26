@@ -9,6 +9,7 @@ import { accountScope, getState, setState, useApp, type AppState } from "./store
 import { needsTranslation, sourceHash, translate, translationSource, translationTarget } from "../ai/translate";
 import { LunaError, openAIReady } from "../luna/client";
 import type { ItemTranslation, TranslationLanguage } from "./model";
+import { useWilma } from "./phrases";
 
 /**
  * An item's translation into the language chosen, for lists and search (null: none). Not checked against the item's
@@ -20,11 +21,16 @@ export function listedTranslation(item: FeedItem, state: Pick<AppState, "setting
   return tr && !tr.error && target && tr.language === target ? tr : null;
 }
 
-/** What a list shows for an item: its title, preview and sentence on what to do, translated when there's one. */
+/**
+ * What a list shows for an item: its title, preview and sentence on what to do, from its translation when there's one.
+ * Until then (an item still waiting, or older than the run goes back), those three go as phrases, a batch at a time
+ * (data/phrases.ts), so a whole list reads in the language chosen within seconds.
+ */
 export function useListed(item: FeedItem): { title: string; preview: string; action: string | null } {
   const tr = useApp((s) => listedTranslation(item, s));
-  if (!tr) return { title: item.title, preview: item.preview, action: item.actionLine };
-  return { title: tr.title || item.title, preview: tr.texts.length ? preview(tr.texts[0]) : item.preview, action: item.actionLine ? tr.action ?? item.actionLine : null };
+  const w = useWilma();
+  if (!tr) return { title: w(item.title), preview: w(item.preview), action: item.actionLine ? w(item.actionLine) : null };
+  return { title: tr.title || item.title, preview: tr.texts.length ? preview(tr.texts[0]) : w(item.preview), action: item.actionLine ? tr.action ?? w(item.actionLine) : null };
 }
 
 const WINDOW_DAYS = 30;
@@ -95,8 +101,9 @@ export function runTranslations(): Promise<void> {
     const language = translationTarget(getState().settings);
     if (!language || !(await openAIReady())) return;
     const from = Date.now() - WINDOW_DAYS * 86_400_000;
+    // Teachers' notes are short, and shown as phrases (data/phrases.ts): a note is translated whole when it's opened.
     const todo = buildFeed(getState())
-      .filter((i) => !i.own && i.at.getTime() >= from && waiting(i, language))
+      .filter((i) => i.kind !== "note" && !i.own && i.at.getTime() >= from && waiting(i, language))
       .sort((a, b) => b.at.getTime() - a.at.getTime());
     if (!todo.length) return;
     setState((s) => ({ translationStatus: { ...s.translationStatus, running: true, done: 0, total: todo.length, error: null } }));

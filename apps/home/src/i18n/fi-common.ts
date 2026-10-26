@@ -25,6 +25,8 @@ export const FI_COMMON: Record<string, string> = {
   Free: "Maksuton",
   OpenAI: "OpenAI",
   Recommended: "Suositeltu",
+  "Translating {done}/{total}": "Käännetään {done}/{total}",
+  "Translating what came in the last 30 days (Settings → Translating messages)": "Käännetään viimeisen 30 päivän viestejä (Asetukset → Viestien kääntäminen)",
   "GPT-6 Luna. Fast and accurate. Translates messages too.": "GPT-6 Luna. Nopea ja tarkka. Kääntää myös viestit.",
   "Your own API key · tens of cents a month": "Oma API-avain · kymmeniä senttejä kuussa",
   "Local AI": "Paikallinen tekoäly",
