@@ -14,7 +14,7 @@ import { useSyncExternalStore } from "react";
 import { clear, del, get, set } from "idb-keyval";
 import { oldKeychain } from "../wilma/transport";
 import { t } from "../i18n";
-import { DEFAULT_SETTINGS, keepsPassword, viewerOf, type AccountInfo, type JevRecord, type LocalState, type LunaRecord, type Settings, type Snapshot, type UsageBucket, type Viewer } from "./model";
+import { DEFAULT_SETTINGS, keepsPassword, viewerOf, type AccountInfo, type ItemTranslation, type JevRecord, type LocalState, type LunaRecord, type Settings, type Snapshot, type UsageBucket, type Viewer } from "./model";
 import { normalizeAIBudget } from "./ai-budget";
 import type { CalEvent } from "./calendar";
 
@@ -52,6 +52,10 @@ export interface AppState {
   /** The Luna experiment: what Luna read, by item key, and the OpenAI usage by month. */
   luna: Record<string, LunaRecord>;
   usage: Record<string, UsageBucket>;
+  /** Items translated into the language chosen in Settings, by item key (data/translations.ts). */
+  translations: Record<string, ItemTranslation>;
+  /** The translations' background run, and the items being translated now. */
+  translationStatus: { running: boolean; done: number; total: number; error: string | null; busy: string[] };
   settings: Settings;
   sync: SyncStatus;
   jevStatus: JevStatus;
@@ -132,6 +136,8 @@ let state: AppState = {
   jevBaseline: {},
   luna: {},
   usage: {},
+  translations: {},
+  translationStatus: { running: false, done: 0, total: 0, error: null, busy: [] },
   settings: loadSettings(),
   sync: { running: false, step: null, error: null, lastOk: null },
   jevStatus: { running: false, done: 0, total: 0, error: null, calls: 0, inputTokens: 0, newItems: 0, changedItems: 0, changedParts: {} },
@@ -178,9 +184,9 @@ export function useApp<T>(select: (s: AppState) => T): T {
 }
 
 /* Persistence: debounced, per part, so a burst of sync steps is one write. */
-const dirty = new Set<"snapshot" | "local" | "jev" | "jevBaseline" | "luna" | "usage">();
+const dirty = new Set<"snapshot" | "local" | "jev" | "jevBaseline" | "luna" | "usage" | "translations">();
 let timer: ReturnType<typeof setTimeout> | null = null;
-type AccountCache = Pick<AppState, "snapshot" | "local" | "jev" | "jevBaseline" | "luna">;
+type AccountCache = Pick<AppState, "snapshot" | "local" | "jev" | "jevBaseline" | "luna"> & Partial<Pick<AppState, "translations">>;
 let accounts: Record<string, AccountCache> = {};
 let accountGeneration = 0;
 let resetGeneration = 0;
@@ -200,8 +206,8 @@ export const resetScope = () => resetGeneration;
 function rememberAccount() {
   const key = accountKey(state.snapshot?.account);
   if (!key) return;
-  const { snapshot, local, jev, jevBaseline, luna } = state;
-  accounts = { ...accounts, [key]: { snapshot, local, jev, jevBaseline, luna } };
+  const { snapshot, local, jev, jevBaseline, luna, translations } = state;
+  accounts = { ...accounts, [key]: { snapshot, local, jev, jevBaseline, luna, translations } };
 }
 
 /** Keep the current account and restore the next one's cache before syncing Wilma. */
@@ -211,7 +217,8 @@ export function activateAccount(account: AccountInfo | null) {
   setState({
     snapshot: cached?.snapshot && account ? { ...cached.snapshot, account } : null,
     local: cached?.local ?? { opened: {}, done: {} },
-    jev: cached?.jev ?? {}, jevBaseline: cached?.jevBaseline ?? {}, luna: cached?.luna ?? {},
+    jev: cached?.jev ?? {}, jevBaseline: cached?.jevBaseline ?? {}, luna: cached?.luna ?? {}, translations: cached?.translations ?? {},
+    translationStatus: { running: false, done: 0, total: 0, error: null, busy: [] },
     sync: { running: false, step: null, error: null, lastOk: cached?.snapshot?.syncedAt?.getTime() ?? null },
     jevStatus: { running: false, done: 0, total: 0, error: null, calls: 0, inputTokens: 0, newItems: 0, changedItems: 0, changedParts: {} },
     lunaStatus: { running: false, done: 0, total: 0, error: null },
@@ -271,6 +278,7 @@ function schedulePersist(patch: Partial<AppState>) {
   if ("luna" in patch) dirty.add("luna");
   if ("jevBaseline" in patch) dirty.add("jevBaseline");
   if ("usage" in patch) dirty.add("usage");
+  if ("translations" in patch) dirty.add("translations");
   if (!dirty.size || timer) return;
   timer = setTimeout(() => {
     void flushPersisted();
@@ -287,13 +295,14 @@ export function flushPersisted(): Promise<void> {
   const values = parts.map((part) => [part, state[part]] as const);
   const savedAccounts = accounts;
   writes = writes.then(async () => {
-    await Promise.all([...values.map(([part, value]) => set(part, value)), ...(parts.some((p) => p !== "usage") ? [set("accounts", savedAccounts)] : [])]);
+    // Usage and translations alone don't rewrite the accounts (a reset clears both): the next other change does.
+    await Promise.all([...values.map(([part, value]) => set(part, value)), ...(parts.some((p) => p !== "usage" && p !== "translations") ? [set("accounts", savedAccounts)] : [])]);
   }).catch(() => {}); // No IndexedDB in pure eval runs.
   return writes;
 }
 
 export async function loadPersisted(): Promise<{ session: SavedSession | null }> {
-  const [snapshot, local, jev, session, luna, usage, jevBaseline, savedAccounts] = await Promise.all([
+  const [snapshot, local, jev, session, luna, usage, jevBaseline, savedAccounts, translations] = await Promise.all([
     get<Snapshot>("snapshot"),
     get<LocalState>("local"),
     get<Record<string, JevRecord>>("jev"),
@@ -302,7 +311,8 @@ export async function loadPersisted(): Promise<{ session: SavedSession | null }>
     get<Record<string, UsageBucket>>("usage"),
     get<Record<string, JevRecord>>("jevBaseline"),
     get<Record<string, AccountCache>>("accounts"),
-  ]).catch(() => [undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined] as const);
+    get<Record<string, ItemTranslation>>("translations"),
+  ]).catch(() => [undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined] as const);
   state = {
     ...state,
     snapshot: snapshot ?? null,
@@ -311,6 +321,7 @@ export async function loadPersisted(): Promise<{ session: SavedSession | null }>
     luna: luna ?? {},
     usage: usage ?? {},
     jevBaseline: jevBaseline ?? {},
+    translations: translations ?? {},
   };
   accounts = savedAccounts ?? {};
   rememberAccount(); // Migrate the existing installation without losing its AI results.
@@ -347,7 +358,7 @@ export async function forgetEverything() {
   }
   // A reset must not import a key from an earlier version on the next launch.
   localStorage.setItem(MOVED_KEY, "1");
-  setState({ settings: { ...DEFAULT_SETTINGS }, usage: {} });
+  setState({ settings: { ...DEFAULT_SETTINGS }, usage: {}, translations: {} });
   await flushPersisted();
 }
 

@@ -35,6 +35,7 @@ import { examResults, isNewResult, resultKey } from "../data/grades";
 import { examMark, markKey, markShade } from "../data/marks";
 import { AIBudgetWarning } from "./AIBudgetWarning";
 import { OpenAIBlocked } from "./OpenAIBlocked";
+import { useListed } from "../data/translations";
 
 /** The next school day (Mon–Fri) after a date. */
 function nextSchoolDay(iso: string): string {
@@ -420,12 +421,13 @@ function DayCell({
 /** One line: the child, the title (in highlighter), the school's own sentence on what to do, and by when. */
 function NeedLine({ item, snap, marked }: { item: FeedItem; snap: Snapshot; marked: boolean }) {
   const when = item.task ? item.task.label : urgencyLabel(item);
+  const listed = useListed(item);
   return (
     <a className="need" href={itemHref(item)}>
       <Tabs snap={snap} numbers={item.children} />
       <span className="need-main">
-        <Mark on={marked}>{item.title}</Mark>
-        <small>{item.actionLine ?? item.from}</small>
+        <Mark on={marked}>{listed.title}</Mark>
+        <small>{listed.action ?? item.from}</small>
       </span>
       {when ? <span className="need-when">{when}</span> : null}
     </a>

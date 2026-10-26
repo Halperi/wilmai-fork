@@ -3,6 +3,7 @@ import mascot from "../assets/mascot-128.png";
 import type { Child, Snapshot } from "../data/model";
 import type { FeedItem } from "../data/feed";
 import { isNeedsYou } from "../data/feed";
+import { useListed } from "../data/translations";
 import { clock, dateOf, shortDate, whenShort } from "../data/dates";
 import { shortLabel, tSense, urgencyLabel } from "./shared";
 import { KINDS } from "../jev/questions";
@@ -171,10 +172,11 @@ export function ItemRow({
   href: string;
 }) {
   const needs = isNeedsYou(item);
+  const listed = useListed(item);
   const subject =
     item.kind === "note" && item.note
-      ? `${item.note.typeLabel} · ${item.note.subjects.length > 2 ? plural(item.note.subjects.length, "{n} lesson", "{n} lessons") : item.note.subjects.join(", ")}`
-      : item.title;
+      ? `${listed.title === item.title ? item.note.typeLabel : listed.title} · ${item.note.subjects.length > 2 ? plural(item.note.subjects.length, "{n} lesson", "{n} lessons") : item.note.subjects.join(", ")}`
+      : listed.title;
   return (
     <a className={`row kind-${item.kind}${item.done ? " done" : ""}`} href={href} aria-current={current ? "true" : undefined} data-key={item.key}>
       <Tabs snap={snap} numbers={item.children} />
@@ -189,13 +191,13 @@ export function ItemRow({
       <div className="row-sub">
         <Icon name={KIND_ICON[item.kind]} className="icon" />
         {item.from ? <span className="from">{item.from}</span> : null}
-        {needs && item.actionLine ? (
-          // The school's own sentence saying what to do (Jev pointed to it; nothing is generated).
-          <span className="pv act" title={item.actionLine}>
-            → {item.actionLine}
+        {needs && listed.action ? (
+          // The school's own sentence saying what to do (Jev pointed to it; nothing is generated), translated when the item is.
+          <span className="pv act" title={listed.action}>
+            → {listed.action}
           </span>
         ) : (
-          <span className="pv">{item.preview}</span>
+          <span className="pv">{listed.preview}</span>
         )}
       </div>
       <TriageChips item={item} compact />

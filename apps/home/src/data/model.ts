@@ -242,6 +242,24 @@ export type JevAnswer =
 /** The languages messages can be translated into (ai/translate.ts). */
 export type TranslationLanguage = "fi" | "sv" | "en" | "uk" | "ar";
 
+/** An item's translation (data/translations.ts), by item key: of what the item said (hash), into a language. */
+export interface ItemTranslation {
+  /** What was translated (ai/translate.ts sourceHash): translated again when the item changes, as with a new reply. */
+  hash: string;
+  language: TranslationLanguage;
+  model: string;
+  /** The language it was translated from, as the AI named it: an ISO 639-1 code ("sv"). */
+  from: string;
+  title: string;
+  /** One per text: a thread's messages, or the one text; then the sentence on what to do, when there's one. */
+  texts: string[];
+  /** The translation of the sentence on what to do (the AI's quote), when there's one. */
+  action: string | null;
+  at: number;
+  /** It couldn't be translated (not tried again until the item changes). */
+  error?: string;
+}
+
 export interface Settings {
   /** Explicit opt-in. Older installations infer OpenAI from their saved key. */
   aiProvider?: "off" | "openai" | "local";
@@ -303,7 +321,7 @@ export interface Settings {
   backgroundRead: boolean;
   /** The app's language: "auto" follows the computer (Finnish if it's set to Finnish, otherwise English). */
   language: "auto" | "en" | "fi";
-  /** What the Translate button translates into, with OpenAI (ai/translate.ts); unset: the app's language. */
+  /** What messages are translated into, with OpenAI (data/translations.ts); unset: no translations. */
   translateTo?: TranslationLanguage | "off";
   /** Who translates with OpenAI (ai/translate.ts TRANSLATORS); unset: the default there. */
   translateModel?: "gpt-6-luna" | "gpt-6.1-sol";

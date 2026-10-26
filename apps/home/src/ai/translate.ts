@@ -1,14 +1,13 @@
 /*
- * Translating a message, bulletin or teacher's note into the language chosen in Settings, with OpenAI and the parent's
- * key: GPT-6 Luna or GPT-6.1 Sol as chosen, each at its least reasoning (which bills as output). Not with local AI: its
- * small model translates the languages offered poorly. Only when asked (the Translate button). Each translation is kept on this computer by
- * its text, language and model, so it's paid for once; a reset forgets them with everything else.
+ * Translating messages, bulletins and teachers' notes into the language chosen in Settings, with OpenAI and the
+ * parent's key: GPT-6.1 Sol or GPT-6 Luna as chosen, each at its least reasoning (which bills as output). Not with local
+ * AI: its small model translates the languages offered poorly. What's translated, when, and where it's kept:
+ * data/translations.ts; this is the call, and what decides what an item's translation is.
  */
-import { get, set } from "idb-keyval";
-import { intelligenceOn, intelligenceProvider, type Settings, type TranslationLanguage } from "../data/model";
-import { getState, resetScope } from "../data/store";
+import { intelligenceOn, intelligenceProvider, type ItemTranslation, type Settings, type Snapshot, type TranslationLanguage } from "../data/model";
+import type { FeedItem } from "../data/feed";
+import { getState } from "../data/store";
 import { hash } from "../data/hash";
-import { resolveLanguage } from "../i18n";
 import { respond } from "../luna/client";
 
 /** The languages offered, each named in itself. */
@@ -30,19 +29,20 @@ export const DEFAULT_TRANSLATOR: Translator = "gpt-6.1-sol";
 /** The least reasoning a model takes: Sol's least is low (26 Oct 2026), Luna's none. */
 const leastEffort = (model: string) => (model === "gpt-6-luna" ? "none" : "low") as "none" | "low";
 
-/** What the Translate button translates into: null when translation is off, or OpenAI isn't the AI. */
-export function translationTarget(s: Settings): TranslationLanguage | null {
-  if (!translationAvailable(s) || s.translateTo === "off") return null;
-  return s.translateTo ?? resolveLanguage(s.language);
-}
-
 /** Translation comes with OpenAI. */
 export const translationAvailable = (s: Settings) => intelligenceProvider(s) === "openai" && intelligenceOn(s);
-const translationModel = (s: Settings): string => s.translateModel ?? DEFAULT_TRANSLATOR;
+
+/** What everything is translated into: null when translation is off (until a language is chosen), or OpenAI isn't the AI. */
+export function translationTarget(s: Settings): TranslationLanguage | null {
+  if (!translationAvailable(s) || !s.translateTo || s.translateTo === "off") return null;
+  return s.translateTo;
+}
+
+export const translationModel = (s: Settings): string => s.translateModel ?? DEFAULT_TRANSLATOR;
 
 /*
- * The language a text is most likely in, from its letters and its most common words: enough to leave the button off a
- * message that's already in the parent's language. null when it can't tell (the button shows then).
+ * The language a text is most likely in, from its letters and its most common words: enough to leave alone what's
+ * already in the parent's language. null when it can't tell (it's translated then).
  */
 const COMMON: Partial<Record<TranslationLanguage, string[]>> = {
   fi: ["ja", "on", "ei", "että", "klo", "hei", "kiitos", "tai", "myös", "ovat", "voi", "kun", "olla", "koulu", "huomenna", "tänään", "oppilaat", "terveisin"],
@@ -64,45 +64,31 @@ export function guessLanguage(text: string): TranslationLanguage | "other" | nul
   return best[1] >= 3 && best[1] >= 2 * second[1] ? best[0] : null;
 }
 
-export interface Translation {
-  language: TranslationLanguage;
-  model: string;
-  /** The language it was translated from, as the AI named it: an ISO 639-1 code ("sv"). */
-  from: string;
+/**
+ * What an item's translation covers: its title, its text (a thread's messages, in order; none for a message not yet
+ * opened from Wilma), and the school's sentence on what to do (the AI's quote, shown in the lists).
+ */
+export interface TranslationSource {
   title: string;
-  /** One per text asked, in order: a thread's messages, or the one text. */
   texts: string[];
-  at: number;
+  action: string | null;
 }
 
-/* Kept translations, newest last, at most a few hundred (a message's is a few kilobytes). */
-const STORE = "translations";
-const KEEP = 400;
-let kept: { generation: number; byKey: Record<string, Translation> } | null = null;
-
-async function keptTranslations(): Promise<Record<string, Translation>> {
-  if (kept?.generation !== resetScope()) {
-    const generation = resetScope();
-    // Without IndexedDB (the eval suite), idb-keyval throws at once rather than rejecting: nothing is kept then.
-    const byKey = (await (async () => get<Record<string, Translation>>(STORE))().catch(() => undefined)) ?? {};
-    kept = { generation, byKey };
-  }
-  return kept.byKey;
+export function translationSource(item: FeedItem, snap: Snapshot): TranslationSource {
+  const thread = item.kind === "message" && item.id ? snap.messages[item.id]?.thread : null;
+  const texts = thread?.replies.length ? [thread.content, ...thread.replies.map((r) => r.content)] : item.text ? [item.text] : [];
+  return { title: item.kind === "note" && item.note ? item.note.typeLabel : item.title, texts, action: item.actionLine };
 }
 
-function keep(key: string, translation: Translation) {
-  if (!kept) return;
-  const entries = Object.entries({ ...kept.byKey, [key]: translation }).sort((a, b) => a[1].at - b[1].at).slice(-KEEP);
-  kept.byKey = Object.fromEntries(entries);
-  const byKey = kept.byKey;
-  void (async () => set(STORE, byKey))().catch(() => {}); // No IndexedDB in pure eval runs.
-}
+export const sourceHash = (source: TranslationSource) => hash([source.title, source.texts, source.action]);
 
-const keyOf = (model: string, language: TranslationLanguage, title: string, texts: string[]) => `${language}:${model}:${hash([title, texts])}`;
+/** Whether an item needs translating into `language`: it has words, and they aren't already in it (when that can be told). */
+export const needsTranslation = (source: TranslationSource, language: TranslationLanguage) =>
+  Boolean(source.title.trim() || source.texts.length) && guessLanguage([source.title, ...source.texts].join("\n")) !== language;
 
-/** A translation already made for this text, language and the AI now chosen (none: null). */
-export async function keptTranslation(title: string, texts: string[], language: TranslationLanguage): Promise<Translation | null> {
-  return (await keptTranslations())[keyOf(translationModel(getState().settings), language, title, texts)] ?? null;
+/** The item's translation when it's into `language` and of what the item says now (else null). */
+export function currentTranslation(tr: ItemTranslation | undefined, source: TranslationSource, language: TranslationLanguage | null): ItemTranslation | null {
+  return tr && !tr.error && language && tr.language === language && tr.hash === sourceHash(source) ? tr : null;
 }
 
 const instructions = (language: TranslationLanguage) =>
@@ -121,9 +107,11 @@ const ALPHABET: Partial<Record<TranslationLanguage, RegExp>> = { uk: /\p{Script=
 
 /**
  * The answer is still the original: every text unchanged, or into Ukrainian or Arabic mostly not in that alphabet
- * (names, codes and links stay in theirs), or still in the original language when that can be told.
+ * (names, codes and links stay in theirs), or still in the original language when that can be told. A title alone
+ * (a message not yet opened) can be a name or a code that stays as it is.
  */
 function untranslated(texts: string[], answer: string[], language: TranslationLanguage): boolean {
+  if (!texts.length) return false;
   if (answer.every((text, i) => text.trim() === texts[i]?.trim())) return true;
   const all = answer.join("\n");
   const alphabet = ALPHABET[language];
@@ -157,9 +145,12 @@ const SCHEMA = {
   },
 };
 
+/** A translation, before it's kept with its item. */
+export type Translation = Pick<ItemTranslation, "language" | "model" | "from" | "title" | "texts">;
+
 /**
- * Translate a title and its texts (a thread's messages, in order), or give the one already made. `options` is for the
- * eval suite, which compares models and efforts (evals/translate.ts).
+ * Translate a title and its texts. A Luna answer still in the original language goes to Sol once; Sol's, an error.
+ * `options` is for the eval suite, which compares models and efforts (evals/translate.ts).
  */
 export async function translate(
   title: string,
@@ -167,12 +158,7 @@ export async function translate(
   language: TranslationLanguage,
   options: { model?: string; effort?: "none" | "low" | "medium" } = {}
 ): Promise<Translation> {
-  const settings = getState().settings;
-  const model = options.model ?? translationModel(settings);
-  const key = keyOf(model, language, title, texts);
-  const before = (await keptTranslations())[key];
-  if (before) return before;
-  const generation = resetScope();
+  const model = options.model ?? translationModel(getState().settings);
   const answer = await respond<{ from: string; title: string; texts: string[] }>({
     name: "translation",
     instructions: instructions(language),
@@ -183,11 +169,8 @@ export async function translate(
   });
   if (answer.texts.length !== texts.length) throw new Error(`The translation came back with ${answer.texts.length} texts for ${texts.length}.`);
   if (untranslated(texts, answer.texts, language)) {
-    // Luna sometimes gives a long text back as it was (a Swedish bulletin, into Finnish): Sol, once, then an error.
     if (model !== "gpt-6.1-sol") return translate(title, texts, language, { model: "gpt-6.1-sol" });
     throw new Error("It came back in the original language.");
   }
-  const translation: Translation = { language, model, from: answer.from, title: answer.title, texts: answer.texts, at: Date.now() };
-  if (generation === resetScope()) keep(key, translation);
-  return translation;
+  return { language, model, from: answer.from, title: answer.title, texts: answer.texts };
 }

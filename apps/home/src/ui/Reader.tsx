@@ -10,7 +10,7 @@ import { clock, dateOf, deadlineText, mentionedDates, relativeDay, shortDate, to
 import { KINDS, PUPIL_SCOPES, SCOPES, TRIAGE_PUPIL_QS } from "../jev/questions";
 import type { ReplyForm } from "@wilma-client/src/write";
 import { Icon, Mark, Tabs, TriageChips } from "./bits";
-import { TranslateButton, TranslationNote, useTranslation } from "./Translated";
+import { TranslationNote, TranslationSwitch, useTranslation } from "./Translated";
 import { go, jevReadingOpen } from "./shared";
 import { language, plural, t, tx } from "../i18n";
 
@@ -107,11 +107,9 @@ export function Reader({
   const [topFor, setTopFor] = useState<string | null>(null);
   if (waiting && topFor !== item.key) setTopFor(item.key);
   const inviteOnTop = waiting || topFor === item.key;
-  // A thread is translated whole (its messages in order); otherwise the one text.
-  const threaded = Boolean(message?.thread?.replies.length);
-  const texts = threaded ? [message!.thread!.content, ...message!.thread!.replies.map((r) => r.content)] : item.text ? [item.text] : [];
   const heading = item.kind === "note" && item.note ? `${item.note.typeLabel}` : item.title;
-  const tr = useTranslation(item.key, heading, texts);
+  // A thread is translated whole: its messages in order (ai/translate.ts translationSource).
+  const tr = useTranslation(item, snap);
   const translated = tr.shown;
 
   return (
@@ -122,7 +120,7 @@ export function Reader({
             <Icon name="back" /> {t("List")}
           </button>
           <span className="spacer" />
-          <TranslateButton tr={tr} />
+          <TranslationSwitch tr={tr} />
           {item.kind !== "note" ? (
             <button
               className={`btn btn-sm${item.pinnedAt ? " pinned" : ""}`}

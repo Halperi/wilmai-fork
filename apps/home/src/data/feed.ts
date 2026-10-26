@@ -156,7 +156,7 @@ export function noteGroups(child: string, notes: LessonNote[]): NoteGroup[] {
   return [...groups.values()];
 }
 
-function preview(text: string | null, fallback = ""): string {
+export function preview(text: string | null, fallback = ""): string {
   const source = (text ?? fallback).replace(/\s+/g, " ").trim();
   return source.length > 180 ? `${source.slice(0, 178)}…` : source;
 }

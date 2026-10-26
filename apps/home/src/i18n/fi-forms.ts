@@ -78,9 +78,7 @@ export const FI_FORMS: Record<string, string> = {
 
   // Settings: language
   Settings: "Asetukset",
-  Language: "Kieli",
   Automatic: "Automaattinen",
-  "Automatic follows your computer's language.": "Automaattinen seuraa tietokoneesi kieltä.",
 
   // Settings: where a key is kept
   "Kept on this computer in the app's own data, scrambled but not encrypted.": "Säilytetään tällä koneella sovelluksen omissa tiedoissa peitettynä, ei salattuna.",
@@ -315,7 +313,7 @@ export const FI_FORMS: Record<string, string> = {
   "date {date}, for this family {calendar}": "päivä {date}, tälle perheelle {calendar}",
   /* ---------- Settings: translation ---------- */
   "Translating messages": "Viestien kääntäminen",
-  "Messages, bulletins and notes in another language get a Translate button. Choose the language to translate into.": "Muunkielisissä viesteissä, tiedotteissa ja merkinnöissä on Käännä-painike. Valitse kieli, jolle käännetään.",
+  "Messages, bulletins and notes in another language are translated as they come in, titles too. Choose the language, or none.": "Muunkieliset viestit, tiedotteet ja merkinnät käännetään sitä mukaa kuin niitä tulee, otsikoita myöten. Valitse kieli tai ei käännöksiä.",
   "Translate into": "Käännä kielelle",
   "No translations": "Ei käännöksiä",
   Translator: "Kääntäjä",
@@ -324,8 +322,12 @@ export const FI_FORMS: Record<string, string> = {
   "Careful with long and tricky messages.": "Huolellinen pitkissä ja hankalissa viesteissä.",
   "Good for everyday messages. If it can't translate one, Most accurate does.": "Hyvä arjen viesteihin. Jos se ei saa viestiä käännettyä, Tarkin kääntää sen.",
   "About {cost} a message.": "Noin {cost} viestiltä.",
-  "About {cost} a message, at most {month} a month.": "Noin {cost} viestiltä, enintään {month} kuussa.",
-  "About {n} message, bulletin or note comes in a month: \"at most\" is all of them translated.": "Kuussa tulee noin {n} viesti, tiedote tai merkintä: \"enintään\" on kaikki käännettyinä.",
-  "About {n} messages, bulletins and notes come in a month: \"at most\" is all of them translated.": "Kuussa tulee noin {n} viestiä, tiedotetta ja merkintää: \"enintään\" on kaikki käännettyinä.",
-  "Paid from your OpenAI key, within your monthly limit. A translation is kept, so each message is paid for once.": "Maksetaan OpenAI-avaimellasi kuukausirajasi sisällä. Käännös säilytetään, joten kustakin viestistä maksetaan kerran.",
+  "About {cost} a message, usually about {month} a month.": "Noin {cost} viestiltä, yleensä noin {month} kuussa.",
+  "About {n} message, bulletin or note a month comes in another language.": "Muulla kielellä tulee kuussa noin {n} viesti, tiedote tai merkintä.",
+  "About {n} messages, bulletins and notes a month come in another language.": "Muulla kielellä tulee kuussa noin {n} viestiä, tiedotetta ja merkintää.",
+  "Choosing a language translates the last 30 days too. Paid from your OpenAI key, within your monthly limit, and each message is translated once.": "Kielen valinta kääntää myös viimeiset 30 päivää. Maksetaan OpenAI-avaimellasi kuukausirajasi sisällä, ja kukin viesti käännetään kerran.",
+  "Translating: {done} of {total}…": "Käännetään: {done}/{total}…",
+  "Translating stopped: {why}": "Kääntäminen keskeytyi: {why}",
+  "App language": "Sovelluksen kieli",
+  "The language of the app's own words. Automatic follows your computer's language.": "Sovelluksen omien tekstien kieli. Automaattinen seuraa tietokoneesi kieltä.",
 };

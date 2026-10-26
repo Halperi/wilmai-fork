@@ -8,7 +8,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { FeedItem } from "../data/feed";
 import type { Child } from "../data/model";
 import { isDemo, syncNow } from "../data/engine";
-import { updateSettings, useViewer } from "../data/store";
+import { updateSettings, useApp, useViewer } from "../data/store";
+import { listedTranslation } from "../data/translations";
 import { whenShort } from "../data/dates";
 import { t } from "../i18n";
 import { Icon, Tab } from "./bits";
@@ -48,6 +49,8 @@ export function CommandMenu({ open, onClose, feed, family, onShortcuts }: { open
   const [active, setActive] = useState(0);
   const { set: setFilter } = useChildFilter();
   const demo = isDemo();
+  const settings = useApp((s) => s.settings);
+  const translations = useApp((s) => s.translations);
   const student = useViewer() === "student";
 
   useEffect(() => {
@@ -126,15 +129,16 @@ export function CommandMenu({ open, onClose, feed, family, onShortcuts }: { open
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   const shown = useMemo(() => {
     const cmds = words.length ? commands.filter((c) => matches(`${c.label} ${c.keywords ?? ""} ${c.child?.name ?? ""}`.toLowerCase(), words)) : commands;
-    // Messages, bulletins and notes, by their words (only when searching).
+    // Messages, bulletins and notes, by their words and their translations' (only when searching).
+    const translated = (i: FeedItem) => listedTranslation(i, { settings, translations });
     const items: Command[] = words.length
       ? feed
-          .filter((i) => matches(`${i.title} ${i.from ?? ""} ${i.text ?? i.preview}`.toLowerCase(), words))
+          .filter((i) => matches(`${i.title} ${i.from ?? ""} ${i.text ?? i.preview} ${translated(i)?.title ?? ""} ${translated(i)?.texts.join(" ") ?? ""}`.toLowerCase(), words))
           .slice(0, 8)
           .map((i) => ({
             id: `item:${i.key}`,
             group: t("Messages and bulletins"),
-            label: i.title,
+            label: translated(i)?.title || i.title,
             hint: whenShort(i.at),
             icon: i.kind === "news" ? "bulletin" : i.kind === "note" ? "note" : "message",
             child: family.find((c) => c.number === i.children[0]),
@@ -142,7 +146,7 @@ export function CommandMenu({ open, onClose, feed, family, onShortcuts }: { open
           }))
       : [];
     return [...cmds, ...items];
-  }, [commands, feed, family, words.join(" ")]);
+  }, [commands, feed, family, words.join(" "), settings, translations]);
 
   useEffect(() => setActive(0), [query]);
   useEffect(() => {

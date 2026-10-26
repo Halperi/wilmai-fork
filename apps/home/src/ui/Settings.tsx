@@ -10,9 +10,10 @@ import { AISettings } from "./AISettings";
 import { notificationsAvailable, testNotification } from "../data/notify";
 import { Icon } from "./bits";
 import { isDesktopApp, onWindows } from "../wilma/transport";
-import { plural, resolveLanguage, t, tx } from "../i18n";
+import { plural, t, tx } from "../i18n";
 import type { Settings as SettingsModel, Viewer } from "../data/model";
-import { DEFAULT_TRANSLATOR, TRANSLATION_LANGUAGES, TRANSLATORS, itemsPerMonth, translationAvailable } from "../ai/translate";
+import { DEFAULT_TRANSLATOR, TRANSLATION_LANGUAGES, TRANSLATORS, itemsPerMonth, needsTranslation, translationAvailable, translationSource } from "../ai/translate";
+import { runTranslations } from "../data/translations";
 import { runJev } from "../jev/runner";
 import { runLuna } from "../luna/events";
 import { READING_MODELS } from "../luna/client";
@@ -32,26 +33,35 @@ function marked(text: string, wrap: (part: string) => ReactNode): ReactNode {
 /** A fraction of a cent, in dollars as OpenAI bills them: "$0.0001", "$0.005". */
 const dollars = (n: number) => `$${n.toFixed(Math.max(2, -Math.floor(Math.log10(n))))}`;
 
-/** With OpenAI: the language the Translate button translates into, or none, and which model translates (ai/translate.ts). */
+/** With OpenAI: what messages are translated into as they come, or nothing, and which model translates (data/translations.ts). */
 function TranslationSettings({ settings }: { settings: SettingsModel }) {
-  const chosen = settings.translateTo ?? resolveLanguage(settings.language);
+  const chosen = settings.translateTo ?? "off";
   const translator = settings.translateModel ?? DEFAULT_TRANSLATOR;
-  // What a month would cost, from what this family gets: everything translated, so at most that.
+  const status = useApp((s) => s.translationStatus);
+  // A usual month's cost, from what this family gets in another language than the one chosen.
   const snapshot = useApp((s) => s.snapshot);
   const local = useApp((s) => s.local);
-  const monthly = useMemo(() => Math.round(itemsPerMonth(buildFeed({ snapshot, local, jev: {}, luna: {} }))), [snapshot, local]);
+  const monthly = useMemo(() => {
+    if (!snapshot || chosen === "off") return 0;
+    const items = buildFeed({ snapshot, local, jev: {}, luna: {} }).filter((i) => needsTranslation(translationSource(i, snapshot), chosen));
+    return Math.round(itemsPerMonth(items));
+  }, [snapshot, local, chosen]);
+  const change = (patch: Partial<SettingsModel>) => {
+    updateSettings(patch);
+    void runTranslations();
+  };
   return (
     <section className="card">
       <h2>
         <Icon name="translate" /> {t("Translating messages")}
       </h2>
-      <p>{t("Messages, bulletins and notes in another language get a Translate button. Choose the language to translate into.")}</p>
+      <p>{t("Messages, bulletins and notes in another language are translated as they come in, titles too. Choose the language, or none.")}</p>
       <div role="group" aria-label={t("Translate into")} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <button className="seg" aria-pressed={chosen === "off"} onClick={() => updateSettings({ translateTo: "off" })}>
+        <button className="seg" aria-pressed={chosen === "off"} onClick={() => change({ translateTo: "off" })}>
           {t("No translations")}
         </button>
         {Object.entries(TRANSLATION_LANGUAGES).map(([id, name]) => (
-          <button key={id} className="seg" lang={id} aria-pressed={chosen === id} onClick={() => updateSettings({ translateTo: id as keyof typeof TRANSLATION_LANGUAGES })}>
+          <button key={id} className="seg" lang={id} aria-pressed={chosen === id} onClick={() => change({ translateTo: id as keyof typeof TRANSLATION_LANGUAGES })}>
             {name}
           </button>
         ))}
@@ -61,7 +71,7 @@ function TranslationSettings({ settings }: { settings: SettingsModel }) {
           <legend>{t("Translator")}</legend>
           {TRANSLATORS.map((x) => (
             <label key={x.model} className="switch">
-              <input type="radio" name="translator" checked={translator === x.model} onChange={() => updateSettings({ translateModel: x.model })} />
+              <input type="radio" name="translator" checked={translator === x.model} onChange={() => change({ translateModel: x.model })} />
               <div>
                 <b>
                   {t(x.label)}
@@ -69,7 +79,7 @@ function TranslationSettings({ settings }: { settings: SettingsModel }) {
                 </b>
                 <span className="translator-cost">
                   {monthly
-                    ? t("About {cost} a message, at most {month} a month.", { cost: dollars(x.perMessage), month: dollars(Math.max(x.perMessage, monthly * x.perMessage)) })
+                    ? t("About {cost} a message, usually about {month} a month.", { cost: dollars(x.perMessage), month: dollars(monthly * x.perMessage) })
                     : t("About {cost} a message.", { cost: dollars(x.perMessage) })}
                 </span>
                 <span>
@@ -79,9 +89,11 @@ function TranslationSettings({ settings }: { settings: SettingsModel }) {
             </label>
           ))}
           <p className="help-line">
-            {monthly ? `${plural(monthly, "About {n} message, bulletin or note comes in a month: \"at most\" is all of them translated.", "About {n} messages, bulletins and notes come in a month: \"at most\" is all of them translated.")} ` : ""}
-            {t("Paid from your OpenAI key, within your monthly limit. A translation is kept, so each message is paid for once.")}
+            {monthly ? `${plural(monthly, "About {n} message, bulletin or note a month comes in another language.", "About {n} messages, bulletins and notes a month come in another language.")} ` : ""}
+            {t("Choosing a language translates the last 30 days too. Paid from your OpenAI key, within your monthly limit, and each message is translated once.")}
           </p>
+          {status.running ? <p className="help-line">{t("Translating: {done} of {total}…", { done: status.done, total: status.total })}</p> : null}
+          {status.error ? <div className="notice err">{t("Translating stopped: {why}", { why: status.error })}</div> : null}
         </fieldset>
       ) : null}
     </section>
@@ -111,9 +123,9 @@ export function Settings() {
       {!demo ? <WhoFor /> : null}
 
       <section className="card">
-        <h2>{t("Language")}</h2>
-        <p>{t("Automatic follows your computer's language.")}</p>
-        <div role="group" aria-label={t("Language")} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <h2>{t("App language")}</h2>
+        <p>{t("The language of the app's own words. Automatic follows your computer's language.")}</p>
+        <div role="group" aria-label={t("App language")} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {LANGUAGES.map((l) => (
             <button
               key={l.id}

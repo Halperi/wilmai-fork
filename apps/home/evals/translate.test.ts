@@ -17,10 +17,11 @@ test("a message's language is guessed from its letters and common words", () => 
   assert.equal(guessLanguage("7G 30.10. B204 14.15"), null);
 });
 
-test("translation comes with OpenAI: off without it, else the language chosen or the app's", () => {
-  assert.equal(translationTarget({ ...DEFAULT_SETTINGS }), null);
+test("translation comes with OpenAI, once a language is chosen", () => {
+  assert.equal(translationTarget({ ...DEFAULT_SETTINGS, translateTo: "en" }), null);
   const ai = { ...DEFAULT_SETTINGS, aiProvider: "openai" as const, openaiKey: "sk-test" };
-  assert.equal(translationTarget({ ...ai, language: "fi" }), "fi");
+  // Not chosen yet: off, whatever the app's language (it costs, so it's asked for).
+  assert.equal(translationTarget({ ...ai, language: "en" }), null);
   assert.equal(translationTarget({ ...ai, language: "en", translateTo: "uk" }), "uk");
   assert.equal(translationTarget({ ...ai, translateTo: "off" }), null);
   assert.equal(translationTarget({ ...DEFAULT_SETTINGS, aiProvider: "local", translateTo: "sv" }), null);

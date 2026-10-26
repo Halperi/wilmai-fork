@@ -8,7 +8,8 @@ import { toggleDoneWithUndo } from "./done";
 import { Reader } from "./Reader";
 import { NewMessage } from "./NewMessage";
 import { t, tx } from "../i18n";
-import { intelligenceOn } from "../data/model";
+import { intelligenceOn, type ItemTranslation } from "../data/model";
+import { listedTranslation } from "../data/translations";
 
 
 const SEGMENTS: { id: Segment; label: string }[] = [
@@ -22,9 +23,11 @@ const SEGMENTS: { id: Segment; label: string }[] = [
 /** "Done" is also a button (Finnish "Hoidettu"); as this list it's plural in Finnish ("Hoidetut"). */
 const segmentLabel = (s: { id: Segment; label: string }) => (s.id === "done" ? tSense("Done", "list") : t(s.label));
 
-function matches(item: FeedItem, query: string): boolean {
+/** By the item's own words, and its translation's when there's one. */
+function matches(item: FeedItem, query: string, tr: ItemTranslation | null): boolean {
   if (!query) return true;
-  const hay = `${item.title} ${item.from ?? ""} ${item.text ?? item.preview} ${item.note?.subjects.join(" ") ?? ""}`.toLowerCase();
+  const translated = tr ? ` ${tr.title} ${tr.texts.join(" ")}` : "";
+  const hay = `${item.title} ${item.from ?? ""} ${item.text ?? item.preview} ${item.note?.subjects.join(" ") ?? ""}${translated}`.toLowerCase();
   return query
     .toLowerCase()
     .split(/\s+/)
@@ -129,12 +132,17 @@ const groupLabel = (group: string) => (group === "This week" || group === "Pinne
 export function Inbox({ feed, query, itemKey }: { feed: FeedItem[]; query: string; itemKey: string | null }) {
   const snap = useApp((s) => s.snapshot)!;
   const jevOn = useApp((s) => intelligenceOn(s.settings));
+  const settings = useApp((s) => s.settings);
+  const translations = useApp((s) => s.translations);
   const { selected } = useChildFilter();
   const segment = useSegment();
   const pick = (s: Segment) => setSegment(s);
 
   // Messages and bulletins: teacher notes are in Notes.
-  const scoped = useMemo(() => forChildren(feed, selected).filter((i) => i.kind !== "note" && matches(i, query)), [feed, selected, query]);
+  const scoped = useMemo(
+    () => forChildren(feed, selected).filter((i) => i.kind !== "note" && matches(i, query, listedTranslation(i, { settings, translations }))),
+    [feed, selected, query, settings, translations]
+  );
   const counts = useMemo(
     () => ({
       all: scoped.filter((i) => !i.done).length,

@@ -29,6 +29,7 @@ import { releaseLocalModels } from "../ai/ollama";
 import { runJev } from "../jev/runner";
 import { subjectNamer } from "../data/schedule";
 import { hash } from "../data/hash";
+import { runTranslations } from "../data/translations";
 
 /** The reading's version: a change here reads everything again. */
 export const LUNA_EVENTS = "luna-reading@5";
@@ -765,6 +766,8 @@ export function runLuna(): Promise<void> {
     if (usesLocalAI(settings)) await releaseLocalModels().catch((err: unknown) => scope === accountScope() && setState((s) => ({ lunaStatus: { ...s.lunaStatus, error: err instanceof Error ? err.message : String(err) } })));
     running = null;
     if (scope !== accountScope() && getState().phase === "ready" && getState().snapshot) void runLuna();
+    // Then the translations, with the readings' sentences on what to do (data/translations.ts).
+    else void runTranslations();
   });
   return running;
 }
