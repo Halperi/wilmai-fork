@@ -122,6 +122,7 @@ export function CommandMenu({ open, onClose, feed, family, onShortcuts }: { open
     if (!demo) list.push({ id: "sync", group: act, label: t("Check Wilma now"), keywords: "refresh sync update päivitä", icon: "refresh", run: () => void syncNow() });
     list.push({ id: "keys", group: act, label: t("Keyboard shortcuts"), keywords: "keys help ? näppäin pikanäppäimet", hint: "?", run: onShortcuts });
     list.push({ id: "lang-fi", group: act, label: "Suomeksi", keywords: "language kieli finnish", run: () => updateSettings({ language: "fi" }) });
+    list.push({ id: "lang-sv", group: act, label: "På svenska", keywords: "language kieli språk svenska swedish ruotsi", run: () => updateSettings({ language: "sv" }) });
     list.push({ id: "lang-en", group: act, label: "In English", keywords: "language kieli english", run: () => updateSettings({ language: "en" }) });
     return list;
   }, [family, demo, student, setFilter, onShortcuts]);

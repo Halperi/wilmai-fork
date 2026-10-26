@@ -24,7 +24,7 @@ import { Section } from "./Glance";
 import { Reader } from "./Reader";
 import { Icon, Tab, Tabs } from "./bits";
 import { DOCK_QUERY, tSense, useChildFilter, useMedia } from "./shared";
-import { language, t } from "../i18n";
+import { locale, t } from "../i18n";
 import { useWilma } from "../data/phrases";
 
 const KIND: Record<CalKind, { one: string; many: string }> = {
@@ -41,7 +41,7 @@ const kindMany = (k: CalKind) => tSense(KIND[k].many, "calendar");
 /** "October 2026" / "Lokakuu 2026". */
 const monthTitle = (month: string) => {
   const [y, m] = month.split("-").map(Number);
-  const text = new Intl.DateTimeFormat(language() === "fi" ? "fi-FI" : "en-GB", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, 15)));
+  const text = new Intl.DateTimeFormat(locale(), { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, 15)));
   return text[0].toUpperCase() + text.slice(1);
 };
 const shiftMonth = (month: string, by: number) => {

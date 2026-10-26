@@ -17,7 +17,7 @@ import { language, plural, t, tx } from "../i18n";
 /** "61%" / "61 %" */
 function percent(share: number): string {
   const n = Math.round(share * 100);
-  return language() === "fi" ? `${n}\u00a0%` : `${n}%`;
+  return language() === "en" ? `${n}%` : `${n}\u00a0%`;
 }
 
 /** A translated sentence with **bold** parts (so the bold words can move with Finnish word order). */

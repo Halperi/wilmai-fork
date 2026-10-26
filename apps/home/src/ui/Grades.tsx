@@ -47,10 +47,10 @@ import { shortDate, today } from "../data/dates";
 import { intelligenceOn, type Child } from "../data/model";
 import { Icon, Linked, Tab } from "./bits";
 import { go, gradesAcademicOnly, tSense, useChildFilter } from "./shared";
-import { language, plural, t } from "../i18n";
+import { locale, plural, t } from "../i18n";
 import { useWilma } from "../data/phrases";
 
-const decimals = (n: number) => new Intl.NumberFormat(language() === "fi" ? "fi-FI" : "en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+const decimals = (n: number) => new Intl.NumberFormat(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
 
 /** "Autumn 24" / "Syksy 24". */

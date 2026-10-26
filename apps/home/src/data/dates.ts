@@ -35,11 +35,14 @@ const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "O
 const MONTH_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const FI_DAY = ["ma", "ti", "ke", "to", "pe", "la", "su"];
 const FI_DAY_LONG = ["maanantai", "tiistai", "keskiviikko", "torstai", "perjantai", "lauantai", "sunnuntai"];
+const SV_DAY = ["mån", "tis", "ons", "tors", "fre", "lör", "sön"];
+const SV_DAY_LONG = ["måndag", "tisdag", "onsdag", "torsdag", "fredag", "lördag", "söndag"];
+const SV_MONTH = ["januari", "februari", "mars", "april", "maj", "juni", "juli", "augusti", "september", "oktober", "november", "december"];
 const FI_MONTH = ["tammikuuta", "helmikuuta", "maaliskuuta", "huhtikuuta", "toukokuuta", "kesäkuuta", "heinäkuuta", "elokuuta", "syyskuuta", "lokakuuta", "marraskuuta", "joulukuuta"];
 
 /** The language dates are shown in (set with the app's language; see i18n). */
-let language: "en" | "fi" = "en";
-export function setDateLanguage(lang: "en" | "fi"): void {
+let language: "en" | "fi" | "sv" = "en";
+export function setDateLanguage(lang: "en" | "fi" | "sv"): void {
   language = lang;
 }
 const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -54,13 +57,15 @@ export function longDateEn(iso: string): string {
 /* On screen, in the app's language. */
 
 /** "Wed" / "Ke": a column heading */
-export const dayName = (iso: string) => (language === "fi" ? capital(FI_DAY[weekday(iso)]) : DAY[weekday(iso)]);
+export const dayName = (iso: string) => (language === "fi" ? capital(FI_DAY[weekday(iso)]) : language === "sv" ? capital(SV_DAY[weekday(iso)]) : DAY[weekday(iso)]);
 /** "Wednesday" / "Keskiviikko" */
-export const dayNameLong = (iso: string) => (language === "fi" ? capital(FI_DAY_LONG[weekday(iso)]) : DAY_LONG[weekday(iso)]);
+export const dayNameLong = (iso: string) =>
+  language === "fi" ? capital(FI_DAY_LONG[weekday(iso)]) : language === "sv" ? capital(SV_DAY_LONG[weekday(iso)]) : DAY_LONG[weekday(iso)];
 
 /** "Wed 7 Oct" / "ke 7.10." */
 export function shortDate(iso: string): string {
   const [, m, d] = iso.split("-").map(Number);
+  if (language === "sv") return `${SV_DAY[weekday(iso)]} ${d}.${m}.`;
   return language === "fi" ? `${FI_DAY[weekday(iso)]} ${d}.${m}.` : `${DAY[weekday(iso)]} ${d} ${MONTH[m - 1]}`;
 }
 
@@ -79,23 +84,28 @@ export function dateSpanFi(from: string, to: string): string {
 export function dateSpan(from: string, to: string): string {
   const [, m1, d1] = from.split("-").map(Number);
   const [, m2, d2] = to.split("-").map(Number);
-  if (language === "fi") return `${FI_DAY[weekday(from)]}–${FI_DAY[weekday(to)]} ${m1 === m2 ? `${d1}.–${d2}.${m2}.` : `${d1}.${m1}.–${d2}.${m2}.`}`;
+  if (language !== "en") {
+    const days = language === "sv" ? SV_DAY : FI_DAY;
+    return `${days[weekday(from)]}–${days[weekday(to)]} ${m1 === m2 ? `${d1}.–${d2}.${m2}.` : `${d1}.${m1}.–${d2}.${m2}.`}`;
+  }
   return `${DAY[weekday(from)]}–${DAY[weekday(to)]} ${m1 === m2 ? `${d1}–${d2} ${MONTH[m2 - 1]}` : `${d1} ${MONTH[m1 - 1]}–${d2} ${MONTH[m2 - 1]}`}`;
 }
 
 /** "7 October" / "7. lokakuuta" */
 export function longDate(iso: string): string {
   const [, m, d] = iso.split("-").map(Number);
-  return language === "fi" ? `${d}. ${FI_MONTH[m - 1]}` : `${d} ${MONTH_LONG[m - 1]}`;
+  return language === "fi" ? `${d}. ${FI_MONTH[m - 1]}` : language === "sv" ? `${d} ${SV_MONTH[m - 1]}` : `${d} ${MONTH_LONG[m - 1]}`;
 }
 
-/** "Today", "Tomorrow", "Yesterday", "Thursday", "Wed 7 Oct" (or in Finnish: "Tänään", "Huomenna", "Eilen", "Torstai", "ke 7.10.") */
+const DAY_WORDS = { en: ["Today", "Tomorrow", "Yesterday"], fi: ["Tänään", "Huomenna", "Eilen"], sv: ["I dag", "I morgon", "I går"] };
+
+/** "Today", "Tomorrow", "Yesterday", "Thursday", "Wed 7 Oct" (or in Finnish: "Tänään", "Huomenna", "Eilen", "Torstai", "ke 7.10."; in Swedish "I dag"…) */
 export function relativeDay(iso: string, now = today()): string {
   const diff = daysBetween(now, iso);
-  const fi = language === "fi";
-  if (diff === 0) return fi ? "Tänään" : "Today";
-  if (diff === 1) return fi ? "Huomenna" : "Tomorrow";
-  if (diff === -1) return fi ? "Eilen" : "Yesterday";
+  const [todayWord, tomorrow, yesterday] = DAY_WORDS[language];
+  if (diff === 0) return todayWord;
+  if (diff === 1) return tomorrow;
+  if (diff === -1) return yesterday;
   if (diff > 1 && diff < 7) return dayNameLong(iso);
   return shortDate(iso);
 }
@@ -105,9 +115,9 @@ export function dayWithDate(iso: string, now = today()): string {
   return Math.abs(daysBetween(now, iso)) <= 1 ? `${relativeDay(iso, now)}, ${shortDate(iso)}` : shortDate(iso);
 }
 
-/** Is this the word relativeDay() gives for today / yesterday (in either language)? */
-export const isTodayWord = (word: string) => word === "Today" || word === "Tänään";
-export const isYesterdayWord = (word: string) => word === "Yesterday" || word === "Eilen";
+/** Is this the word relativeDay() gives for today / yesterday (in any of the languages)? */
+export const isTodayWord = (word: string) => Object.values(DAY_WORDS).some(([w]) => w === word);
+export const isYesterdayWord = (word: string) => Object.values(DAY_WORDS).some(([, , w]) => w === word);
 
 export function dateOf(instant: Date): string {
   return finnishDateString(instant);

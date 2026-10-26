@@ -320,7 +320,7 @@ export interface Settings {
   /** Read new messages in the background so Jev can sort them (Wilma then shows them as read). */
   backgroundRead: boolean;
   /** The app's language: "auto" follows the computer (Finnish if it's set to Finnish, otherwise English). */
-  language: "auto" | "en" | "fi";
+  language: "auto" | "en" | "fi" | "sv";
   /** What messages are translated into, with OpenAI (data/translations.ts); unset: no translations. */
   translateTo?: TranslationLanguage | "off";
   /** Who translates with OpenAI (ai/translate.ts TRANSLATORS); unset: the default there. */

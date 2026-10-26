@@ -203,6 +203,7 @@ export function byDay(iso: string, now = today()): string {
   const days = daysBetween(now, iso);
   const thisWeek = days > 1 && days < 7;
   if (language() === "fi") return thisWeek ? `${FI_BY_WEEKDAY[weekday(iso)]} mennessä` : `${shortDate(iso)} mennessä`;
+  if (language() === "sv") return `Senast ${thisWeek ? dayNameLong(iso).toLowerCase() : shortDate(iso)}`;
   return `By ${thisWeek ? dayNameLong(iso) : shortDate(iso)}`;
 }
 

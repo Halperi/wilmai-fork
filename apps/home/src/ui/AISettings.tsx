@@ -246,7 +246,7 @@ export function AISettings() {
             <div className="ai-key-label">
               <label htmlFor="openai-key">{t("Add your OpenAI API key")}</label>
               {/* Step by step on the website, for anyone who has never made one */}
-              <a className="linkish" href={`https://wilm.ai/${language()}/home#openai-key`} target="_blank" rel="noreferrer">{t("How to get a key")} ↗</a>
+              <a className="linkish" href={`https://wilm.ai/${language() === "fi" ? "fi" : "en"}/home#openai-key`} target="_blank" rel="noreferrer">{t("How to get a key")} ↗</a>
             </div>
             {keyInput}
             <span className="help">

@@ -103,6 +103,7 @@ function TranslationSettings({ settings }: { settings: SettingsModel }) {
 const LANGUAGES: { id: SettingsModel["language"]; label: () => string }[] = [
   { id: "auto", label: () => t("Automatic") },
   { id: "fi", label: () => "Suomi" },
+  { id: "sv", label: () => "Svenska" },
   { id: "en", label: () => "English" },
 ];
 

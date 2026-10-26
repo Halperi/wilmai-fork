@@ -493,13 +493,17 @@ type AbsenceStage =
   | { kind: "sending"; form: AbsenceForm }
   | { kind: "error"; message: string; form?: AbsenceForm };
 
-/** Wilma's reasons, glossed in English (in Finnish, Wilma's own label says it all). */
-const REASONS: [RegExp, string][] = [
-  [/terveydellinen/i, "health reason"],
-  [/sairaus/i, "illness"],
-  [/muu syy/i, "other reason"],
+/** Wilma's reasons, glossed in English and Swedish (in Finnish, Wilma's own label says it all). */
+const REASONS: [RegExp, string, string][] = [
+  [/terveydellinen/i, "health reason", "hälsoskäl"],
+  [/sairaus/i, "illness", "sjukdom"],
+  [/muu syy/i, "other reason", "annat skäl"],
 ];
-const gloss = (label: string) => (language() === "en" ? (REASONS.find(([re]) => re.test(label))?.[1] ?? null) : null);
+const gloss = (label: string) => {
+  if (language() === "fi") return null;
+  const row = REASONS.find(([re]) => re.test(label));
+  return row ? (language() === "sv" ? row[2] : row[1]) : null;
+};
 
 const FI_ON_DAY = ["maanantaina", "tiistaina", "keskiviikkona", "torstaina", "perjantaina", "lauantaina", "sunnuntaina"];
 const FI_FOR_DAY = ["maanantaiksi", "tiistaiksi", "keskiviikoksi", "torstaiksi", "perjantaiksi", "lauantaiksi", "sunnuntaiksi"];
@@ -519,6 +523,14 @@ function dayPhrase(iso: string, as: "on" | "for" = "on"): string {
     if (diff === 1) return as === "on" ? "huomenna" : "huomiseksi";
     if (diff === -1 && as === "on") return "eilen";
     return weekdayName ? (as === "on" ? FI_ON_DAY : FI_FOR_DAY)[weekday(iso)] : shortDate(iso);
+  }
+  if (language() === "sv") {
+    // "i dag", "i morgon", "i går", "på torsdag", "mån 12.10." / "till i dag", "till i morgon", "till torsdag", "till mån 12.10."
+    const to = as === "for" ? "till " : "";
+    if (diff === 0) return `${to}i dag`;
+    if (diff === 1) return `${to}i morgon`;
+    if (diff === -1 && as === "on") return "i går";
+    return weekdayName ? `${as === "for" ? "till" : "på"} ${dayNameLong(iso).toLowerCase()}` : `${to}${shortDate(iso)}`;
   }
   const prefix = as === "for" ? "for " : "";
   if (diff === 0) return `${prefix}today`;

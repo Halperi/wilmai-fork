@@ -4,7 +4,7 @@
  * which language, with the original a click away. An item switched to its original stays so while the app is open.
  */
 import { useEffect, useState } from "react";
-import { useApp } from "../data/store";
+import { setState, useApp } from "../data/store";
 import type { FeedItem } from "../data/feed";
 import type { ItemTranslation, Snapshot } from "../data/model";
 import { currentTranslation, needsTranslation, sourceHash, translationSource, translationTarget } from "../ai/translate";
@@ -33,6 +33,8 @@ export interface Translating {
   busy: boolean;
   error: string | null;
   toggle: () => void;
+  /** After a failure: forget it and translate again. */
+  retry: () => void;
 }
 
 /** The reader's translation: translated now if it isn't yet (an item from further back, or just opened from Wilma). */
@@ -60,13 +62,24 @@ export function useTranslation(item: FeedItem, snap: Snapshot): Translating {
     translateItem(item).catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
   }, [item.key, hash, target, wanted, Boolean(available), Boolean(failed)]);
 
+  const retry = () => {
+    setError(null);
+    if (stored?.error) {
+      setState((s) => {
+        const { [item.key]: _failed, ...rest } = s.translations;
+        return { translations: rest };
+      });
+    }
+    translateItem(item).catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
+  };
+
   const toggle = () => {
     const next = !original;
     if (next) originals.add(item.key);
     else originals.delete(item.key);
     setOriginal(next);
   };
-  return { shown: available && !original ? available : null, available, busy, error: error ?? failed, toggle };
+  return { shown: available && !original ? available : null, available, busy, error: error ?? failed, toggle, retry };
 }
 
 /** The reader's switch between the translation and the original. */
@@ -108,5 +121,12 @@ export function TranslationNote({ tr }: { tr: Translating }) {
       </div>
     );
   }
-  return tr.error ? <div className="notice err">{t("The translation didn't work: {why}", { why: tr.error })}</div> : null;
+  return tr.error ? (
+    <div className="notice err translate-failed">
+      <span>{t("The translation didn't work: {why}", { why: tr.error })}</span>
+      <button type="button" className="btn btn-sm" onClick={tr.retry}>
+        <Icon name="refresh" /> {t("Try again")}
+      </button>
+    </div>
+  ) : null;
 }

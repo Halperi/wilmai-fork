@@ -17,25 +17,30 @@ import { showToast } from "./Toast";
 import { language, plural, t, tx } from "../i18n";
 
 /* Wilma's words in English (Wilma's own word when there's no match, and always in Finnish). */
-const GROUPS: [RegExp, string][] = [
-  [/^omat opettajat$/i, "Own teachers"],
-  [/^opettajat$/i, "Teachers"],
-  [/^henkilökunta$/i, "Staff"],
-  [/^opiskelija$/i, "Your child"],
-  [/^muut huoltajat$/i, "Other guardian"],
+const GROUPS: [RegExp, string, string][] = [
+  [/^omat opettajat$/i, "Own teachers", "Egna lärare"],
+  [/^opettajat$/i, "Teachers", "Lärare"],
+  [/^henkilökunta$/i, "Staff", "Personal"],
+  [/^opiskelija$/i, "Your child", "Ditt barn"],
+  [/^muut huoltajat$/i, "Other guardian", "Andra vårdnadshavare"],
 ];
-const ROLES: [RegExp, string][] = [
-  [/ryhmänohjaaja|luokanvalvoja/i, "Class teacher"],
-  [/muut ohjaajat/i, "Supervisor"],
+const ROLES: [RegExp, string, string][] = [
+  [/ryhmänohjaaja|luokanvalvoja/i, "Class teacher", "Klassföreståndare"],
+  [/muut ohjaajat/i, "Supervisor", "Handledare"],
 ];
-const english = (table: [RegExp, string][], text: string) =>
-  language() === "fi" ? text : (table.find(([re]) => re.test(text))?.[1] ?? text);
+/** Wilma's Finnish label in English or Swedish, when the app is (else as it is). */
+const english = (table: [RegExp, string, string][], text: string) => {
+  if (language() === "fi") return text;
+  const row = table.find(([re]) => re.test(text));
+  return row ? (language() === "sv" ? row[2] : row[1]) : text;
+};
 
-/** A message group link (to all teachers or all supervisors): in English, what it means; in Finnish, Wilma's own words. */
+/** A message group link (to all teachers or all supervisors): in English or Swedish, what it means; in Finnish, Wilma's own words. */
 function groupLinkLabel(name: string, first: string | null): string {
   if (language() === "fi") return name;
-  if (/kaikille ohjaajille/i.test(name)) return "All supervisors";
-  if (/kaikille opettajille/i.test(name)) return first ? `All of ${first}'s teachers` : "All of your child's teachers";
+  const sv = language() === "sv";
+  if (/kaikille ohjaajille/i.test(name)) return sv ? "Alla handledare" : "All supervisors";
+  if (/kaikille opettajille/i.test(name)) return first ? (sv ? `Alla lärare som ${first} har` : `All of ${first}'s teachers`) : sv ? "Alla ditt barns lärare" : "All of your child's teachers";
   return name;
 }
 
