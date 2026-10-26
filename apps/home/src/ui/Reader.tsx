@@ -10,6 +10,7 @@ import { clock, dateOf, deadlineText, mentionedDates, relativeDay, shortDate, to
 import { KINDS, PUPIL_SCOPES, SCOPES, TRIAGE_PUPIL_QS } from "../jev/questions";
 import type { ReplyForm } from "@wilma-client/src/write";
 import { Icon, Mark, Tabs, TriageChips } from "./bits";
+import { TranslateButton, TranslationNote, useTranslation } from "./Translated";
 import { go, jevReadingOpen } from "./shared";
 import { language, plural, t, tx } from "../i18n";
 
@@ -106,6 +107,12 @@ export function Reader({
   const [topFor, setTopFor] = useState<string | null>(null);
   if (waiting && topFor !== item.key) setTopFor(item.key);
   const inviteOnTop = waiting || topFor === item.key;
+  // A thread is translated whole (its messages in order); otherwise the one text.
+  const threaded = Boolean(message?.thread?.replies.length);
+  const texts = threaded ? [message!.thread!.content, ...message!.thread!.replies.map((r) => r.content)] : item.text ? [item.text] : [];
+  const heading = item.kind === "note" && item.note ? `${item.note.typeLabel}` : item.title;
+  const tr = useTranslation(item.key, heading, texts);
+  const translated = tr.shown;
 
   return (
     <article className={`reader${inPanel ? " in-panel" : ""}`} aria-labelledby="reader-title">
@@ -115,6 +122,7 @@ export function Reader({
             <Icon name="back" /> {t("List")}
           </button>
           <span className="spacer" />
+          <TranslateButton tr={tr} />
           {item.kind !== "note" ? (
             <button
               className={`btn btn-sm${item.pinnedAt ? " pinned" : ""}`}
@@ -139,7 +147,7 @@ export function Reader({
       <TriageChips item={item} />
       <h2 id="reader-title" style={{ marginTop: 12 }}>
         <Mark on={needs} sweep>
-          {item.kind === "note" && item.note ? `${item.note.typeLabel}` : item.title}
+          {translated ? translated.title : heading}
         </Mark>
       </h2>
       <div className="meta">
@@ -189,26 +197,29 @@ export function Reader({
         </div>
       ) : null}
 
+      <TranslationNote tr={tr} />
+
       {item.kind === "note" ? (
         item.text ? (
-          <RichText text={item.text} anchor={anchor} />
+          <RichText text={translated?.texts[0] ?? item.text} anchor={anchor} />
         ) : (
           <p className="waiting">{t("The teacher didn't write anything else.")}</p>
         )
       ) : message?.thread?.replies.length ? (
         <Thread
           key={item.key}
-          opening={{ who: message.sender ?? t("Someone"), at: openedAt(message), text: message.thread.content }}
-          replies={message.thread.replies}
+          opening={{ who: message.sender ?? t("Someone"), at: openedAt(message), text: translated?.texts[0] ?? message.thread.content }}
+          replies={translated ? message.thread.replies.map((r, i) => ({ ...r, content: translated.texts[i + 1] ?? r.content })) : message.thread.replies}
           anchor={anchor}
-          highlight={inPanel ? highlight : needs ? item.actionLine : null}
+          // The AI's line is quoted from the original, so it marks only the original.
+          highlight={translated ? null : inPanel ? highlight : needs ? item.actionLine : null}
           why={inPanel ? t("The calendar's date is read from this line") : undefined}
         />
       ) : item.text !== null ? (
         <RichText
-          text={item.text}
+          text={translated?.texts[0] ?? item.text}
           anchor={anchor}
-          highlight={inPanel ? highlight : needs ? item.actionLine : null}
+          highlight={translated ? null : inPanel ? highlight : needs ? item.actionLine : null}
           why={inPanel ? t("The calendar's date is read from this line") : undefined}
         />
       ) : (

@@ -1,5 +1,15 @@
 /* Finnish for inbox. Keys are the English text exactly as in t(). */
 export const FI_INBOX: Record<string, string> = {
+  /* ---------- Reader: translation ---------- */
+  Translate: "Käännä",
+  Original: "Alkuperäinen",
+  "Translating…": "Käännetään…",
+  "Show the original": "Näytä alkuperäinen",
+  "Show original": "Näytä alkuperäinen",
+  "Translate into {language} with AI": "Käännä tekoälyllä: {language}",
+  "Translated by {by}, {from} → {to}. Check times and dates against the original.": "Käännös: {by}, {from} → {to}. Tarkista ajat ja päivät alkuperäisestä.",
+  "The translation didn't work: {why}": "Käännös ei onnistunut: {why}",
+
   /* ---------- Inbox: segments, groups, list ---------- */
   "All": "Kaikki",
   "Needs you": "Odottaa sinua",

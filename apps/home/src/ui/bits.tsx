@@ -53,6 +53,7 @@ const paths: Record<string, ReactNode> = {
   note: <><path d="M5 3.5h10l4 4v13H5z" /><path d="M15 3.5v4h4M8.5 12h7M8.5 16h5" /></>,
   message: <path d="M4 5.5h16v11H9l-5 4z" />,
   pen: <><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z" /><path d="M14.5 6.5l3 3" /></>,
+  translate: <><path d="M4 5h7" /><path d="M9 3v2c0 4.4-2.2 8-5 8" /><path d="M5 9c0 2.1 3 3.9 6.7 4" /><path d="M12 20l4-9 4 9" /><path d="M19.1 18h-6.2" /></>,
   close: <path d="M6 6l12 12M18 6L6 18" />,
   grades: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
   exam: <><rect x="5" y="4" width="14" height="17" rx="2.5" /><path d="M9 4V3h6v1M8.5 11l2 2 4-4M8.5 16.5h7" /></>,

@@ -379,6 +379,18 @@ a { color: var(--pen); }
 .notice { border-radius: 10px; padding: 10px 12px; font-size: 14px; }
 .notice.err { background: var(--warn-soft); color: var(--warn); }
 .notice.ok { background: var(--good-soft); color: var(--good); }
+/* Above a translated text (Translated.tsx): by whom, from and to which language, and back to the original. */
+.translated-note { display: flex; gap: 8px; align-items: center; margin: 12px 0 4px; padding: 8px 12px; border-radius: 10px; background: var(--pen-soft); color: var(--ink-2); font-size: 13px; line-height: 1.45; }
+.translated-note .icon { flex: none; width: 16px; height: 16px; color: var(--pen); }
+.translated-note span { flex: 1; }
+.translated-note .linkish { flex: none; }
+/* Settings: the two translators, with what a message costs. */
+.translator { border: 0; padding: 0; margin: 14px 0 0; }
+.translator legend { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+.translator .switch { padding: 6px 0; }
+.translator .switch span.translator-cost { display: block; color: var(--ink-2); font-weight: 600; }
+.translator-badge { display: inline-flex; margin-left: 8px; border-radius: 999px; padding: 2px 8px; background: var(--marker); color: var(--on-marker); font-size: 11px; line-height: 1.4; font-weight: 700; vertical-align: 2px; }
+.translator .help-line { margin-top: 6px; }
 
 .reader-empty { height: 100%; display: grid; place-items: center; color: var(--ink-3); text-align: center; padding: 40px; }
 .reader-empty kbd { border: 1px solid var(--rule-2); border-radius: 5px; padding: 0 6px; font-family: var(--body); font-size: 13px; }

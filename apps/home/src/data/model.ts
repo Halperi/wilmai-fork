@@ -239,6 +239,9 @@ export type JevAnswer =
   | { type: "score"; score: number; probabilities: Record<string, number>; confidence: number }
   | { type: "noul"; noul: number };
 
+/** The languages messages can be translated into (ai/translate.ts). */
+export type TranslationLanguage = "fi" | "sv" | "en" | "uk" | "ar";
+
 export interface Settings {
   /** Explicit opt-in. Older installations infer OpenAI from their saved key. */
   aiProvider?: "off" | "openai" | "local";
@@ -300,6 +303,10 @@ export interface Settings {
   backgroundRead: boolean;
   /** The app's language: "auto" follows the computer (Finnish if it's set to Finnish, otherwise English). */
   language: "auto" | "en" | "fi";
+  /** What the Translate button translates into, with OpenAI (ai/translate.ts); unset: the app's language. */
+  translateTo?: TranslationLanguage | "off";
+  /** Who translates with OpenAI (ai/translate.ts TRANSLATORS); unset: the default there. */
+  translateModel?: "gpt-6-luna" | "gpt-6.1-sol";
   /** Look for a newer version on wilm.ai now and then (desktop app). */
   updateChecks: boolean;
 }

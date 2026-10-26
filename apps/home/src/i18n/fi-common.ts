@@ -25,11 +25,11 @@ export const FI_COMMON: Record<string, string> = {
   Free: "Maksuton",
   OpenAI: "OpenAI",
   Recommended: "Suositeltu",
-  "GPT-6 Luna. Fast and accurate.": "GPT-6 Luna. Nopea ja tarkka.",
+  "GPT-6 Luna. Fast and accurate. Translates messages too.": "GPT-6 Luna. Nopea ja tarkka. Kääntää myös viestit.",
   "Your own API key · tens of cents a month": "Oma API-avain · kymmeniä senttejä kuussa",
   "Local AI": "Paikallinen tekoäly",
   "On this Mac": "Tällä Macilla",
-  "Nothing goes to an AI service. Slower, and less accurate.": "Mitään ei lähetetä tekoälypalveluun. Hitaampi ja epätarkempi.",
+  "Nothing goes to an AI service. Slower, less accurate, and no translations.": "Mitään ei lähetetä tekoälypalveluun. Hitaampi ja epätarkempi, eikä käännöksiä.",
   "9.1 GB download · works the Mac hard": "9,1 Gt:n lataus · kuormittaa Macia",
   "Needs an Apple Silicon Mac with 16 GB of memory": "Vaatii Apple Silicon -Macin ja 16 Gt muistia",
   "Without AI you see everything Wilma has, as Wilma shows it, but nothing picks out what needs you, deadlines or dates from the text. AI answers from earlier stay.":

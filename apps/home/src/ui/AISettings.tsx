@@ -28,8 +28,8 @@ const tokens = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)} M` : n >= 1e4
 
 const AI_CHOICES = [
   { value: "off", label: "No AI", badge: "Default", icon: "book", help: "You read and sort everything yourself.", detail: "Free" },
-  { value: "openai", label: "OpenAI", badge: "Recommended", icon: "sparkles", help: "GPT-6 Luna. Fast and accurate.", detail: "Your own API key · tens of cents a month" },
-  { value: "local", label: "Local AI", badge: "On this Mac", icon: "laptop", help: "Nothing goes to an AI service. Slower, and less accurate.", detail: "9.1 GB download · works the Mac hard" },
+  { value: "openai", label: "OpenAI", badge: "Recommended", icon: "sparkles", help: "GPT-6 Luna. Fast and accurate. Translates messages too.", detail: "Your own API key · tens of cents a month" },
+  { value: "local", label: "Local AI", badge: "On this Mac", icon: "laptop", help: "Nothing goes to an AI service. Slower, less accurate, and no translations.", detail: "9.1 GB download · works the Mac hard" },
 ] as const;
 
 /**

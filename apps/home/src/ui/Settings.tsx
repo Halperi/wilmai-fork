@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { setViewAs, updateSettings, useApp, useViewer } from "../data/store";
+import { buildFeed } from "../data/feed";
 import { UpdatesCard } from "./Update";
 import { APP_VERSION } from "../data/edition";
 import { SessionHistory } from "./SessionHistory";
@@ -9,10 +10,12 @@ import { AISettings } from "./AISettings";
 import { notificationsAvailable, testNotification } from "../data/notify";
 import { Icon } from "./bits";
 import { isDesktopApp, onWindows } from "../wilma/transport";
-import { t, tx } from "../i18n";
+import { plural, resolveLanguage, t, tx } from "../i18n";
 import type { Settings as SettingsModel, Viewer } from "../data/model";
+import { DEFAULT_TRANSLATOR, TRANSLATION_LANGUAGES, TRANSLATORS, itemsPerMonth, translationAvailable } from "../ai/translate";
 import { runJev } from "../jev/runner";
 import { runLuna } from "../luna/events";
+import { READING_MODELS } from "../luna/client";
 
 /** A sentence translated whole, with the part between asterisks wrapped in markup. */
 function marked(text: string, wrap: (part: string) => ReactNode): ReactNode {
@@ -23,6 +26,65 @@ function marked(text: string, wrap: (part: string) => ReactNode): ReactNode {
       {wrap(part)}
       {after}
     </>
+  );
+}
+
+/** A fraction of a cent, in dollars as OpenAI bills them: "$0.0001", "$0.005". */
+const dollars = (n: number) => `$${n.toFixed(Math.max(2, -Math.floor(Math.log10(n))))}`;
+
+/** With OpenAI: the language the Translate button translates into, or none, and which model translates (ai/translate.ts). */
+function TranslationSettings({ settings }: { settings: SettingsModel }) {
+  const chosen = settings.translateTo ?? resolveLanguage(settings.language);
+  const translator = settings.translateModel ?? DEFAULT_TRANSLATOR;
+  // What a month would cost, from what this family gets: everything translated, so at most that.
+  const snapshot = useApp((s) => s.snapshot);
+  const local = useApp((s) => s.local);
+  const monthly = useMemo(() => Math.round(itemsPerMonth(buildFeed({ snapshot, local, jev: {}, luna: {} }))), [snapshot, local]);
+  return (
+    <section className="card">
+      <h2>
+        <Icon name="translate" /> {t("Translating messages")}
+      </h2>
+      <p>{t("Messages, bulletins and notes in another language get a Translate button. Choose the language to translate into.")}</p>
+      <div role="group" aria-label={t("Translate into")} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <button className="seg" aria-pressed={chosen === "off"} onClick={() => updateSettings({ translateTo: "off" })}>
+          {t("No translations")}
+        </button>
+        {Object.entries(TRANSLATION_LANGUAGES).map(([id, name]) => (
+          <button key={id} className="seg" lang={id} aria-pressed={chosen === id} onClick={() => updateSettings({ translateTo: id as keyof typeof TRANSLATION_LANGUAGES })}>
+            {name}
+          </button>
+        ))}
+      </div>
+      {chosen !== "off" ? (
+        <fieldset className="translator">
+          <legend>{t("Translator")}</legend>
+          {TRANSLATORS.map((x) => (
+            <label key={x.model} className="switch">
+              <input type="radio" name="translator" checked={translator === x.model} onChange={() => updateSettings({ translateModel: x.model })} />
+              <div>
+                <b>
+                  {t(x.label)}
+                  {x.model === DEFAULT_TRANSLATOR ? <span className="translator-badge">{t("Recommended")}</span> : null}
+                </b>
+                <span className="translator-cost">
+                  {monthly
+                    ? t("About {cost} a message, at most {month} a month.", { cost: dollars(x.perMessage), month: dollars(Math.max(x.perMessage, monthly * x.perMessage)) })
+                    : t("About {cost} a message.", { cost: dollars(x.perMessage) })}
+                </span>
+                <span>
+                  {t(x.help)} {READING_MODELS[x.model].label}.
+                </span>
+              </div>
+            </label>
+          ))}
+          <p className="help-line">
+            {monthly ? `${plural(monthly, "About {n} message, bulletin or note comes in a month: \"at most\" is all of them translated.", "About {n} messages, bulletins and notes come in a month: \"at most\" is all of them translated.")} ` : ""}
+            {t("Paid from your OpenAI key, within your monthly limit. A translation is kept, so each message is paid for once.")}
+          </p>
+        </fieldset>
+      ) : null}
+    </section>
   );
 }
 
@@ -43,6 +105,8 @@ export function Settings() {
       <h1>{t("Settings")}</h1>
 
       <AISettings />
+
+      {translationAvailable(settings) ? <TranslationSettings settings={settings} /> : null}
 
       {!demo ? <WhoFor /> : null}
 
