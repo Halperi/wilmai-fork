@@ -17,7 +17,7 @@ export const SV_COMMON: Record<string, string> = {
   "Once you're in, choose it in Settings. OpenAI with your own key usually costs tens of cents a month.":
     "När du har loggat in väljer du i Inställningar. OpenAI med egen nyckel kostar vanligen några tiotal cent i månaden.",
   "WilmAI Intelligence reads new messages, bulletins and teachers' notes for you, and picks out what needs you, by when, and the dates for your calendar. It's optional, and you can change your choice any time.":
-    "WilmAI Intelligence läser nya meddelanden, notiser och lektionsanteckningar åt dig och plockar ut vad du behöver göra, när det ska vara gjort och datum för din kalender. Det är frivilligt, och du kan ändra ditt val när som helst.",
+    "WilmAI Intelligence läser nya meddelanden, nyheter och lektionsanteckningar åt dig och plockar ut vad du behöver göra, när det ska vara gjort och datum för din kalender. Det är frivilligt, och du kan ändra ditt val när som helst.",
   "Choose your AI": "Välj AI",
   "No AI": "Ingen AI",
   Default: "Standard",
@@ -301,7 +301,7 @@ export const SV_COMMON: Record<string, string> = {
   "In the calendar": "I kalendern",
   "Nothing in the next four weeks.": "Inget under de kommande fyra veckorna.",
   Message: "Meddelande",
-  Bulletin: "Notis",
+  Bulletin: "Nyhet",
   "It isn't in Wilma any more.": "Det finns inte längre i Wilma.",
   "Open in the Inbox": "Öppna i inkorgen",
   "The calendar's date is read from this line": "Kalenderns datum har lästs från den här raden",

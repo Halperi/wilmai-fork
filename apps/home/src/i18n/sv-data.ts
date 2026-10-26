@@ -27,7 +27,7 @@ export const SV_DATA: Record<string, string> = {
   // engine.ts: sync steps
   "Checking Wilma": "Kontrollerar Wilma",
   "Read {name}'s Wilma": "Har läst Wilma för {name}",
-  "Reading new messages and bulletins": "Läser nya meddelanden och notiser",
+  "Reading new messages and bulletins": "Läser nya meddelanden och nyheter",
 
   // engine.ts: invitations, the sample family, sending
   "Open the invitation first.": "Öppna inbjudan först.",

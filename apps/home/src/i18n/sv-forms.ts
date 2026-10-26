@@ -197,7 +197,7 @@ export const SV_FORMS: Record<string, string> = {
   "From a message; Wilma's exam list doesn't have it.": "Från ett meddelande; provet finns inte i Wilmas provlista.",
   "Open the note": "Öppna anteckningen",
   "Open the message": "Öppna meddelandet",
-  "Open the bulletin": "Öppna notisen",
+  "Open the bulletin": "Öppna nyheten",
   // Stay signed in (Settings → Reading from Wilma; engine's getBack)
   "Stay signed in": "Håll mig inloggad",
   "When Wilma signs the app out, it signs in again by itself, so notifications keep coming.":
@@ -313,7 +313,7 @@ export const SV_FORMS: Record<string, string> = {
   "date {date}, for this family {calendar}": "datum {date}, för den här familjen {calendar}",
   /* ---------- Settings: translation ---------- */
   "Translating messages": "Översättning av meddelanden",
-  "Messages, bulletins and notes in another language are translated as they come in, titles too. Choose the language, or none.": "Meddelanden, notiser och anteckningar på andra språk översätts när de kommer in, även rubrikerna. Välj språk eller inga översättningar.",
+  "Messages, bulletins and notes in another language are translated as they come in, titles too. Choose the language, or none.": "Meddelanden, nyheter och anteckningar på andra språk översätts när de kommer in, även rubrikerna. Välj språk eller inga översättningar.",
   "Translate into": "Översätt till",
   "No translations": "Inga översättningar",
   Translator: "Översättare",
@@ -323,8 +323,8 @@ export const SV_FORMS: Record<string, string> = {
   "Good for everyday messages. If it can't translate one, Most accurate does.": "Bra för vardagliga meddelanden. Om den inte kan översätta ett meddelande tar Noggrannast över.",
   "About {cost} a message.": "Cirka {cost} per meddelande.",
   "About {cost} a message, usually about {month} a month.": "Cirka {cost} per meddelande, vanligen cirka {month} i månaden.",
-  "About {n} message, bulletin or note a month comes in another language.": "Ungefär {n} meddelande, notis eller anteckning på ett annat språk kommer in i månaden.",
-  "About {n} messages, bulletins and notes a month come in another language.": "Ungefär {n} meddelanden, notiser och anteckningar på andra språk kommer in i månaden.",
+  "About {n} message, bulletin or note a month comes in another language.": "Ungefär {n} meddelande, nyhet eller anteckning på ett annat språk kommer in i månaden.",
+  "About {n} messages, bulletins and notes a month come in another language.": "Ungefär {n} meddelanden, nyheter och anteckningar på andra språk kommer in i månaden.",
   "Choosing a language translates the last 30 days too. Paid from your OpenAI key, within your monthly limit, and each message is translated once.": "När du väljer språk översätts också de senaste 30 dagarna. Kostnaden debiteras via din OpenAI-nyckel, inom din månadsgräns. Varje meddelande översätts en gång.",
   "Translating: {done} of {total}…": "Översätter: {done} av {total}…",
   "Translating stopped: {why}": "Översättningen avbröts: {why}",

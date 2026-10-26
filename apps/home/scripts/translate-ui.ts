@@ -19,7 +19,7 @@ const LANGUAGES: Record<string, { name: string; guide: string }> = {
   sv: {
     name: "Finland Swedish",
     guide:
-      "Write as Finland's Swedish-speaking schools and Wilma's Swedish version do: vårdnadshavare (guardian), elev, klassföreståndare, studiehandledare, prov, läxor, frånvaro, schema, vitsord (grades), lektionsanteckningar (teachers' notes on lessons). Address the reader as du. Amounts in dollars as in the Finnish: 0,50–3 dollar.",
+      "Write as Finland's Swedish-speaking schools and Wilma's Swedish version do: vårdnadshavare (guardian), elev, klassföreståndare, studiehandledare, prov, läxor, frånvaro, schema, nyheter (bulletins; notiser are notifications), vitsord (grades), lektionsanteckningar (teachers' notes on lessons). Address the reader as du. Amounts in dollars as in the Finnish: 0,50–3 dollar.",
   },
 };
 if (!LANGUAGES[lang]) throw new Error(`--lang ${Object.keys(LANGUAGES).join("|")}`);

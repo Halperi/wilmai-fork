@@ -14,7 +14,7 @@ export const SV_INBOX: Record<string, string> = {
   "All": "Alla",
   "Needs you": "Väntar på dig",
   "Messages": "Meddelanden",
-  "Bulletins": "Notiser",
+  "Bulletins": "Nyheter",
   "Teacher notes": "Lektionsanteckningar",
   "Done": "Klart",
   "Done (list)": "Klara",
