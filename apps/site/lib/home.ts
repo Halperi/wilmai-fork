@@ -14,6 +14,8 @@ export const windowsDownload = release.downloads.find((d) => d.id === "windows-x
 interface Audience { label: string; title: string; points: string[]; alt: string }
 interface Choice { title: string; badge: string; body: string; detail: string; link?: { label: string; href: string } }
 interface KeyStep { title: string; body: string; visual: "signin" | "credit" | "key" | "app"; link?: { label: string; href: string } }
+/** The translation sketch (components/TranslateVisual.tsx): a message as the app shows it translated. */
+export interface TranslateVisualLabels { languages: string[]; chosen: string; title: string; from: string; note: string; showOriginal: string; text: string }
 /** Words in the key steps' sketches (components/KeyVisual.tsx) that aren't OpenAI's own labels. */
 export interface KeyVisualLabels { window: string; off: string; local: string; turnOn: string; once: string; reloadOff: string }
 interface Faq { q: string; a: string }
@@ -39,6 +41,8 @@ export interface HomeCopy {
   audiences: { eyebrow: string; title: string; students: Audience; parents: Audience };
   /** The teaser for what comes next, as a taped note. */
   next: { label: string; title: string; text: string };
+  /** Live translation, highlighted after the two audiences. */
+  translate: { label: string; title: string; lead: string; points: string[]; visual: TranslateVisualLabels };
   why: { eyebrow: string; title: string; lines: string[] };
   ai: { eyebrow: string; title: string; lead: string; choices: Choice[] };
   /** Getting an OpenAI API key, for someone who has never made one. Facts from OpenAI's help centre, 21 October 2026. */
@@ -129,6 +133,27 @@ const en: HomeCopy = {
     title: "Your family calendar",
     text: "Exams, events and deadlines straight into Google Calendar, kept up to date as Wilma changes."
   },
+  translate: {
+    label: "New",
+    title: "Messages in your language",
+    lead: "Does your child go to a Swedish-speaking school, or is Finnish not your first language? Choose a language in Settings, and WilmAI Home translates messages, bulletins and teachers' notes as they arrive, titles too.",
+    points: [
+      "Into Finnish, Swedish, English, Ukrainian or Arabic.",
+      "New messages arrive translated, and turning it on translates the last 30 days too.",
+      "The original is always a click away.",
+      "With OpenAI and your own key: usually a fraction of a cent a message, within the monthly limit you set.",
+      "The app itself is in Finnish, Swedish or English."
+    ],
+    visual: {
+      languages: ["Suomi", "Svenska", "English", "Українська", "العربية"],
+      chosen: "English",
+      title: "School starts at 10.15 tomorrow",
+      from: "Mäkinen Laura (MÄL)",
+      note: "Translated by GPT-6.1 Sol, Finnish → English. Check times and dates against the original.",
+      showOriginal: "Show original",
+      text: "Hi! Because of a teachers' training day, 3B's school day starts at 10.15 tomorrow. The morning club is open as usual from 7.30."
+    }
+  },
   why: {
     eyebrow: "why it exists",
     title: "Wilma has everything. Finding it shouldn't take ten clicks.",
@@ -152,7 +177,7 @@ const en: HomeCopy = {
       {
         title: "OpenAI",
         badge: "Recommended",
-        body: "Fast and accurate. You add your own OpenAI API key, so it runs with your permission and on your account: OpenAI bills you directly, usually tens of cents a month for a family. You set a monthly limit in the app.",
+        body: "Fast and accurate. You add your own OpenAI API key, so it runs with your permission and on your account: OpenAI bills you directly, usually tens of cents a month for a family. You set a monthly limit in the app. It can also translate messages into your language.",
         detail: "Your own API key · tens of cents a month",
         link: { label: "How to get a key", href: "#openai-key" }
       },
@@ -341,6 +366,27 @@ const fi: HomeCopy = {
     title: "Perheen kalenteri",
     text: "Kokeet, tapahtumat ja määräajat suoraan Google-kalenteriin, ja ne pysyvät ajan tasalla, kun Wilma muuttuu."
   },
+  translate: {
+    label: "Uutta",
+    title: "Viestit omalla kielelläsi",
+    lead: "Käykö lapsesi ruotsinkielistä koulua, tai puhutaanko kotonanne muuta kieltä? Valitse kieli asetuksista, niin WilmAI Home kääntää viestit, tiedotteet ja opettajien merkinnät sitä mukaa kuin ne tulevat, otsikoita myöten.",
+    points: [
+      "Suomeksi, ruotsiksi, englanniksi, ukrainaksi tai arabiaksi.",
+      "Uudet viestit tulevat valmiiksi käännettyinä, ja käyttöön ottaessa käännetään myös viimeiset 30 päivää.",
+      "Alkuperäinen on aina klikkauksen päässä.",
+      "OpenAI:lla ja omalla avaimellasi: yleensä sentin murto-osa viestiltä, asettamasi kuukausirajan sisällä.",
+      "Itse sovellus on suomeksi, ruotsiksi tai englanniksi."
+    ],
+    visual: {
+      languages: ["Suomi", "Svenska", "English", "Українська", "العربية"],
+      chosen: "Suomi",
+      title: "Koulu alkaa huomenna klo 10.15",
+      from: "Lindqvist Anna (LIA)",
+      note: "Käännös: GPT-6.1 Sol, ruotsi → suomi. Tarkista ajat ja päivät alkuperäisestä.",
+      showOriginal: "Näytä alkuperäinen",
+      text: "Hei! Opettajien koulutuspäivän vuoksi 3B:n koulupäivä alkaa huomenna vasta klo 10.15. Aamukerho on auki tavalliseen tapaan klo 7.30 alkaen."
+    }
+  },
   why: {
     eyebrow: "miksi tämä on olemassa",
     title: "Wilmassa on kaikki. Sen löytämiseen ei pitäisi tarvita kymmentä klikkausta.",
@@ -364,7 +410,7 @@ const fi: HomeCopy = {
       {
         title: "OpenAI",
         badge: "Suositeltu",
-        body: "Nopea ja tarkka. Lisäät oman OpenAI-avaimesi, joten se toimii sinun luvallasi ja sinun tililläsi: OpenAI laskuttaa suoraan, perheen käytössä yleensä kymmeniä senttejä kuussa. Kuukausirajan asetat sovelluksessa.",
+        body: "Nopea ja tarkka. Lisäät oman OpenAI-avaimesi, joten se toimii sinun luvallasi ja sinun tililläsi: OpenAI laskuttaa suoraan, perheen käytössä yleensä kymmeniä senttejä kuussa. Kuukausirajan asetat sovelluksessa. Se voi myös kääntää viestit omalle kielellesi.",
         detail: "Oma API-avain · kymmeniä senttejä kuussa",
         link: { label: "Näin saat avaimen", href: "#openai-key" }
       },

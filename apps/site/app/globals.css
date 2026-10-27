@@ -1474,6 +1474,89 @@ main {
   margin: 0;
 }
 
+/* Live translation: what it does beside a sketch of a translated message. */
+.home-translate {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+  gap: 36px;
+  align-items: center;
+  padding: 28px 30px 30px;
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 5px 6px 0 var(--note-pink);
+}
+
+.home-translate-label {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--note-pink);
+  color: var(--coral-text);
+  font: 700 12px var(--font-body), sans-serif;
+  margin-bottom: 10px;
+}
+
+.home-translate h2 {
+  margin-bottom: 10px;
+}
+
+.home-translate .lead {
+  margin-bottom: 18px;
+}
+
+.translate-visual {
+  transform: rotate(-0.8deg);
+}
+
+.tv-languages {
+  flex-wrap: wrap;
+}
+
+.tv-message {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 12px;
+  border: 1.5px solid var(--rule);
+  border-radius: 10px;
+}
+
+.tv-title {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.tv-from {
+  color: var(--ink-soft);
+  font-size: 11.5px;
+}
+
+.tv-note {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--note-teal);
+  color: var(--teal-deep);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.tv-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .home-translate {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    padding: 22px 20px 24px;
+  }
+}
+
 @media (max-width: 760px) {
   .home-audiences {
     grid-template-columns: minmax(0, 1fr);
