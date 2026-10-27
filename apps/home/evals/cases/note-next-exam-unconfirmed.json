@@ -31,7 +31,7 @@
       "subject": "ENA1_71",
       "kind": "Ennalta anottu vapaa",
       "teacher": "Opettaja Esimerkki",
-      "text": "Englannin koe, tee seuraavalla englnnin tunnilla."
+      "text": "Sanakoe tehdään seuraavalla englanin tunilla."
     }
   ],
   "expect": {
@@ -45,7 +45,7 @@
       {
         "item": 1,
         "important": true,
-        "quote": "Englannin koe",
+        "quote": "seuraavalla englanin tunilla",
         "date": null,
         "originalExam": null
       }

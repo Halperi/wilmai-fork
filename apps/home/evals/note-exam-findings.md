@@ -1,6 +1,6 @@
 # Exams inside neutral absence notes
 
-The note “Englannin koe, tee seuraavalla englnnin tunnilla.” contains a
+A note like “Kappaleiden 1–3 koe, tee se seuraavalla englanin tunnilla.” contains a
 required pupil exam despite its “Ennalta anottu vapaa” category and neutral
 tone. Previously the reading returned no guardian action and no dated
 event, so neither the feed nor calendar retained the instruction. Tone
@@ -25,7 +25,7 @@ timetable. The school's category and the note's tone remain unchanged.
 
 ## Eval coverage
 
-Three fictional cases were added, preserving the original spelling error:
+Three fictional cases were added, with spelling errors in the instruction:
 
 - `note-next-english-exam`: retain the pupil instruction, keep a neutral
   tone and no guardian task, find the next English lesson rather than
@@ -48,6 +48,8 @@ rollover, extraction/verification and a later cancellation reaching both
 the feed and calendar.
 
 ## Results, 9 October 2026
+
+These runs used the cases' earlier wording, reworded on 27 October 2026.
 
 Before the change, all six cloud configurations failed to retain the two
 positive instructions. Each passed 21 of 30 checks (70%) on the three new

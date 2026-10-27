@@ -31,7 +31,7 @@
       "subject": "ENA1_71",
       "kind": "Ennalta anottu vapaa",
       "teacher": "Opettaja Esimerkki",
-      "text": "Englannin koe, tee seuraavalla englnnin tunnilla."
+      "text": "Kappaleiden 1–3 koe, tee se seuraavalla englanin tunnilla."
     },
     {
       "type": "lesson",
@@ -97,7 +97,7 @@
       {
         "item": 1,
         "important": true,
-        "quote": "tee seuraavalla englnnin tunnilla",
+        "quote": "tee se seuraavalla englanin tunnilla",
         "date": "2026-10-13",
         "originalExam": 6
       }

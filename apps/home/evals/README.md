@@ -164,7 +164,7 @@ fixed. A case is one JSON file in `cases/`:
 
 The `note-next-english-exam`, `note-next-exam-unconfirmed`,
 `note-next-exam-guards` and `note-missed-exam-next-lesson` cases cover an exam instruction inside a neutral
-pre-approved absence, including the spelling error in “englnnin”.
+pre-approved absence, including spelling errors (“englanin”, “tunilla”).
 `expect.noteExam` checks that the instruction remains important, its
 original words survive, it reaches home attention, and it does not become
 a guardian's task. The missed-exam case also covers “ensi tunnilla”,
