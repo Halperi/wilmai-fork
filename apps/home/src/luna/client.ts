@@ -7,7 +7,8 @@
  *  - Decisions (/v1/decisions): typed questions (predicate, choice, score)
  *    answered with probabilities, as Jev answers.
  * Every call's tokens are counted by month (state.usage), for what it costs,
- * and no call starts once the month's cost is near the parent's limit.
+ * and no call starts that could take the month past the parent's limit,
+ * counting what the calls still on their way can cost.
  */
 import { bridgeCall } from "../wilma/transport";
 import { accountScope, getState, resetScope, setState } from "../data/store";
@@ -129,8 +130,31 @@ export function nextMonth(): string {
   return m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
 }
 
-/** The month has reached the limit (less what a call can cost): no more calls until next month. */
-export const overLimit = () => aiBudgetState(monthCost(), monthlyLimit()) === "paused";
+/** At most what the calls on their way to OpenAI cost, in dollars: it counts against the limit until their usage is counted. */
+let reserved = 0;
+
+/** Reasoning a call can use at each effort, in tokens, for its most cost. */
+const REASONING_CEILING = { none: 0, low: 2_000, medium: 4_000, high: 10_000 } as const;
+
+/** At most what a Responses call costs, about: its input at three characters a token, as much again out, and its reasoning. */
+function responsesCeiling(model: string, chars: number, effort: keyof typeof REASONING_CEILING): number {
+  const price = READING_MODELS[model] ?? READING_MODELS[LUNA];
+  const input = chars / 3;
+  return (input * price.input + (input + REASONING_CEILING[effort]) * price.output) / 1e6;
+}
+
+/** Counts a call's most cost against the limit until it's done and its usage is counted. */
+async function reserving<T>(ceiling: number, work: () => Promise<T>): Promise<T> {
+  reserved += ceiling;
+  try {
+    return await work();
+  } finally {
+    reserved -= ceiling;
+  }
+}
+
+/** The month has reached the limit, with what the calls on their way can cost: no more calls until next month. */
+export const overLimit = () => aiBudgetState(monthCost() + reserved, monthlyLimit()) === "paused";
 
 /*
  * A network that can't reach OpenAI (a school or work network that blocks it, or no connection): calls stop at the
@@ -218,25 +242,30 @@ export async function respond<T>(opts: { name: string; instructions: string; inp
   if (localReading(getState().settings)) return localCall(() => readLocally<T>(opts));
   const generation = resetScope();
   const model = opts.model && READING_MODELS[opts.model] ? opts.model : readingModel();
-  const data = (await post("/v1/responses", {
-    model,
-    instructions: opts.instructions,
-    input: opts.input,
-    reasoning: { effort: opts.effort ?? getState().settings.readingEffort ?? READING_EFFORT },
-    text: { format: { type: "json_schema", name: opts.name, strict: true, schema: opts.schema } },
-    store: false,
-  })) as ResponsesReply;
-  const u = data.usage ?? {};
-  const used: ReadingUsage = {
-    calls: 1,
-    input: u.input_tokens ?? 0,
-    cached: u.input_tokens_details?.cached_tokens ?? 0,
-    output: u.output_tokens ?? 0,
-    reasoning: u.output_tokens_details?.reasoning_tokens ?? 0,
-  };
-  if (generation === resetScope()) count((b) => {
-    const reading = readingOf(b);
-    return { ...b, responses: undefined, reading: { ...reading, [model]: reading[model] ? addReading(reading[model], used) : used } };
+  const effort = opts.effort ?? getState().settings.readingEffort ?? READING_EFFORT;
+  const ceiling = responsesCeiling(model, opts.instructions.length + opts.input.length + JSON.stringify(opts.schema).length, effort);
+  const data = await reserving(ceiling, async () => {
+    const reply = (await post("/v1/responses", {
+      model,
+      instructions: opts.instructions,
+      input: opts.input,
+      reasoning: { effort },
+      text: { format: { type: "json_schema", name: opts.name, strict: true, schema: opts.schema } },
+      store: false,
+    })) as ResponsesReply;
+    const u = reply.usage ?? {};
+    const used: ReadingUsage = {
+      calls: 1,
+      input: u.input_tokens ?? 0,
+      cached: u.input_tokens_details?.cached_tokens ?? 0,
+      output: u.output_tokens ?? 0,
+      reasoning: u.output_tokens_details?.reasoning_tokens ?? 0,
+    };
+    if (generation === resetScope()) count((b) => {
+      const reading = readingOf(b);
+      return { ...b, responses: undefined, reading: { ...reading, [model]: reading[model] ? addReading(reading[model], used) : used } };
+    });
+    return reply;
   });
   const parts = (data.output ?? []).flatMap((o) => o.content ?? []);
   const refusal = parts.find((c) => c.type === "refusal");
@@ -262,13 +291,18 @@ export async function decide(input: string, questions: DecisionQuestion[]): Prom
   if (localDecisions(getState().settings)) return localCall(() => decideLocally(input, questions));
   const generation = resetScope();
   const body = { model: getState().settings.decisionsModel || LUNA, input, questions };
-  const data = (await post("/v1/decisions", body)) as { answers?: DecisionAnswer[]; usage?: { input_tokens?: number } };
-  // The guide shows no usage in the answer; until one comes, about four characters a token.
-  const measured = data.usage?.input_tokens;
-  if (generation === resetScope()) count((b) => ({
-    ...b,
-    decisions: { calls: b.decisions.calls + 1, input: b.decisions.input + (measured ?? Math.ceil(JSON.stringify(body).length / 4)), estimated: b.decisions.estimated || measured === undefined },
-  }));
+  // Input only, at three characters a token at most.
+  const ceiling = ((JSON.stringify(body).length / 3) * DECISIONS_INPUT_PRICE) / 1e6;
+  const data = await reserving(ceiling, async () => {
+    const reply = (await post("/v1/decisions", body)) as { answers?: DecisionAnswer[]; usage?: { input_tokens?: number } };
+    // The guide shows no usage in the answer; until one comes, about four characters a token.
+    const measured = reply.usage?.input_tokens;
+    if (generation === resetScope()) count((b) => ({
+      ...b,
+      decisions: { calls: b.decisions.calls + 1, input: b.decisions.input + (measured ?? Math.ceil(JSON.stringify(body).length / 4)), estimated: b.decisions.estimated || measured === undefined },
+    }));
+    return reply;
+  });
   const answers = Object.fromEntries((data.answers ?? []).map((a) => [a.name, a]));
   for (const q of questions) if (!answers[q.name]) throw new LunaError(t("The AI's answer was missing a question"), true);
   return answers;

@@ -17,6 +17,7 @@ import { runTranslations } from "../data/translations";
 import { runJev } from "../jev/runner";
 import { runLuna } from "../luna/events";
 import { READING_MODELS } from "../luna/client";
+import { budgetText, normalizeAIBudget } from "../data/ai-budget";
 
 /** A sentence translated whole, with the part between asterisks wrapped in markup. */
 function marked(text: string, wrap: (part: string) => ReactNode): ReactNode {
@@ -90,7 +91,10 @@ function TranslationSettings({ settings }: { settings: SettingsModel }) {
           ))}
           <p className="help-line">
             {monthly ? `${plural(monthly, "About {n} message, bulletin or note a month comes in another language.", "About {n} messages, bulletins and notes a month come in another language.")} ` : ""}
-            {t("Choosing a language translates the last 30 days too. Paid from your OpenAI key, within your monthly limit, and each message is translated once.")}
+            {t(
+              "Choosing a language also translates the last 30 days and the titles in your lists. That's done once, so the first day costs more than a usual month. It's paid from your OpenAI key, and WilmAI never spends more than your monthly limit of {limit}: if it's reached, the rest waits for next month or a higher limit.",
+              { limit: budgetText(normalizeAIBudget(settings.aiMonthlyBudgetUsd)) }
+            )}
           </p>
           {status.running ? <p className="help-line">{t("Translating: {done} of {total}…", { done: status.done, total: status.total })}</p> : null}
           {status.error ? <div className="notice err">{t("Translating stopped: {why}", { why: status.error })}</div> : null}

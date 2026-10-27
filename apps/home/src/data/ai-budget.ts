@@ -6,7 +6,7 @@ export const MIN_AI_BUDGET = 0.5;
 export const MAX_AI_BUDGET = 3;
 export const AI_BUDGET_STEP = 0.5;
 export const DEFAULT_AI_BUDGET = 1;
-/** Leave room for calls already in flight. */
+/** A little room besides what the calls on their way can cost (luna/client.ts), which is estimated. */
 export const AI_CALL_MARGIN = 0.01;
 
 export function normalizeAIBudget(value: unknown): number {

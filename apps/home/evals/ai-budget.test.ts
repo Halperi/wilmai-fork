@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { aiBudgetState, budgetText, normalizeAIBudget } from "../src/data/ai-budget.ts";
 import { DEFAULT_SETTINGS, type UsageBucket } from "../src/data/model.ts";
 import { getState, setState, updateSettings } from "../src/data/store.ts";
-import { decide, monthCost, monthlyLimit, overLimit } from "../src/luna/client.ts";
+import { decide, monthCost, monthlyLimit, overLimit, respond } from "../src/luna/client.ts";
 import { overrideBridge } from "../src/wilma/transport.ts";
 
 const questions = [{ type: "predicate" as const, name: "needed", instructions: "Does this need a response?" }];
@@ -88,5 +88,32 @@ test("a retry checks the current budget before sending another request", async (
   try {
     await assert.rejects(decide("Please reply", questions), /limit of \$1/);
     assert.equal(sent, 1);
+  } finally { overrideBridge(null); }
+});
+
+test("calls on their way count against the limit, so parallel calls can't take the month past it", async () => {
+  setup(0.88);
+  let sent = 0;
+  const waiting: (() => void)[] = [];
+  let hold = true;
+  const answer = { status: 200, retryAfter: null, body: JSON.stringify({ usage: { input_tokens: 10, output_tokens: 10 }, output: [{ type: "message", content: [{ type: "output_text", text: "{}" }] }] }) };
+  overrideBridge(async () => {
+    sent++;
+    if (hold) await new Promise<void>((resolve) => waiting.push(resolve));
+    return answer;
+  });
+  // A batch of about 6,000 characters for Sol at low effort: at most about 4.4 cents a call.
+  const call = () => respond({ name: "phrases", instructions: "Translate.", input: "x".repeat(6000), schema: { type: "object" }, effort: "low", model: "gpt-6.1-sol" });
+  try {
+    const calls = [call(), call()];
+    await assert.rejects(call(), /limit of \$1/, "a third call at once could take the month past $1");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(sent, 2);
+    hold = false;
+    for (const resolve of waiting) resolve();
+    await Promise.all(calls);
+    assert.ok(monthCost() < 0.89, "what they cost is counted, and their reservations are released");
+    await call();
+    assert.equal(sent, 3);
   } finally { overrideBridge(null); }
 });
