@@ -231,8 +231,12 @@ const en: HomeCopy = {
         a: "The app is free. If you choose OpenAI, OpenAI bills your own key: in my family it has been tens of cents a month, even with me testing it all the time. The app stops at a monthly limit you set, from 50 cents to $3."
       },
       {
+        q: "Can it translate messages?",
+        a: "Yes, if you choose OpenAI. Pick a language in Settings (Finnish, Swedish, English, Ukrainian or Arabic), and messages, bulletins and notes in another language are translated as they come in, titles too, with the original a click away. It usually costs a fraction of a cent a message. The app itself is in Finnish, Swedish or English."
+      },
+      {
         q: "What does OpenAI see?",
-        a: "Only if you choose OpenAI: one message, bulletin or note at a time, with your children's first names and classes so it can tell who it's about. Your Wilma password never goes there. With local AI or no AI, nothing goes to an AI service."
+        a: "Only if you choose OpenAI: one message, bulletin or note at a time, with your children's first names and classes so it can tell who it's about. With translations on, also the texts it translates. Your Wilma password never goes there. With local AI or no AI, nothing goes to an AI service."
       },
       {
         q: "Where is my data?",
@@ -439,8 +443,12 @@ const fi: HomeCopy = {
         a: "Sovellus on maksuton. Jos valitset OpenAI:n, OpenAI laskuttaa omaa avaintasi: perheessäni se on maksanut kymmeniä senttejä kuussa, vaikka olen testannut sitä koko ajan. Sovellus pysähtyy asettamaasi kuukausirajaan, 50 sentistä 3 dollariin."
       },
       {
+        q: "Voiko se kääntää viestejä?",
+        a: "Kyllä, jos valitset OpenAI:n. Valitse asetuksista kieli (suomi, ruotsi, englanti, ukraina tai arabia), niin muunkieliset viestit, tiedotteet ja merkinnät käännetään sitä mukaa kuin ne tulevat, otsikoita myöten, ja alkuperäinen on klikkauksen päässä. Se maksaa yleensä sentin murto-osan viestiltä. Itse sovellus on suomeksi, ruotsiksi tai englanniksi."
+      },
+      {
         q: "Mitä OpenAI näkee?",
-        a: "Vain jos valitset OpenAI:n: yhden viestin, tiedotteen tai merkinnän kerrallaan sekä lasten etunimet ja luokat, jotta se tietää, ketä asia koskee. Wilma-salasanasi ei koskaan mene sinne. Paikallisella tekoälyllä tai ilman tekoälyä mitään ei lähetetä tekoälypalveluun."
+        a: "Vain jos valitset OpenAI:n: yhden viestin, tiedotteen tai merkinnän kerrallaan sekä lasten etunimet ja luokat, jotta se tietää, ketä asia koskee. Kun käännökset ovat päällä, myös käännettävät tekstit. Wilma-salasanasi ei koskaan mene sinne. Paikallisella tekoälyllä tai ilman tekoälyä mitään ei lähetetä tekoälypalveluun."
       },
       {
         q: "Missä tietoni ovat?",

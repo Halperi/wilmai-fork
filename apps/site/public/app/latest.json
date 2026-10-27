@@ -1,16 +1,16 @@
 {
-  "version": "0.1.4",
-  "notes": "Security fixes for the app's encrypted connections. · Tietoturvakorjauksia sovelluksen salattuihin yhteyksiin.",
-  "pub_date": "2026-10-24T14:21:33.758Z",
+  "version": "0.1.5",
+  "notes": "Messages translated into your language, and the app in Swedish. · Viestit käännettyinä omalle kielellesi, ja sovellus ruotsiksi.",
+  "pub_date": "2026-10-27T00:37:01.485Z",
   "url": "https://wilm.ai/app",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQlNGbEhIU0luSnpNUVM1ckRBWDBGK2RPTGNRQzRLUTlaNC9MSHBrUlhKYytrekQ2ajdjbnA0T3MwV2drOFF4dUY4eEhuZkg2Vng3WlF0M3BrUXRKeFFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyODUxNTMwCWZpbGU6V2lsbUFJIEhvbWUuYXBwLnRhci5negl2ZXJzaW9uOjAuMS40Ck1lWU9JMTluRWxOWUtFdEREM1U0NHFYaUNYY0ZweW5tUnp3UXJNc3gyekxPNEJjSU4xa1JINFMyQmswbG1RbmIwazZKaGl3b0hPVk16RTRkQnU5MUR3PT0K",
-      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.4/WilmAI-Home-0.1.4-beta-macos-arm64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQmV5TS80bjEvSXFmQ1luUStVc0NYU08wSjJHMFVFWGxmaVh4cnBjTkY2S3hNbjNLcmFzdEtRekozTVBPMkFUaGljRG5tWTljd3BUanBtNDlxYkJwbFF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMDYxMTc5CWZpbGU6V2lsbUFJIEhvbWUuYXBwLnRhci5negl2ZXJzaW9uOjAuMS41ClVvb1ZxRmt5Y3hWMGloOGprNUpCTW1PWk54V21VRGJ3WitvQXE4NlRORjVJYlJoVGVhR0lqZHVIYk4vNngzRUNpVGRRazN3VXBpVytjaXZkWEpFOUFBPT0K",
+      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.5/WilmAI-Home-0.1.5-beta-macos-arm64.app.tar.gz"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQmVJQ3hMTjI2Y2dPbHRXVnB4aVlnR1NLME9lb0VhVkdyTktjVHFaaUtRNGtxdUFJRk5qZTBRTWJBYUhaclFrcjJjall5UEV1Q2lTYWFnVjBiUFFJVmdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyODUxNjEzCWZpbGU6V2lsbUFJLUhvbWUtMC4xLjQtYmV0YS13aW5kb3dzLXg2NC5leGUKWXk0V2JBSG53VjJNMzhic3dUdEVTMmFtSmZZYnFqenNZTnV0clJVb1BobGpBcThLWmVOU0w3VDlGSTNYdk9td3g2bWtxWDdZcXM4eitFNEd0STZmQ2c9PQo=",
-      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.4/WilmAI-Home-0.1.4-beta-windows-x64.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQlk5azNKR2NRMVZ0WUdpZTZmY2xFVTlUNGJ4U1hLcjNMWDNuUjNFeWZ4ZWNoL0RRWVhCazdscmxnc3AzdWI2WGpoRTBtUkQvSFB3OHBTL1hkZ1VlR2drPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMDYxMjYyCWZpbGU6V2lsbUFJLUhvbWUtMC4xLjUtYmV0YS13aW5kb3dzLXg2NC5leGUKMkc5K2w5THppN0ZqUFZoU1IvYVlQbko0dkY1VmkwUC9DM1NmK3h0eE1ac1RrN2wvVStzcXBiNWFrNlg1TEF1Q29qYlY0ZmxEakNrWDhIQzdaMm1IQ1E9PQo=",
+      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.5/WilmAI-Home-0.1.5-beta-windows-x64.exe"
     }
   }
 }
