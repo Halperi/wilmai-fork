@@ -92,7 +92,7 @@ function TranslationSettings({ settings }: { settings: SettingsModel }) {
           <p className="help-line">
             {monthly ? `${plural(monthly, "About {n} message, bulletin or note a month comes in another language.", "About {n} messages, bulletins and notes a month come in another language.")} ` : ""}
             {t(
-              "Choosing a language also translates the last 30 days and the titles in your lists. That's done once, so the first day costs more than a usual month. It's paid from your OpenAI key, and WilmAI never spends more than your monthly limit of {limit}: if it's reached, the rest waits for next month or a higher limit.",
+              "Choosing a language also translates the last 30 days and the titles in your lists, once. That usually costs a few tens of cents, well within your monthly limit of {limit}, and WilmAI never spends more than the limit.",
               { limit: budgetText(normalizeAIBudget(settings.aiMonthlyBudgetUsd)) }
             )}
           </p>

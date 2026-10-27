@@ -325,8 +325,8 @@ export const SV_FORMS: Record<string, string> = {
   "About {cost} a message, usually about {month} a month.": "Cirka {cost} per meddelande, vanligen cirka {month} i månaden.",
   "About {n} message, bulletin or note a month comes in another language.": "Ungefär {n} meddelande, nyhet eller anteckning på ett annat språk kommer in i månaden.",
   "About {n} messages, bulletins and notes a month come in another language.": "Ungefär {n} meddelanden, nyheter och anteckningar på andra språk kommer in i månaden.",
-  "Choosing a language also translates the last 30 days and the titles in your lists. That's done once, so the first day costs more than a usual month. It's paid from your OpenAI key, and WilmAI never spends more than your monthly limit of {limit}: if it's reached, the rest waits for next month or a higher limit.":
-    "När du väljer ett språk översätts också de senaste 30 dagarna och rubrikerna i dina listor. Det görs en gång, så den första dagen kostar mer än en vanlig månad. Det betalas med din OpenAI-nyckel, och WilmAI använder aldrig mer än din månadsgräns på {limit}: om gränsen nås väntar resten till nästa månad eller en högre gräns.",
+  "Choosing a language also translates the last 30 days and the titles in your lists, once. That usually costs a few tens of cents, well within your monthly limit of {limit}, and WilmAI never spends more than the limit.":
+    "När du väljer ett språk översätts också de senaste 30 dagarna och rubrikerna i dina listor, en gång. Det kostar oftast några tiotals cent, långt under din månadsgräns på {limit}, och WilmAI använder aldrig mer än gränsen.",
   "Translating: {done} of {total}…": "Översätter: {done} av {total}…",
   "Translating stopped: {why}": "Översättningen avbröts: {why}",
   "App language": "Appens språk",

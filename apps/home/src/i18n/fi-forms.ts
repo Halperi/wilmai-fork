@@ -325,8 +325,8 @@ export const FI_FORMS: Record<string, string> = {
   "About {cost} a message, usually about {month} a month.": "Noin {cost} viestiltä, yleensä noin {month} kuussa.",
   "About {n} message, bulletin or note a month comes in another language.": "Muulla kielellä tulee kuussa noin {n} viesti, tiedote tai merkintä.",
   "About {n} messages, bulletins and notes a month come in another language.": "Muulla kielellä tulee kuussa noin {n} viestiä, tiedotetta ja merkintää.",
-  "Choosing a language also translates the last 30 days and the titles in your lists. That's done once, so the first day costs more than a usual month. It's paid from your OpenAI key, and WilmAI never spends more than your monthly limit of {limit}: if it's reached, the rest waits for next month or a higher limit.":
-    "Kielen valinta kääntää myös viimeiset 30 päivää ja listojesi otsikot. Se tehdään kerran, joten ensimmäinen päivä maksaa tavallista kuukautta enemmän. Kulut maksetaan OpenAI-avaimellasi, eikä WilmAI koskaan käytä enempää kuin kuukausirajasi {limit}: jos raja täyttyy, loput odottavat seuraavaa kuukautta tai korkeampaa rajaa.",
+  "Choosing a language also translates the last 30 days and the titles in your lists, once. That usually costs a few tens of cents, well within your monthly limit of {limit}, and WilmAI never spends more than the limit.":
+    "Kielen valinta kääntää kerran myös viimeiset 30 päivää ja listojesi otsikot. Se maksaa yleensä muutamia kymmeniä senttejä, reilusti alle kuukausirajasi {limit}, eikä WilmAI koskaan käytä rajaa enempää.",
   "Translating: {done} of {total}…": "Käännetään: {done}/{total}…",
   "Translating stopped: {why}": "Kääntäminen keskeytyi: {why}",
   "App language": "Sovelluksen kieli",
