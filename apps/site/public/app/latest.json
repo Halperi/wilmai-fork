@@ -1,16 +1,16 @@
 {
-  "version": "0.1.5",
-  "notes": "Messages translated into your language, and the app in Swedish. · Viestit käännettyinä omalle kielellesi, ja sovellus ruotsiksi.",
-  "pub_date": "2026-10-27T00:37:01.485Z",
+  "version": "0.1.6",
+  "notes": "Make-up exams leave Today once they're past, and Today's items can be marked done. · Rästikokeet poistuvat Tänään-näkymästä, kun ne ovat ohi, ja Tänään-näkymän asiat voi merkitä hoidetuiksi.",
+  "pub_date": "2026-10-27T13:14:22.984Z",
   "url": "https://wilm.ai/app",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQmV5TS80bjEvSXFmQ1luUStVc0NYU08wSjJHMFVFWGxmaVh4cnBjTkY2S3hNbjNLcmFzdEtRekozTVBPMkFUaGljRG5tWTljd3BUanBtNDlxYkJwbFF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMDYxMTc5CWZpbGU6V2lsbUFJIEhvbWUuYXBwLnRhci5negl2ZXJzaW9uOjAuMS41ClVvb1ZxRmt5Y3hWMGloOGprNUpCTW1PWk54V21VRGJ3WitvQXE4NlRORjVJYlJoVGVhR0lqZHVIYk4vNngzRUNpVGRRazN3VXBpVytjaXZkWEpFOUFBPT0K",
-      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.5/WilmAI-Home-0.1.5-beta-macos-arm64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQlM2SXVKV01raHl3eUpsSnQ3OGNmdlcvd0s5UGJsTFI3eDVITTZUNW50dnRSSDRIRWRCdWhEenNTRDJLdGs4WlcycGlyaExOcGhEOTF0M0xuaVpDamcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMTA2Njk3CWZpbGU6V2lsbUFJIEhvbWUuYXBwLnRhci5negl2ZXJzaW9uOjAuMS42CkhkNEVtZ2dCY1pJOEhmZnpaMnBiS3REa21BR3hza2Z5eTFEMDM3S0NZemEyRUo5ZjRmMEhCa2k3UXZsTGFhUnhVeWRXVFpZVVpBV1BXcWVZUjJDSkF3PT0K",
+      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.6/WilmAI-Home-0.1.6-beta-macos-arm64.app.tar.gz"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQlk5azNKR2NRMVZ0WUdpZTZmY2xFVTlUNGJ4U1hLcjNMWDNuUjNFeWZ4ZWNoL0RRWVhCazdscmxnc3AzdWI2WGpoRTBtUkQvSFB3OHBTL1hkZ1VlR2drPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMDYxMjYyCWZpbGU6V2lsbUFJLUhvbWUtMC4xLjUtYmV0YS13aW5kb3dzLXg2NC5leGUKMkc5K2w5THppN0ZqUFZoU1IvYVlQbko0dkY1VmkwUC9DM1NmK3h0eE1ac1RrN2wvVStzcXBiNWFrNlg1TEF1Q29qYlY0ZmxEakNrWDhIQzdaMm1IQ1E9PQo=",
-      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.5/WilmAI-Home-0.1.5-beta-windows-x64.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTblZlNHloQXhhQlNuUkdCQXVuVXJ1cXFleU9jS3EyMmRYc1I3LzhXNm5hUkJVaVB5OHgvcWlpeEswYmJmb01TOUUzNUJNNTcrS3Q2TURBVEFpUVhpY0U3YnRSdm9xb1F3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMTA2Nzc4CWZpbGU6V2lsbUFJLUhvbWUtMC4xLjYtYmV0YS13aW5kb3dzLXg2NC5leGUKVG5QT0lkNS9tdHRwRFl4YnRJd2FuR3YwWUdlT1pXMUNLTXNPUHNINFNUempKbkxpQkVMeWNYVzdVSVJTeVpOVGlaR1g3RE5mVXpRUVFDbG5RVXMxQWc9PQo=",
+      "url": "https://github.com/aikarjal/wilmai/releases/download/home-v0.1.6/WilmAI-Home-0.1.6-beta-windows-x64.exe"
     }
   }
 }
