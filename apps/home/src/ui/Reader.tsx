@@ -5,7 +5,7 @@ import { answerInvitation, declineInvitation, isDemo, isSessionEnded, openMessag
 import { showToast } from "./Toast";
 import { slotState, type InvitationSlot as InviteSlot } from "@wilma-client/src/core";
 import { NEEDS_YOU, isNeedsYou, type FeedItem } from "../data/feed";
-import type { JevAnswer, MessageRec, Snapshot } from "../data/model";
+import { awaitingReply, type JevAnswer, type MessageRec, type Snapshot } from "../data/model";
 import { clock, dateOf, deadlineText, mentionedDates, relativeDay, shortDate, today, whenLong } from "../data/dates";
 import { KINDS, PUPIL_SCOPES, SCOPES, TRIAGE_PUPIL_QS } from "../jev/questions";
 import type { ReplyForm } from "@wilma-client/src/write";
@@ -162,7 +162,7 @@ export function Reader({
             </span>
           </>
         ) : null}
-        {message?.thread?.recipients?.length ? (
+        {message?.thread?.recipients?.length && !message.sent ? (
           <>
             <span className="sep">·</span>
             <span>
@@ -246,7 +246,7 @@ export function Reader({
         </div>
       ) : null}
 
-      {message && message.thread && !inPanel ? (
+      {message && message.thread && !inPanel && !awaitingReply(message) ? (
         <Composer key={message.id} messageId={message.id} to={message.sender} collated={message.thread.collated} onSent={() => !item.done && toggleDone(item.key)} />
       ) : null}
 

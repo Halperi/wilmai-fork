@@ -18,7 +18,7 @@
  */
 import { bridgeCall } from "../wilma/transport";
 import { accountScope, getState, setState } from "../data/store";
-import { intelligenceOn, pupilName, viewerOf, type JevAnswer, type JevRecord, type Snapshot, type Viewer } from "../data/model";
+import { awaitingReply, intelligenceOn, pupilName, viewerOf, type JevAnswer, type JevRecord, type Snapshot, type Viewer } from "../data/model";
 import { localDecisions, providerIdentity, usesLocalAI } from "../ai/config";
 import { prepareOllama } from "../ai/ollama";
 import { dateOf, dayNameLongEn as dayNameLong, longDateEn as longDate, today } from "../data/dates";
@@ -131,7 +131,8 @@ function jobs(snap: Snapshot, who: Viewer): Job[] {
   const recent = (d: Date | null, days: number) => d && Date.parse(now) - d.getTime() < days * 86_400_000;
 
   for (const m of Object.values(snap.messages)) {
-    if (!recent(m.sentAt, 60) && !m.unreadInWilma) continue;
+    // The family's own message, not answered yet: nothing to ask about it until someone answers.
+    if ((!recent(m.sentAt, 60) && !m.unreadInWilma) || awaitingReply(m)) continue;
     const item: Record<string, Entry> = {
       type: "Wilma message",
       from: m.sender,

@@ -291,6 +291,18 @@ export function demoSnapshot(): Snapshot {
         `Hyvät huoltajat,\n\nlaajat terveystarkastukset 3. ja 8. luokille alkavat ${fi(next(d(1), 0, 1))}. Saatte kutsun ja ajan erikseen. Täyttäkää ennen tarkastusta esitietolomake, jonka lähetän Wilmaan lomakkeena.\n\nYstävällisin terveisin\nSari Virtanen, kouluterveydenhoitaja`
       ),
     }),
+    // Sent by the family, not answered yet: only in Wilma's Sent folder.
+    message({
+      subject: "Hammaslääkäri torstaina",
+      sender: null,
+      sentAt: at(d(-1), "19:05"),
+      unreadInWilma: false,
+      children: [KIIA],
+      sent: true,
+      thread: thread(`Hei,\n\nKiialla on hammaslääkäri torstaiaamuna, joten hän tulee kouluun vasta toiselle tunnille.\n\nTerveisin\nMikko Virtanen`, {
+        recipients: ["Korhonen Jussi (KOJ)"],
+      }),
+    }),
     message({
       subject: `Viikkokirje vk ${isoWeek(now) - 1}`,
       sender: "Mäkinen Laura (MÄL)",

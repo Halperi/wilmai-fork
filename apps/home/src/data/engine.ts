@@ -567,6 +567,44 @@ function mergeMessages(current: Record<number, MessageRec>, lists: [string, Mess
   return next;
 }
 
+/**
+ * Adds what the family sent, from Wilma's Sent folder. A thread someone answered is in the inbox too, and the inbox's
+ * listing wins (its sender is the family, data/feed.ts).
+ */
+export function withSent(next: Record<number, MessageRec>, before: Record<number, MessageRec>, lists: [string, Message[]][]): Record<number, MessageRec> {
+  for (const [child, list] of lists) {
+    for (const m of list) {
+      const listed = next[m.wilmaId];
+      if (listed && !listed.sent) continue;
+      const was = listed ?? before[m.wilmaId];
+      const replyCount = m.replyCount ?? 0;
+      next[m.wilmaId] = {
+        id: m.wilmaId,
+        subject: m.subject,
+        // Who the Sent folder names isn't the sender; the thread says who it went to.
+        sender: null,
+        sentAt: m.sentAt,
+        unreadInWilma: false,
+        replyCount,
+        children: inFamilyOrder([...(listed?.children ?? []), child]),
+        thread: was?.thread && was.replyCount === replyCount ? was.thread : undefined,
+        sent: true,
+      };
+    }
+  }
+  return next;
+}
+
+/** Wilma's Sent folder read again after a message goes, so it shows at once, with its text. */
+async function loadSent(child: string) {
+  const scope = accountScope();
+  const sent = await kid(child).messages.list("outbox");
+  if (scope !== accountScope()) return;
+  patchSnapshot((s) => ({ ...s, messages: withSent({ ...s.messages }, s.messages, [[child, sent]]) }), scope);
+  const unread = sent.filter((m) => !getState().snapshot?.messages[m.wilmaId]?.thread).slice(0, 3);
+  await Promise.all(unread.map((m) => loadThread(m.wilmaId)));
+}
+
 /** Marks invitations, and reads one again when its sign-up state changed in Wilma. */
 function withInvites(next: Record<number, MessageRec>, before: Record<number, MessageRec>, lists: [string, InvitationListing[]][]): Record<number, MessageRec> {
   for (const [, list] of lists) {
@@ -634,6 +672,7 @@ async function runSync() {
     if (!current()) return;
     const children = getState().snapshot!.children;
     const messageLists: [string, Message[]][] = [];
+    const sentLists: [string, Message[]][] = [];
     const newsLists: [string, NewsItem[]][] = [];
     const inviteLists: [string, InvitationListing[]][] = [];
 
@@ -641,9 +680,11 @@ async function runSync() {
       children.map(async (child) => {
         const c = kid(child.number);
         const overview = await limit(() => c.overview.get());
-        const [lessons, messages, news, notes, calendar, invites] = await Promise.all([
+        const [lessons, messages, sent, news, notes, calendar, invites] = await Promise.all([
           limit(() => c.schedule.list({ from: monday, to: addDays(monday, 13) })),
           limit(() => c.messages.list("inbox")),
+          // What the family sent and nobody has answered yet is only in the Sent folder.
+          limit(() => c.messages.list("outbox")),
           limit(() => c.news.list()),
           // The weeks ahead too: a teacher may note a make-up exam on a coming lesson (for the calendar).
           limit(() => c.attendance.list({ from: addDays(now, -20), to: addDays(now, 60) })),
@@ -661,6 +702,7 @@ async function runSync() {
                 .then((details) => ({ value: details.className, fetchedAt: new Date() }))
                 .catch((err) => (err instanceof SessionEndedError ? Promise.reject(err) : known));
         messageLists.push([child.number, messages], [child.number, invites.map((i) => i.message)]);
+        sentLists.push([child.number, sent]);
         newsLists.push([child.number, news]);
         inviteLists.push([child.number, invites]);
         patch((s) => ({
@@ -675,7 +717,7 @@ async function runSync() {
     if (!current()) return;
     patch((s) => ({
       ...s,
-      messages: withInvites(mergeMessages(s.messages, messageLists), s.messages, inviteLists),
+      messages: withInvites(withSent(mergeMessages(s.messages, messageLists), s.messages, sentLists), s.messages, inviteLists),
       news: mergeNews(s.news, newsLists),
       firstSyncAt: s.firstSyncAt ?? Date.now(),
     }));
@@ -1015,10 +1057,21 @@ export function messageApi(child: string) {
       return write.prepareMessage(kid(child), recipient);
     },
     send: async (form: write.MessageForm, subject: string, text: string): Promise<void> => {
-      if (isDemo()) return;
+      if (isDemo()) {
+        // Nothing is sent; the message shows as sent, as a real one does.
+        patchSnapshot((s) => {
+          const id = Math.max(0, ...Object.keys(s.messages).map(Number)) + 1;
+          const now = new Date();
+          const thread = { content: text, sentAt: now, recipients: form.recipients, replies: [], collated: false, fetchedAt: now };
+          return { ...s, messages: { ...s.messages, [id]: { id, subject, sender: null, sentAt: now, unreadInWilma: false, replyCount: 0, children: [child], thread, sent: true } } };
+        });
+        return;
+      }
       try {
         await write.sendMessage(kid(child), form, { subject, text });
         keepSession();
+        // Sent: it shows in the inbox now, not only once someone answers. A failure here doesn't undo the sending.
+        void loadSent(child).catch(() => {});
       } catch (err) {
         if (err instanceof SessionEndedError) handleError(err);
         throw err;

@@ -8,7 +8,7 @@
 import type { LessonNote } from "@wilma-client/src/core";
 import { addDays, dateOf, daysBetween, today } from "./dates";
 import type { AppState } from "./store";
-import { LUNA_THRESHOLDS, viewerOf, writtenByFamily, type Child, type JevAnswer, type JevRecord, type LunaEvent, type LunaRecord, type Snapshot } from "./model";
+import { LUNA_THRESHOLDS, awaitingReply, viewerOf, writtenByFamily, type Child, type JevAnswer, type JevRecord, type LunaEvent, type LunaRecord, type Snapshot } from "./model";
 import { TRIAGE_PUPIL_QS, TRIAGE_QS, type Kind, type Scope } from "../jev/questions";
 import { awaitingAnswer, slotState, type Invitation as Invite, type InvitationSlot as InviteSlot } from "@wilma-client/src/core";
 import { clock, deadlineDay, shortDate } from "./dates";
@@ -77,8 +77,10 @@ export interface FeedItem {
   eventDate: string | null;
   /** Something the parent has to do that code knows for certain from Wilma's own data (no model needed). */
   task: { label: string; reason: string } | null;
-  /** A message this family wrote (model.ts writtenByFamily): never a step for them, whatever the reading says. */
+  /** A message this family wrote (model.ts writtenByFamily, or in Wilma's Sent folder): never a step for them, whatever the reading says. */
   own?: boolean;
+  /** The family sent it and nobody has answered yet: not read by the AI, and no dates from it. */
+  awaitingReply?: boolean;
   tone: "praise" | "neutral" | "concern" | null;
   replyCount: number;
   note?: NoteGroup;
@@ -244,6 +246,13 @@ function signUpReason(until: Date | undefined): string {
   return t("The school asks you to sign up, by {date} {time}.", { date: shortDate(day), time });
 }
 
+/** In place of the sender, for what the family sent: who it went to (once the thread is read), and whether it's answered. */
+function sentLine(recipients: string[] | null, waiting: boolean): string {
+  if (!recipients?.length) return waiting ? t("Sent by you, no reply yet") : t("Sent by you");
+  const names = `${recipients.slice(0, 2).join(", ")}${recipients.length > 2 ? ` +${recipients.length - 2}` : ""}`;
+  return waiting ? t("To {names}, no reply yet", { names }) : t("To {names}", { names });
+}
+
 export function buildFeed(state: Pick<AppState, "snapshot" | "local" | "jev" | "luna">): FeedItem[] {
   const snap = state.snapshot;
   if (!snap) return [];
@@ -256,7 +265,9 @@ export function buildFeed(state: Pick<AppState, "snapshot" | "local" | "jev" | "
   for (const m of Object.values(snap.messages)) {
     const key = `m:${m.id}`;
     const text = m.thread?.content ?? null;
-    const triage = triageOf(state.jev[key], state.luna[key], !m.thread);
+    // The family's own message, not answered yet, isn't read (an earlier reading of it doesn't show either).
+    const waiting = awaitingReply(m);
+    const triage = waiting ? null : triageOf(state.jev[key], state.luna[key], !m.thread);
     const inviteData = m.thread?.invite ?? null;
     const invite = m.invite
       ? {
@@ -269,7 +280,7 @@ export function buildFeed(state: Pick<AppState, "snapshot" | "local" | "jev" | "
         }
       : undefined;
     // Written by this family: its dates still count (the calendar), but it's never a step for them.
-    const own = writtenByFamily(m.sender, snap.children);
+    const own = Boolean(m.sent) || writtenByFamily(m.sender, snap.children);
     const openUntil = inviteData?.slots
       .filter((slot) => slotState(slot) === "open" && slot.enrollEnd)
       .map((slot) => slot.enrollEnd!)
@@ -284,20 +295,22 @@ export function buildFeed(state: Pick<AppState, "snapshot" | "local" | "jev" | "
       id: m.id,
       children: m.children,
       title: m.subject || t("(no subject)"),
-      from: m.sender,
+      from: m.sent ? sentLine(m.thread?.recipients ?? null, waiting) : m.sender,
       at: m.sentAt,
       text,
       preview: preview(text),
-      isNew: !state.local.opened[key] && (m.unreadInWilma || m.sentAt.getTime() > firstSync),
+      // What the family just sent isn't news to them.
+      isNew: !waiting && !state.local.opened[key] && (m.unreadInWilma || m.sentAt.getTime() > firstSync),
       done: Boolean(state.local.done[key]),
-      upcoming: [...new Set([...inviteDates, ...upcomingOf(state.luna[key])])].sort(),
-      dated: Boolean(state.luna[key]?.events.length) || inviteDates.length > 0,
+      upcoming: [...new Set([...inviteDates, ...upcomingOf(waiting ? undefined : state.luna[key])])].sort(),
+      dated: Boolean(!waiting && state.luna[key]?.events.length) || inviteDates.length > 0,
       triage,
       actionLine: own ? null : triage?.detail?.actionLine ?? null,
       deadline: own ? null : triage?.detail?.deadline ?? null,
       eventDate: triage?.detail?.eventDate ?? null,
       task: invite?.awaiting && !student ? { label: t("Sign up"), reason: signUpReason(openUntil) } : null,
       own,
+      awaitingReply: waiting || undefined,
       invite,
       tone: triage && triage.praise >= 0.6 && triage.aboutChild >= 0.5 ? "praise" : null,
       replyCount: m.replyCount,

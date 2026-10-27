@@ -265,7 +265,7 @@ export function calendarEvents(
   // `said`: when the school said it (a message's time, a note's lesson), for which of two sources of one event comes first.
   const read: { key: string; said: string; children: string[]; detail: string; source: (line: string | null) => CalSource; from?: string | null; subjects?: string[]; nextExam?: LunaEvent }[] = [];
   for (const item of items) {
-    if (!item.text || item.kind === "note" || !item.children.some(wanted)) continue;
+    if (!item.text || item.kind === "note" || item.awaitingReply || !item.children.some(wanted)) continue;
     read.push({ key: item.key, said: item.at.toISOString(), children: order(item.children.filter(wanted)), detail: item.title, source: (line) => ({ kind: "item", key: item.key, line }), from: item.from });
   }
   for (const child of kids) {

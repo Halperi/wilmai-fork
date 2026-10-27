@@ -19,7 +19,7 @@
  */
 import { accountScope, getState, setState } from "../data/store";
 import { noteGroups } from "../data/feed";
-import { intelligenceOn, pupilName, viewerOf, type LunaEvent, type LunaRecord, type Snapshot, type Viewer } from "../data/model";
+import { awaitingReply, intelligenceOn, pupilName, viewerOf, type LunaEvent, type LunaRecord, type Snapshot, type Viewer } from "../data/model";
 import { addDays, dateOf, dayNameLongEn, longDateEn, today } from "../data/dates";
 import { LUNA, LunaError, READING_EFFORT, countItem, decide, openAIBlockedMessage, openAIReach, openAIReady, readingModel, respond, type DecisionQuestion } from "./client";
 import { saveCompareReport } from "./compare";
@@ -76,7 +76,8 @@ export function lunaSources(snap: Snapshot, reader: Viewer = viewerOf(snap.accou
     out.push({ key, kind, children, pupils, title: subject, body: `${subject}\n${text}`, input: `${lines.join("\n")}\nSubject: ${subject}\n\n${text}`, note, sent, reader });
   };
   for (const m of Object.values(snap.messages)) {
-    if (!m.thread?.content || !recent(m.sentAt)) continue;
+    // The family's own message, not answered yet: their words, nothing to read for them (an answer is).
+    if (!m.thread?.content || !recent(m.sentAt) || awaitingReply(m)) continue;
     add(
       `m:${m.id}`,
       "message",

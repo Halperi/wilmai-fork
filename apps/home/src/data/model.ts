@@ -49,7 +49,12 @@ export interface MessageRec {
   thread?: ThreadRec;
   /** Set for event invitations: Wilma's list status ("Applied", "ExpiredReg", …) and its time note. */
   invite?: { status: string | null; extra: string | null };
+  /** Listed in Wilma's Sent folder: the family wrote it. Wilma moves the thread to the inbox when someone answers. */
+  sent?: boolean;
 }
+
+/** The family sent it and nobody has answered yet. */
+export const awaitingReply = (m: Pick<MessageRec, "sent" | "replyCount">): boolean => Boolean(m.sent) && m.replyCount === 0;
 
 export interface NewsRec {
   id: number;
