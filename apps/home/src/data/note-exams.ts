@@ -10,6 +10,8 @@ export interface PupilExam {
   end: string | null;
   /** Only an unambiguous exam of the same pupil, subject and original lesson day. */
   originalExamId: number | null;
+  /** With no date: the day of a known later lesson of the subject. The exam was on it or before it. */
+  noLaterThan: string | null;
 }
 
 type ExamNote = { child: string; date: string; start: string | null; end?: string | null; subjects: string[]; note: string | null };
@@ -42,6 +44,7 @@ export function noteExam(snap: Snapshot, note: ExamNote, record: LunaRecord | un
     start: lesson?.start ?? null,
     end: lesson?.end ?? null,
     originalExamId: original.length === 1 ? original[0].examId : null,
+    noLaterThan: lesson ? null : candidate?.date ?? null,
   };
 }
 

@@ -788,12 +788,14 @@ a { color: var(--pen); }
 .sd-row > .day-actions, .sd-row > .absence { grid-column: 2 / -1; margin-top: 4px; justify-content: flex-start; }
 .today-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 26px; align-items: start; }
 .needs { padding: 6px 8px; }
-.need { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: baseline; padding: 10px 10px; border-radius: 10px; color: var(--ink); text-decoration: none; }
+.need { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 10px; align-items: baseline; padding: 10px 10px; border-radius: 10px; color: var(--ink); text-decoration: none; }
 .need + .need { border-top: 1px solid var(--rule); border-radius: 0; }
 .need:hover { background: var(--paper-2); }
 .need-main { min-width: 0; font-weight: 600; }
 .need-main small { display: block; font-weight: 400; color: var(--ink-2); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
 .need-when { font-size: 13px; color: var(--ink-2); white-space: nowrap; font-weight: 600; }
+.need-done { grid-column: 4; align-self: center; margin: -4px -4px -4px 0; opacity: 0; transition: opacity 100ms; }
+.need:is(:hover, :focus-within) .need-done { opacity: 1; }
 .needs-more { margin: 6px 10px 6px; font-size: 13.5px; }
 .jev-hint { color: var(--ink-3); font-size: 13.5px; margin: 10px 2px 0; }
 .glance-card { padding: 16px 16px 12px; }

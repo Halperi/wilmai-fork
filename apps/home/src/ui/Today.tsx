@@ -28,6 +28,7 @@ import { readExamEntries } from "../data/calendar";
 import { language, plural, t, tx } from "../i18n";
 import { Icon, Mark, Tab, Tabs } from "./bits";
 import { takePendingAbsence } from "./CommandMenu";
+import { toggleDoneWithUndo } from "./done";
 import { go, hrefFor, itemHref, setSegment, tSense, urgencyLabel, useChildFilter } from "./shared";
 import { Glance } from "./Glance";
 import { DayPanel, type DayFocus } from "./DayPanel";
@@ -146,6 +147,7 @@ export function Today({ feed }: { feed: FeedItem[] }) {
                     <Tabs snap={snap} numbers={item.children} />
                     <span className="need-main"><Mark on>{w(item.pupilExam.title)}</Mark><small>{w(item.pupilExam.quote)}</small></span>
                     <span className="need-when">{item.pupilExam.date ? dayWithDate(item.pupilExam.date) : t("Date not confirmed")}</span>
+                    <NeedDone item={item} />
                   </a>
                 ))}
               </div>
@@ -435,7 +437,27 @@ function NeedLine({ item, snap, marked }: { item: FeedItem; snap: Snapshot; mark
         <small>{listed.action ?? item.from}</small>
       </span>
       {when ? <span className="need-when">{when}</span> : null}
+      <NeedDone item={item} />
     </a>
+  );
+}
+
+/** Done, as in the lists: the item leaves Today and the lists, with Undo. */
+function NeedDone({ item }: { item: FeedItem }) {
+  return (
+    <button
+      type="button"
+      className="btn btn-quiet btn-sm need-done"
+      title={t("Mark done")}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleDoneWithUndo(item);
+      }}
+    >
+      <Icon name="check" />
+      <span className="sr-only">{t("Mark done")}</span>
+    </button>
   );
 }
 

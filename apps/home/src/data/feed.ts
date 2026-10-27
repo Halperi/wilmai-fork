@@ -97,9 +97,17 @@ export interface FeedItem {
 export const NEEDS_YOU = 0.6;
 const SCOPE_WEIGHT: Record<Scope, number> = { pupil: 1, group: 0.7, school: 0.4, wider: 0 };
 
+/** A "next lesson" exam with no later lesson of the subject in the timetable stops showing this long after its note. */
+const UNPLACED_EXAM_DAYS = 14;
+
 /** Outstanding pupil exams need a parent's attention even when no guardian action is assigned. */
 export function examsNeedingAttention(items: FeedItem[], from = today()): (FeedItem & { pupilExam: PupilExam })[] {
-  return items.filter((item): item is FeedItem & { pupilExam: PupilExam } => Boolean(item.pupilExam && !item.done && (!item.pupilExam.date || item.pupilExam.date >= from)))
+  return items.filter((item): item is FeedItem & { pupilExam: PupilExam } => {
+    if (!item.pupilExam || item.done) return false;
+    // Not sure of the day: once a later lesson of the subject is over, so is the exam.
+    const day = item.pupilExam.date ?? item.pupilExam.noLaterThan;
+    return day ? day >= from : (item.note?.date ?? from) >= addDays(from, -UNPLACED_EXAM_DAYS);
+  })
     .sort((a, b) => ((a.pupilExam.date ?? "9999") + (a.pupilExam.start ?? "")).localeCompare((b.pupilExam.date ?? "9999") + (b.pupilExam.start ?? "")));
 }
 

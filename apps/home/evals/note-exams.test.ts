@@ -62,6 +62,21 @@ test("home attention includes dated and unconfirmed pupil exams, respects the ch
   assert.equal(isNeedsYou(unknown[0]), false);
 });
 
+test("an unconfirmed instruction clears once a later lesson of the subject is over, or two weeks after its note when none is known", () => {
+  const { snap, child, note, record } = fixture();
+  const lesson = { date: "2026-10-27", start: "09:00", end: "10:00", dayOfWeek: 2, subject: "Englanti", subjectCode: "ENA1_71", groupId: 1, teacher: "", teacherCode: "" };
+  snap.perChild[child].lessons = [];
+  snap.perChild[child].weeks = { "2026-10-26": { lessons: [lesson], fetchedAt: at("2026-10-10") } };
+  const state = { snapshot: snap, luna: { [note.key]: record }, jev: {}, local: { opened: {}, done: {} } };
+  const exam = buildFeed(state).find((i) => i.key === note.key)!.pupilExam!;
+  assert.deepEqual([exam.date, exam.noLaterThan], [null, "2026-10-27"], "a gap before the week: the exam is on that lesson or before it");
+  assert.equal(examsNeedingAttention(buildFeed(state), "2026-10-27").length, 1, "still shown on the lesson's day");
+  assert.equal(examsNeedingAttention(buildFeed(state), "2026-10-28").length, 0, "gone once that lesson is past");
+  snap.perChild[child].weeks = {};
+  assert.equal(examsNeedingAttention(buildFeed(state), "2026-10-23").length, 1, "no later lesson known: shown for two weeks");
+  assert.equal(examsNeedingAttention(buildFeed(state), "2026-10-24").length, 0, "then left out");
+});
+
 // A private case (it quotes a real school's make-up exam days); without it, the test is skipped.
 const makeupNote = cases.find((c) => c.id === "makeup-exam-note");
 test("the day panel includes a future note's exam after school even without a matching lesson or Wilma exam entry", { skip: !makeupNote && "the private eval cases aren't here" }, () => {
