@@ -1,7 +1,7 @@
 /*
  * Translations on screen (data/translations.ts makes them): lists, search and Today show an item's translated title,
- * preview and sentence on what to do; the reader shows the translated text under a line saying by which model and from
- * which language, with the original a click away. An item switched to its original stays so while the app is open.
+ * preview and sentence on what to do; the reader shows the translated text under a line saying which language it was
+ * translated from, with the original a click away. An item switched to its original stays so while the app is open.
  */
 import { useEffect, useState } from "react";
 import { setState, useApp } from "../data/store";
@@ -9,7 +9,6 @@ import type { FeedItem } from "../data/feed";
 import type { ItemTranslation, Snapshot } from "../data/model";
 import { currentTranslation, needsTranslation, sourceHash, translationSource, translationTarget } from "../ai/translate";
 import { translateItem } from "../data/translations";
-import { READING_MODELS } from "../luna/client";
 import { Icon } from "./bits";
 import { language, t } from "../i18n";
 
@@ -100,11 +99,7 @@ export function TranslationNote({ tr }: { tr: Translating }) {
       <div className="translated-note">
         <Icon name="translate" />
         <span>
-          {t("Translated by {by}, {from} → {to}. Check times and dates against the original.", {
-            by: READING_MODELS[tr.shown.model]?.label ?? tr.shown.model,
-            from: languageName(tr.shown.from),
-            to: languageName(tr.shown.language),
-          })}
+          {t("Translated automatically from {from}. Check times and dates against the original.", { from: languageName(tr.shown.from) })}
         </span>
         <button type="button" className="linkish" onClick={tr.toggle}>
           {t("Show original")}

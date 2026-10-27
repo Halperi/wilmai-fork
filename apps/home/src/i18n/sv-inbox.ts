@@ -7,7 +7,7 @@ export const SV_INBOX: Record<string, string> = {
   "Translating…": "Översätter…",
   "Show the original": "Visa originalet",
   "Show original": "Visa originalet",
-  "Translated by {by}, {from} → {to}. Check times and dates against the original.": "Översatt av {by}, {from} → {to}. Kontrollera tider och datum i originalet.",
+  "Translated automatically from {from}. Check times and dates against the original.": "Automatiskt översatt från {from}. Kontrollera tider och datum i originalet.",
   "The translation didn't work: {why}": "Översättningen misslyckades: {why}",
 
   /* ---------- Inbox: segments, groups, list ---------- */

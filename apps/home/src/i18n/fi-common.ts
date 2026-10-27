@@ -27,7 +27,7 @@ export const FI_COMMON: Record<string, string> = {
   Recommended: "Suositeltu",
   "Translating {done}/{total}": "Käännetään {done}/{total}",
   "Translating what came in the last 30 days (Settings → Translating messages)": "Käännetään viimeisen 30 päivän viestejä (Asetukset → Viestien kääntäminen)",
-  "GPT-6 Luna. Fast and accurate. Translates messages too.": "GPT-6 Luna. Nopea ja tarkka. Kääntää myös viestit.",
+  "Fast and accurate. Translates messages too.": "Nopea ja tarkka. Kääntää myös viestit.",
   "Your own API key · tens of cents a month": "Oma API-avain · kymmeniä senttejä kuussa",
   "Local AI": "Paikallinen tekoäly",
   "On this Mac": "Tällä Macilla",
@@ -56,8 +56,7 @@ export const FI_COMMON: Record<string, string> = {
     "Kaikki luetaan tällä Macilla: mitään ei lähetetä tekoälypalveluun, eikä API-avainta tai käyttömaksuja tarvita. Wilma itse on yhteydessä kouluun tavalliseen tapaan.",
   "Before you turn it on: it's a big download, 9.1 GB, and reading works the Mac hard, so it may run warm and use more battery. It's also slower than OpenAI and makes more mistakes, most often with dates and deadlines, so check those in the message itself.":
     "Ennen kuin otat sen käyttöön: lataus on iso, 9,1 Gt, ja lukeminen kuormittaa Macia paljon, joten kone voi lämmetä ja akku kulua nopeammin. Se on myös OpenAI:ta hitaampi ja tekee enemmän virheitä, useimmiten päivämäärissä ja määräajoissa, joten tarkista ne itse viestistä.",
-  "Needs an Apple Silicon Mac with at least 16 GB of memory. The models are Clef-flash 9B and Qwen3.5 4B.":
-    "Vaatii Apple Silicon -Macin, jossa on vähintään 16 Gt muistia. Mallit ovat Clef-flash 9B ja Qwen3.5 4B.",
+  "Needs an Apple Silicon Mac with at least 16 GB of memory.": "Vaatii Apple Silicon -Macin, jossa on vähintään 16 Gt muistia.",
   "Local AI is set up in the Mac app.": "Paikallinen tekoäly otetaan käyttöön Mac-sovelluksessa.",
   "This computer can't run local AI. It needs an Apple Silicon Mac with 16 GB of memory.": "Tällä tietokoneella ei voi käyttää paikallista tekoälyä. Se vaatii Apple Silicon -Macin ja 16 Gt muistia.",
   "Models installed ({size} GB). Choosing another option keeps them; Remove models frees the space.":

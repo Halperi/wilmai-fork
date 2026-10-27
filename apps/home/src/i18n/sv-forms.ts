@@ -296,7 +296,7 @@ export const SV_FORMS: Record<string, string> = {
     "Den här gången: {new} nya för AI:n, {changed} ändrade sedan AI:n läste dem (mer under Inställningar)",
   "Add an OpenAI API key in Settings.": "Lägg till en OpenAI-API-nyckel i inställningarna.",
   "OpenAI didn't accept the API key.": "OpenAI godkände inte API-nyckeln.",
-  "OpenAI answered HTTP {status}.": "OpenAI svarade med HTTP {status}.",
+  "OpenAI couldn't answer (error {status}). Try again later.": "OpenAI kunde inte svara (fel {status}). Försök igen senare.",
   "Paste your OpenAI API key": "Klistra in din OpenAI-API-nyckel",
   "item read": "läst post",
   "items read": "lästa poster",

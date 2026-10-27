@@ -226,7 +226,7 @@ async function post(path: "/v1/responses" | "/v1/decisions", body: unknown): Pro
     })();
     if (r.status === 401 || r.status === 403) throw new LunaError(t("OpenAI didn't accept the API key."), false);
     const retryable = r.status === 429 || r.status >= 500;
-    if (!retryable || attempt >= 4) throw new LunaError(message ? `OpenAI ${r.status}: ${message}` : t("OpenAI answered HTTP {status}.", { status: r.status }), retryable);
+    if (!retryable || attempt >= 4) throw new LunaError(message ? `OpenAI ${r.status}: ${message}` : t("OpenAI couldn't answer (error {status}). Try again later.", { status: r.status }), retryable);
     const wait = Number(r.retryAfter) > 0 ? Math.min(Number(r.retryAfter) * 1000, 30_000) : 500 * 2 ** attempt;
     await new Promise((resolve) => setTimeout(resolve, wait));
   }

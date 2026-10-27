@@ -16,7 +16,6 @@ import { DEFAULT_TRANSLATOR, TRANSLATION_LANGUAGES, TRANSLATORS, itemsPerMonth, 
 import { runTranslations } from "../data/translations";
 import { runJev } from "../jev/runner";
 import { runLuna } from "../luna/events";
-import { READING_MODELS } from "../luna/client";
 import { budgetText, normalizeAIBudget } from "../data/ai-budget";
 
 /** A sentence translated whole, with the part between asterisks wrapped in markup. */
@@ -84,7 +83,7 @@ function TranslationSettings({ settings }: { settings: SettingsModel }) {
                     : t("About {cost} a message.", { cost: dollars(x.perMessage) })}
                 </span>
                 <span>
-                  {t(x.help)} {READING_MODELS[x.model].label}.
+                  {t(x.help)}
                 </span>
               </div>
             </label>

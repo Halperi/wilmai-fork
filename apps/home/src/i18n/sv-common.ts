@@ -27,7 +27,7 @@ export const SV_COMMON: Record<string, string> = {
   Recommended: "Rekommenderas",
   "Translating {done}/{total}": "Översätter {done}/{total}",
   "Translating what came in the last 30 days (Settings → Translating messages)": "Översätter det som kommit in de senaste 30 dagarna (Inställningar → Översättning av meddelanden)",
-  "GPT-6 Luna. Fast and accurate. Translates messages too.": "GPT-6 Luna. Snabb och träffsäker. Översätter också meddelanden.",
+  "Fast and accurate. Translates messages too.": "Snabb och träffsäker. Översätter också meddelanden.",
   "Your own API key · tens of cents a month": "Egen API-nyckel · några tiotal cent i månaden",
   "Local AI": "Lokal AI",
   "On this Mac": "På den här Macen",
@@ -56,8 +56,7 @@ export const SV_COMMON: Record<string, string> = {
     "Allt läses på den här Macen: inget skickas till en AI-tjänst, och det behövs ingen API-nyckel eller användningsavgift. Wilma ansluter fortfarande till din skola som vanligt.",
   "Before you turn it on: it's a big download, 9.1 GB, and reading works the Mac hard, so it may run warm and use more battery. It's also slower than OpenAI and makes more mistakes, most often with dates and deadlines, so check those in the message itself.":
     "Innan du tar det i bruk: hämtningen är stor, 9,1 GB, och läsningen belastar Macen hårt, så den kan bli varm och dra mer batteri. Det är också långsammare än OpenAI och gör fler fel, oftast med datum och tidsfrister, så kontrollera dem i själva meddelandet.",
-  "Needs an Apple Silicon Mac with at least 16 GB of memory. The models are Clef-flash 9B and Qwen3.5 4B.":
-    "Kräver en Mac med Apple Silicon och minst 16 GB minne. Modellerna är Clef-flash 9B och Qwen3.5 4B.",
+  "Needs an Apple Silicon Mac with at least 16 GB of memory.": "Kräver en Mac med Apple Silicon och minst 16 GB minne.",
   "Local AI is set up in the Mac app.": "Lokal AI ställs in i Mac-appen.",
   "This computer can't run local AI. It needs an Apple Silicon Mac with 16 GB of memory.": "Den här datorn kan inte köra lokal AI. Det kräver en Mac med Apple Silicon och 16 GB minne.",
   "Models installed ({size} GB). Choosing another option keeps them; Remove models frees the space.":

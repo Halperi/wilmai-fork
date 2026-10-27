@@ -141,7 +141,7 @@ const en: HomeCopy = {
       "Into Finnish, Swedish, English, Ukrainian or Arabic.",
       "New messages arrive translated, and turning it on translates the last 30 days too.",
       "The original is always a click away.",
-      "With OpenAI and your own key: usually a fraction of a cent a message, within the monthly limit you set.",
+      "It uses the app's OpenAI choice: usually a fraction of a cent a message, within the monthly limit you set.",
       "The app itself is in Finnish, Swedish or English."
     ],
     visual: {
@@ -149,7 +149,7 @@ const en: HomeCopy = {
       chosen: "English",
       title: "School starts at 10.15 tomorrow",
       from: "Mäkinen Laura (MÄL)",
-      note: "Translated by GPT-6.1 Sol, Finnish → English. Check times and dates against the original.",
+      note: "Translated automatically from Finnish. Check times and dates against the original.",
       showOriginal: "Show original",
       text: "Hi! Because of a teachers' training day, 3B's school day starts at 10.15 tomorrow. The morning club is open as usual from 7.30."
     }
@@ -245,7 +245,7 @@ const en: HomeCopy = {
       },
       {
         q: "Can I run local AI?",
-        a: "If your Mac has Apple Silicon (M1 or newer) and at least 16 GB of memory, yes. Choose Local AI in Settings, and the app downloads the models once, 9.1 GB. It works the Mac hard, and it's slower and less accurate than OpenAI, especially with dates. On other computers the choice is greyed out."
+        a: "If your Mac has Apple Silicon (M1 or newer) and at least 16 GB of memory, yes. Choose Local AI in Settings, and the app downloads what it needs once, 9.1 GB. It works the Mac hard, and it's slower and less accurate than OpenAI, especially with dates. On other computers the choice is greyed out."
       },
       {
         q: "Can students use it?",
@@ -285,7 +285,7 @@ const en: HomeCopy = {
     title: "Download WilmAI Home",
     mac: "Mac",
     macDetail: "Apple Silicon (M1 or newer) · macOS 13.3 or later",
-    includes: "The Mac download includes optional local AI. Its 9.1 GB of models download only if you turn local AI on.",
+    includes: "The Mac download includes optional local AI. Its 9.1 GB download happens only if you turn local AI on.",
     macNote: "The Mac app isn't signed by Apple yet, so macOS stops it the first time: choose Done, then open System Settings → Privacy & Security and choose Open Anyway for WilmAI Home. After that it opens normally.",
     windows: "Windows",
     windowsDetail: "Windows 10 or 11 · 64-bit",
@@ -374,7 +374,7 @@ const fi: HomeCopy = {
       "Suomeksi, ruotsiksi, englanniksi, ukrainaksi tai arabiaksi.",
       "Uudet viestit tulevat valmiiksi käännettyinä, ja käyttöön ottaessa käännetään myös viimeiset 30 päivää.",
       "Alkuperäinen on aina klikkauksen päässä.",
-      "OpenAI:lla ja omalla avaimellasi: yleensä sentin murto-osa viestiltä, asettamasi kuukausirajan sisällä.",
+      "Käyttää sovelluksen OpenAI-vaihtoehtoa: yleensä sentin murto-osa viestiltä, asettamasi kuukausirajan sisällä.",
       "Itse sovellus on suomeksi, ruotsiksi tai englanniksi."
     ],
     visual: {
@@ -382,7 +382,7 @@ const fi: HomeCopy = {
       chosen: "Suomi",
       title: "Koulu alkaa huomenna klo 10.15",
       from: "Lindqvist Anna (LIA)",
-      note: "Käännös: GPT-6.1 Sol, ruotsi → suomi. Tarkista ajat ja päivät alkuperäisestä.",
+      note: "Käännetty automaattisesti, alkuperäinen kieli: ruotsi. Tarkista ajat ja päivät alkuperäisestä.",
       showOriginal: "Näytä alkuperäinen",
       text: "Hei! Opettajien koulutuspäivän vuoksi 3B:n koulupäivä alkaa huomenna vasta klo 10.15. Aamukerho on auki tavalliseen tapaan klo 7.30 alkaen."
     }
@@ -478,7 +478,7 @@ const fi: HomeCopy = {
       },
       {
         q: "Voinko käyttää paikallista tekoälyä?",
-        a: "Jos Macissasi on Apple Silicon (M1 tai uudempi) ja vähintään 16 Gt muistia, voit. Valitse asetuksista Paikallinen tekoäly, niin sovellus lataa mallit kerran, 9,1 Gt. Se kuormittaa Macia paljon ja on OpenAI:ta hitaampi ja epätarkempi, varsinkin päivämäärissä. Muilla koneilla vaihtoehto näkyy harmaana."
+        a: "Jos Macissasi on Apple Silicon (M1 tai uudempi) ja vähintään 16 Gt muistia, voit. Valitse asetuksista Paikallinen tekoäly, niin sovellus lataa tarvitsemansa kerran, 9,1 Gt. Se kuormittaa Macia paljon ja on OpenAI:ta hitaampi ja epätarkempi, varsinkin päivämäärissä. Muilla koneilla vaihtoehto näkyy harmaana."
       },
       {
         q: "Voiko oppilas käyttää sitä?",
@@ -518,7 +518,7 @@ const fi: HomeCopy = {
     title: "Lataa WilmAI Home",
     mac: "Mac",
     macDetail: "Apple Silicon (M1 tai uudempi) · macOS 13.3 tai uudempi",
-    includes: "Macin latauksessa on mukana vapaaehtoinen paikallinen tekoäly. Sen 9,1 Gt:n mallit latautuvat vain, jos otat paikallisen tekoälyn käyttöön.",
+    includes: "Macin latauksessa on mukana vapaaehtoinen paikallinen tekoäly. Sen 9,1 Gt:n lataus tehdään vain, jos otat paikallisen tekoälyn käyttöön.",
     macNote: "Mac-sovellusta ei ole vielä allekirjoitettu Applen kautta, joten macOS pysäyttää sen ensimmäisellä kerralla: valitse Valmis, avaa sitten Järjestelmäasetukset → Tietosuoja ja turvallisuus ja valitse WilmAI Homen kohdalla Avaa silti. Sen jälkeen sovellus aukeaa normaalisti.",
     windows: "Windows",
     windowsDetail: "Windows 10 tai 11 · 64-bittinen",

@@ -44,7 +44,7 @@ export function LocalAISetup() {
     <div className="local-ai-setup">
       <p>{t("Everything is read on this Mac: nothing goes to an AI service, and there's no API key or usage charge. Wilma itself still connects to your school as usual.")}</p>
       <p className="help-line">{t("Before you turn it on: it's a big download, 9.1 GB, and reading works the Mac hard, so it may run warm and use more battery. It's also slower than OpenAI and makes more mistakes, most often with dates and deadlines, so check those in the message itself.")}</p>
-      <p className="help-line">{t("Needs an Apple Silicon Mac with at least 16 GB of memory. The models are Clef-flash 9B and Qwen3.5 4B.")}</p>
+      <p className="help-line">{t("Needs an Apple Silicon Mac with at least 16 GB of memory.")}</p>
       {!isDesktopApp ? <p className="notice">{t("Local AI is set up in the Mac app.")}</p> : null}
       {status && !status.supported ? <p className="notice">{t("This computer can't run local AI. It needs an Apple Silicon Mac with 16 GB of memory.")}</p> : null}
       {status && status.supported ? <p className="help-line">{ready ? t("Models installed ({size} GB). Choosing another option keeps them; Remove models frees the space.", { size: gb(status.installedBytes) }) : t("Needs {needed} GB of free space; {free} GB is free.", { free: gb(status.availableBytes), needed: gb(status.requiredFreeBytes) })}</p> : null}

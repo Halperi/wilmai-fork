@@ -7,7 +7,7 @@ export const FI_INBOX: Record<string, string> = {
   "Translating…": "Käännetään…",
   "Show the original": "Näytä alkuperäinen",
   "Show original": "Näytä alkuperäinen",
-  "Translated by {by}, {from} → {to}. Check times and dates against the original.": "Käännös: {by}, {from} → {to}. Tarkista ajat ja päivät alkuperäisestä.",
+  "Translated automatically from {from}. Check times and dates against the original.": "Käännetty automaattisesti, alkuperäinen kieli: {from}. Tarkista ajat ja päivät alkuperäisestä.",
   "The translation didn't work: {why}": "Käännös ei onnistunut: {why}",
 
   /* ---------- Inbox: segments, groups, list ---------- */

@@ -296,7 +296,7 @@ export const FI_FORMS: Record<string, string> = {
     "Tällä kerralla: tekoälylle uusia {new}, muuttuneita {changed} (tarkemmin Asetuksissa)",
   "Add an OpenAI API key in Settings.": "Lisää OpenAI-avain asetuksissa.",
   "OpenAI didn't accept the API key.": "OpenAI ei hyväksynyt avainta.",
-  "OpenAI answered HTTP {status}.": "OpenAI vastasi HTTP {status}.",
+  "OpenAI couldn't answer (error {status}). Try again later.": "OpenAI ei pystynyt vastaamaan (virhe {status}). Yritä myöhemmin uudelleen.",
   "Paste your OpenAI API key": "Liitä OpenAI-avaimesi",
   "item read": "luettu asia",
   "items read": "luettua asiaa",
