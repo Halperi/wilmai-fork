@@ -281,6 +281,8 @@ a { color: var(--pen); }
   position: absolute; right: 12px; bottom: 10px; opacity: 0; transition: opacity 100ms;
 }
 .row:hover .check, .row:focus-within .check { opacity: 1; }
+/* While Done shows, the row's last line (the preview, or the chips under it) stops short of it. */
+.row:is(:hover, :focus-within) > :is(.row-sub, .row-chips):nth-last-child(2) { padding-right: 44px; }
 .row.kind-note .row-title { font-weight: 600; }
 
 .empty {
