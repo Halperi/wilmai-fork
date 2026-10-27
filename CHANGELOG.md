@@ -2,13 +2,14 @@
 
 ## 2.3.0 (2026-10-24)
 
-_Releases: wilma-cli 2.3.0, wilma-client 1.7.1._
+_Releases: wilma-cli 2.3.0, wilma-client 1.7.1; the `wilma` skill and plugin 2.3.0 (2026-10-27)._
 
 **In short:** security fixes, and `wilma home` says where to download WilmAI Home, the Wilma app for Mac and Windows.
 
 ### Added
 
 - **`wilma home`**: where to download WilmAI Home, the Wilma app for your computer from the same project, and what its first start asks for (it isn't signed by Apple or Microsoft yet). The links are wilm.ai's own, which always lead to the current installer. The JSON has the download per platform with its requirements, and a hint that downloading and installing is the user's step. Needs no login. `wilma --help` lists it, so an agent can find the app and suggest it when someone wants a Wilma app of their own.
+- **The `wilma` skill** lists `wilma home`, and says that WilmAI only reads Wilma: when someone wants to reply to a message, sign up for an event or report an absence, or wants a Wilma app of their own, the agent can point to WilmAI Home.
 
 ### Fixed
 
