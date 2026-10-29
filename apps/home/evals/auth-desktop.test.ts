@@ -9,13 +9,34 @@ const native = { invoke: async () => null };
 Object.assign(globalThis, { __TAURI_INTERNALS__: native, window: { __TAURI_INTERNALS__: native } });
 const { WilmaClient } = await import("@wilma-client/src/core");
 const { getBack, resetApp, signInWithCli, signOut } = await import("../src/data/engine.ts");
-const { activateAccount, getState, saveSession, savedSession, setState } = await import("../src/data/store.ts");
+const { accountStorageKey, activateAccount, getState, saveSession, savedSession, setState } = await import("../src/data/store.ts");
 const { emptySnapshot } = await import("../src/data/model.ts");
 const { overrideBridge } = await import("../src/wilma/transport.ts");
 const { SignInCancelledError } = await import("../src/data/sign-in-attempt.ts");
 
 const login = { index: 0, id: "synthetic-profile", baseUrl: "https://school.inschool.fi", username: "parent", tenantName: null };
 const cookieState = JSON.stringify({ cookies: [{ key: "Wilma2SID", value: "synthetic-session", domain: "school.inschool.fi", path: "/", hostOnly: true }] });
+
+test("automatic recovery identifies the CLI account even after its list position changes", async (t) => {
+  await setup(t);
+  const account = { ...login, via: "cli" as const, cliIndex: 0 };
+  activateAccount(account);
+  setState({ snapshot: emptySnapshot(account), phase: "signed-out", settings: { ...getState().settings, staySignedIn: true } });
+  await saveSession({ account, state: "", sharedKey: "a".repeat(64) });
+  const requested: string[] = [];
+  overrideBridge(async (path, init) => {
+    if (path === "cli/accounts") return { accounts: [{ ...login, id: "different-profile", username: "someone-else", index: 0 }, { ...login, index: 7 }] };
+    if (path === "cli/secret") { requested.push((init.body as { id: string }).id); return { password: "synthetic-password", totpSecret: null }; }
+    if (path === "session/get") return null;
+    if (path === "session/set") return { ok: true };
+    throw new Error(`Unexpected bridge call: ${path}`);
+  });
+  t.mock.method(WilmaClient, "login", async (_profile: unknown, _mfa: unknown, options: ClientOptions) => WilmaClient.resumeSession(login.baseUrl, cookieState, options)!);
+  assert.equal(await getBack(), true);
+  assert.deepEqual(requested, [login.id]);
+  assert.equal(getState().snapshot?.account.username, login.username);
+  assert.equal((await savedSession())?.account.cliIndex, 7);
+});
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -53,7 +74,7 @@ for (const stage of ["secret", "session", "students"] as const) test(`desktop CL
   const settled = assert.rejects(signing, SignInCancelledError);
   await started.promise;
   assert.equal(await savedSession(), null, "do not persist before accepting the account");
-  assert.equal(localStorage.getItem("wilmai.sessionHistory"), null);
+  assert.equal(localStorage.getItem(accountStorageKey("sessionHistory")), null);
   assert.deepEqual(writes, []);
   await resetApp();
   answer.resolve();
@@ -61,7 +82,7 @@ for (const stage of ["secret", "session", "students"] as const) test(`desktop CL
   assert.equal(getState().phase, "signed-out");
   assert.equal(getState().snapshot, null);
   assert.equal(await savedSession(), null);
-  assert.equal(localStorage.getItem("wilmai.sessionHistory"), null);
+  assert.equal(localStorage.getItem(accountStorageKey("sessionHistory")), null);
   assert.deepEqual(writes, []);
 });
 
@@ -79,7 +100,7 @@ test("desktop CLI continuation accepts a live session without a new login", asyn
   assert.equal(logins, 0);
   assert.equal(getState().phase, "ready");
   assert.equal((await savedSession())?.account.username, login.username);
-  assert.equal(JSON.parse(localStorage.getItem("wilmai.sessionHistory")!)[0].kind, "continued");
+  assert.equal(JSON.parse(localStorage.getItem(accountStorageKey("sessionHistory"))!)[0].kind, "continued");
 });
 
 test("desktop automatic recovery and password fallback share one cancellation lifetime", async (t) => {
