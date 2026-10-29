@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Footer, TopBar } from "../../../components/SiteChrome";
 import { KeyVisual } from "../../../components/KeyVisual";
 import { TranslateVisual } from "../../../components/TranslateVisual";
+import { SchoolsVisual } from "../../../components/SchoolsVisual";
 import { Installers } from "../../../components/Installers";
 import { HomeClip } from "../../../components/HomeClip";
 import { GITHUB_URL, githubStars } from "../../../lib/github-stars";
@@ -90,6 +91,20 @@ export default async function WilmAIHomePage({ params }: Props) {
           <h3>{t.next.title}</h3>
           <p>{t.next.text}</p>
         </aside>
+      </section>
+
+      <section className="section" id="schools">
+        <div className="home-translate home-schools">
+          <div className="home-translate-text">
+            <p className="home-translate-label">{t.schools.label}</p>
+            <h2>{t.schools.title}</h2>
+            <p className="lead">{t.schools.lead}</p>
+            <ul className="home-audience-points">
+              {t.schools.points.map((point) => <li key={point}>{point}</li>)}
+            </ul>
+          </div>
+          <SchoolsVisual labels={t.schools.visual} />
+        </div>
       </section>
 
       <section className="section" id="translate">

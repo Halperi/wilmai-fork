@@ -1557,6 +1557,59 @@ main {
   }
 }
 
+/* Several schools' Wilmas (0.2.0): the translation section's layout, in teal, beside a sketch of the sign-in page. */
+.home-schools {
+  box-shadow: 5px 6px 0 var(--note-teal);
+}
+
+.home-schools .home-translate-label {
+  background: var(--note-teal);
+  color: var(--teal-deep);
+}
+
+.schools-visual {
+  transform: rotate(0.8deg);
+}
+
+.sv-school {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--rule);
+  border-radius: 10px;
+}
+
+.sv-on {
+  color: var(--teal-deep);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sv-child {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.sv-check {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--teal-deep);
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.sv-add {
+  align-self: flex-start;
+  border-color: var(--rule);
+}
+
 @media (max-width: 760px) {
   .home-audiences {
     grid-template-columns: minmax(0, 1fr);

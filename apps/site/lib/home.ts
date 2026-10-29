@@ -16,6 +16,8 @@ interface Choice { title: string; badge: string; body: string; detail: string; l
 interface KeyStep { title: string; body: string; visual: "signin" | "credit" | "key" | "app"; link?: { label: string; href: string } }
 /** The translation sketch (components/TranslateVisual.tsx): a message as the app shows it translated. */
 export interface TranslateVisualLabels { languages: string[]; chosen: string; title: string; from: string; note: string; showOriginal: string; text: string }
+/** The several-Wilmas sketch (components/SchoolsVisual.tsx): the sign-in page with two schools' Wilmas. */
+export interface SchoolsVisualLabels { title: string; signedIn: string; schools: { name: string; child: string }[]; add: string; open: string }
 /** Words in the key steps' sketches (components/KeyVisual.tsx) that aren't OpenAI's own labels. */
 export interface KeyVisualLabels { window: string; off: string; local: string; turnOn: string; once: string; reloadOff: string }
 interface Faq { q: string; a: string }
@@ -41,7 +43,9 @@ export interface HomeCopy {
   audiences: { eyebrow: string; title: string; students: Audience; parents: Audience };
   /** The teaser for what comes next, as a taped note. */
   next: { label: string; title: string; text: string };
-  /** Live translation, highlighted after the two audiences. */
+  /** Several schools' Wilmas in one app (0.2.0), highlighted after the two audiences. */
+  schools: { label: string; title: string; lead: string; points: string[]; visual: SchoolsVisualLabels };
+  /** Live translation, highlighted after several Wilmas. */
   translate: { label: string; title: string; lead: string; points: string[]; visual: TranslateVisualLabels };
   why: { eyebrow: string; title: string; lines: string[] };
   ai: { eyebrow: string; title: string; lead: string; choices: Choice[] };
@@ -120,7 +124,7 @@ const en: HomeCopy = {
       label: "For parents",
       title: "All your children in one place",
       points: [
-        "Every child side by side: timetables, homework, exams, grades and teachers' notes, without switching between children.",
+        "Every child side by side, even at schools on different Wilmas: timetables, homework, exams, grades and teachers' notes, without switching between children.",
         "Act without opening Wilma: reply to teachers, sign up for parents' evenings, report an absence.",
         "A notification when something needs you, and one click to sign back in when Wilma signs you out.",
         "Supercharge it with AI, if you want: it reads every message, bulletin and teacher's note, and puts what needs you first, with the deadline."
@@ -133,8 +137,30 @@ const en: HomeCopy = {
     title: "Your family calendar",
     text: "Exams, events and deadlines straight into Google Calendar, kept up to date as Wilma changes."
   },
+  schools: {
+    label: "New in 0.2.0",
+    title: "Children at different schools, in one view",
+    lead: "Are your children at schools on different Wilmas: another town, an upper secondary school, a private school? Sign in to each school's Wilma, and WilmAI Home shows all your children together.",
+    points: [
+      "Today, the inbox, the week, exams and grades show every child, whichever Wilma they're on.",
+      "Notifications come from every school's Wilma.",
+      "Add a school with Add another school's Wilma on the sign-in page. One Sign in signs in to all of them.",
+      "A new school can give a child a new profile, so Wilma lists them twice: untick the one you don't need.",
+      "A parent with children in two towns asked for this on GitHub."
+    ],
+    visual: {
+      title: "Sign in with Wilma",
+      signedIn: "Signed in",
+      schools: [
+        { name: "Espoon kaupunki", child: "Kiia" },
+        { name: "Tampereen kaupunki", child: "Otso" }
+      ],
+      add: "Add another school's Wilma",
+      open: "Open WilmAI Home"
+    }
+  },
   translate: {
-    label: "New",
+    label: "Also new",
     title: "Messages in your language",
     lead: "Does your child go to a Swedish-speaking school, or is Finnish not your first language? Choose a language in Settings, and WilmAI Home translates messages, bulletins and teachers' notes as they arrive, titles too.",
     points: [
@@ -256,6 +282,10 @@ const en: HomeCopy = {
         a: "The app is free. If you choose OpenAI, OpenAI bills your own key: in my family it has been tens of cents a month, even with me testing it all the time. The app stops at a monthly limit you set, from 50 cents to $3."
       },
       {
+        q: "My children's schools are on different Wilmas. Does that work?",
+        a: "Yes, from version 0.2.0. On the sign-in page, choose Add another school's Wilma and sign in there too, and the app shows all the children together, with notifications from every school. Several Wilmas are for a guardian's login; a student's own login has one."
+      },
+      {
         q: "Can it translate messages?",
         a: "Yes, if you choose OpenAI. Pick a language in Settings (Finnish, Swedish, English, Ukrainian or Arabic), and messages, bulletins and notes in another language are translated as they come in, titles too, with the original a click away. It usually costs a fraction of a cent a message. The app itself is in Finnish, Swedish or English."
       },
@@ -353,7 +383,7 @@ const fi: HomeCopy = {
       label: "Vanhemmalle",
       title: "Kaikki lapset yhdessä paikassa",
       points: [
-        "Kaikki lapset rinnakkain: lukujärjestykset, läksyt, kokeet, arvosanat ja opettajien merkinnät, ilman lapsesta toiseen vaihtamista.",
+        "Kaikki lapset rinnakkain, vaikka koulut olisivat eri Wilmoissa: lukujärjestykset, läksyt, kokeet, arvosanat ja opettajien merkinnät, ilman lapsesta toiseen vaihtamista.",
         "Hoida asiat avaamatta Wilmaa: vastaa opettajalle, ilmoittaudu vanhempainiltaan, ilmoita poissaolo.",
         "Ilmoitus, kun jokin vaatii sinua, ja yksi klikkaus takaisin sisään, kun Wilma kirjaa sinut ulos.",
         "Tehosta tekoälyllä, jos haluat: se lukee jokaisen viestin, tiedotteen ja opettajan merkinnän ja nostaa ensimmäiseksi sen, mikä vaatii sinua, määräaikoineen."
@@ -366,8 +396,30 @@ const fi: HomeCopy = {
     title: "Perheen kalenteri",
     text: "Kokeet, tapahtumat ja määräajat suoraan Google-kalenteriin, ja ne pysyvät ajan tasalla, kun Wilma muuttuu."
   },
+  schools: {
+    label: "Uutta versiossa 0.2.0",
+    title: "Eri koulujen lapset samassa näkymässä",
+    lead: "Käyvätkö lapsesi kouluja, joilla on eri Wilma: toisella paikkakunnalla, lukiossa tai yksityiskoulussa? Kirjaudu kunkin koulun Wilmaan, niin WilmAI Home näyttää kaikki lapsesi yhdessä.",
+    points: [
+      "Tänään, viestit, viikko, kokeet ja arvosanat näyttävät jokaisen lapsen, oli hän missä Wilmassa tahansa.",
+      "Ilmoitukset tulevat jokaisen koulun Wilmasta.",
+      "Lisää koulu kirjautumissivulla kohdasta Lisää toisen koulun Wilma. Yksi Kirjaudu sisään kirjaa sisään kaikkiin.",
+      "Uusi koulu voi antaa lapselle uuden profiilin, jolloin Wilma näyttää hänet kahdesti: poista valinta siltä, jota et tarvitse.",
+      "Tätä toivoi GitHubissa vanhempi, jonka lapset käyvät koulua kahdella paikkakunnalla."
+    ],
+    visual: {
+      title: "Kirjaudu Wilma-tunnuksilla",
+      signedIn: "Kirjautunut",
+      schools: [
+        { name: "Espoon kaupunki", child: "Kiia" },
+        { name: "Tampereen kaupunki", child: "Otso" }
+      ],
+      add: "Lisää toisen koulun Wilma",
+      open: "Avaa WilmAI Home"
+    }
+  },
   translate: {
-    label: "Uutta",
+    label: "Myös uutta",
     title: "Viestit omalla kielelläsi",
     lead: "Käykö lapsesi ruotsinkielistä koulua, tai puhutaanko kotonanne muuta kieltä? Valitse kieli asetuksista, niin WilmAI Home kääntää viestit, tiedotteet ja opettajien merkinnät sitä mukaa kuin ne tulevat, otsikoita myöten.",
     points: [
@@ -487,6 +539,10 @@ const fi: HomeCopy = {
       {
         q: "Mitä se maksaa?",
         a: "Sovellus on maksuton. Jos valitset OpenAI:n, OpenAI laskuttaa omaa avaintasi: perheessäni se on maksanut kymmeniä senttejä kuussa, vaikka olen testannut sitä koko ajan. Sovellus pysähtyy asettamaasi kuukausirajaan, 50 sentistä 3 dollariin."
+      },
+      {
+        q: "Lasteni koulut ovat eri Wilmoissa. Toimiiko se?",
+        a: "Toimii, versiosta 0.2.0 alkaen. Valitse kirjautumissivulla Lisää toisen koulun Wilma ja kirjaudu sinnekin, niin sovellus näyttää kaikki lapset yhdessä ja ilmoitukset jokaisen koulun Wilmasta. Useita Wilmoja voi olla huoltajan tunnuksilla; oppilaan omilla tunnuksilla on yksi."
       },
       {
         q: "Voiko se kääntää viestejä?",
