@@ -2,6 +2,7 @@ import "./shim.ts";
 import "fake-indexeddb/auto";
 import test from "node:test";
 import assert from "node:assert/strict";
+import { fileURLToPath } from "node:url";
 import { get, set } from "idb-keyval";
 import { accountKey, accountScope, accountStorageKey, activateAccount, flushPersisted, getState, loadPersisted, saveSession, savedSession, setState, updateSettings } from "../src/data/store.ts";
 import { leaveDemo, resetApp, resume, signInDemo, signOut } from "../src/data/engine.ts";
@@ -17,7 +18,7 @@ const record: LunaRecord = { v: "test", hash: "cached", at: 1, model: "test", ac
 
 function installAccount(account = own) {
   activateAccount(account);
-  const fixture = loadCases(new URL("./cases", import.meta.url).pathname).find((c) => c.id === "relative-tomorrow")!;
+  const fixture = loadCases(fileURLToPath(new URL("./cases", import.meta.url))).find((c) => c.id === "relative-tomorrow")!;
   const snapshot = snapshotOf(fixture);
   snapshot.account = account;
   setState({ snapshot, phase: "ready" });

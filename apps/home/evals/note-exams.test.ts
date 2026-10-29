@@ -1,6 +1,7 @@
 import { setNow } from "./shim.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
+import { fileURLToPath } from "node:url";
 import { loadSuite, snapshotOf, at, scoreCase } from "./lib.ts";
 import { noteGroups, buildFeed, examsNeedingAttention, forChildren, isNeedsYou } from "../src/data/feed.ts";
 import { noteExam } from "../src/data/note-exams.ts";
@@ -12,7 +13,7 @@ import { overrideBridge } from "../src/wilma/transport.ts";
 import type { DecisionQuestion } from "../src/luna/client.ts";
 import { retainedScheduleWeeks } from "../src/data/schedule.ts";
 
-const cases = loadSuite(new URL(".", import.meta.url).pathname);
+const cases = loadSuite(fileURLToPath(new URL(".", import.meta.url)));
 const fixture = () => {
   const c = cases.find((c) => c.id === "note-next-english-exam")!;
   setNow(at(c.today).getTime());

@@ -206,6 +206,9 @@ export function accountKey(account?: AccountInfo): string | null {
 export const accountScope = () => accountGeneration;
 export const resetScope = () => resetGeneration;
 
+/** Also invalidate readers when a newer sign-in replaces a session on the same account. */
+export function invalidateAccountScope() { accountGeneration += 1; }
+
 function rememberAccount() {
   const key = accountKey(state.snapshot?.account);
   if (!key) return;
@@ -340,8 +343,10 @@ export async function savedSession(): Promise<SavedSession | null> {
   return upgradeSession(await get<SavedSession>("session").catch(() => undefined));
 }
 
-export function saveSession(session: SavedSession | null) {
-  writes = writes.then(() => session ? set("session", session) : del("session")).catch(() => {});
+export function saveSession(session: SavedSession | null, current = () => true) {
+  writes = writes.then(() => {
+    if (current()) return session ? set("session", session) : del("session");
+  }).catch(() => {});
   return writes;
 }
 

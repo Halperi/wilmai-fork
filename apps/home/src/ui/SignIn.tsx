@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { getState, updateSettings, useApp } from "../data/store";
+import { getState, useApp } from "../data/store";
 import type { Viewer } from "../data/model";
 import { useLocalEdition } from "../data/edition";
 import { UpdatesCard } from "./Update";
 import { go } from "./shared";
-import { PasswordRefusedError, SignInAgainError, cliAccounts, signInDemo, signInWithCli, signInWithPassword, type CliAccount } from "../data/engine";
+import { SignInAgainError, cliAccounts, signInDemo, signInWithCli, signInWithPassword, type CliAccount } from "../data/engine";
 import { Brand, Icon } from "./bits";
 import { TENANTS, searchTenants, type Tenant } from "../data/tenants";
 import { isDesktopApp } from "../wilma/transport";
 import { t } from "../i18n";
+import { SignInCancelledError } from "../data/sign-in-attempt";
 
 /** A sentence translated whole, with the part between asterisks wrapped in markup: "School, *sorted*." */
 function marked(text: string, wrap: (part: string) => ReactNode): ReactNode {
@@ -56,7 +57,7 @@ export function SignIn() {
     try {
       await task();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      if (!(err instanceof SignInCancelledError)) setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(null);
     }
@@ -90,9 +91,7 @@ export function SignIn() {
       return;
     }
     void run("password", async () => {
-      const next = await signInWithPassword(tenant.url, username.trim(), password, undefined, false, who);
-      // Wilma took the password (a code may still follow): kept for one click next time, unless not wanted here.
-      updateSettings(remember ? { rememberPassword: true, wilmaPassword: password } : { rememberPassword: false, wilmaPassword: "", staySignedIn: false });
+      const next = await signInWithPassword(tenant.url, username.trim(), password, undefined, false, who, remember);
       setPassword("");
       if (next) setMfa(() => next.mfa);
     });
@@ -102,13 +101,8 @@ export function SignIn() {
   const signInAgain = () =>
     void run("again", async () => {
       if (!known) return;
-      try {
-        const next = await signInWithPassword(known.baseUrl, known.username, remembered);
-        if (next) setMfa(() => next.mfa);
-      } catch (err) {
-        if (err instanceof PasswordRefusedError) updateSettings({ wilmaPassword: "", staySignedIn: false });
-        throw err;
-      }
+      const next = await signInWithPassword(known.baseUrl, known.username, remembered);
+      if (next) setMfa(() => next.mfa);
     });
 
   const host = tenant ? new URL(tenant.url).host : null;
