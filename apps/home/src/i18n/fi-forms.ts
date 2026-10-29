@@ -35,6 +35,7 @@ export const FI_FORMS: Record<string, string> = {
   "Sending…": "Lähetetään…",
   "Send now": "Lähetä nyt",
   "Draft saved on this device": "Luonnos tallennettu tälle laitteelle",
+  "Draft": "Luonnos",
   "Drafts stay on this device until you send": "Luonnokset pysyvät tällä laitteella, kunnes lähetät",
   "Send…": "Lähetä…",
   "Sample family: nothing was sent to {to}.": "Esimerkkiperhe: vastaanottajalle {to} ei lähetetty mitään.",

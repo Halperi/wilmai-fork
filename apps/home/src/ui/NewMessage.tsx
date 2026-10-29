@@ -10,6 +10,7 @@ import type { MessageRecipient } from "@wilma-client/src/core";
 import type { MessageForm } from "@wilma-client/src/write";
 import { accountStorageKey, useApp } from "../data/store";
 import { isDemo, isSessionEnded, loadContacts, messageApi, preparedAgain, signInAgain, SESSION_CHANGED_NOTE } from "../data/engine";
+import { draftTo, openDraft, readDrafts, saveDraft, writeDrafts, type Drafts } from "../data/drafts";
 import type { Contacts } from "../data/model";
 import { Icon, Tab } from "./bits";
 import { go, hrefFor, useChildFilter } from "./shared";
@@ -63,7 +64,7 @@ type Stage =
 
 /**
  * `initialTeacher`: a teacher code ("KOJ") or a name ("Jussi Korhonen") to write to; `initialSubject`: a subject
- * to start with (from a note, say), used unless there's already a draft with text for this child.
+ * to start with (from a note, say), used unless there's already a draft with text to that teacher.
  */
 /** An error for the composer: Wilma ending the session says so in words, with "Sign in again" (the draft stays). */
 function errorStage(err: unknown, form?: MessageForm): Stage {
@@ -113,33 +114,46 @@ function Writer({ child, initialTeacher, initialSubject }: { child: string; init
   const draftKey = accountStorageKey(`newmsg.${child}`);
   const [subject, setSubject] = useState("");
   const [text, setText] = useState("");
+  // Until the parent writes, the words are what the app filled in (or a saved draft as it was): nothing to save.
+  const [written, setWritten] = useState(false);
+  // The saved draft the words opened from, so it moves with them if the parent sends them to someone else.
+  const draftFrom = useRef<string | null>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
   const demo = isDemo();
+  const stored = () => readDrafts(localStorage.getItem(draftKey));
+  const store = (drafts: Drafts) => {
+    const raw = writeDrafts(drafts);
+    if (raw) localStorage.setItem(draftKey, raw);
+    else localStorage.removeItem(draftKey);
+  };
 
-  // The child's contacts and their draft.
+  // The child's contacts.
   useEffect(() => {
     let live = true;
-    try {
-      const draft = JSON.parse(localStorage.getItem(draftKey) ?? "{}") as { subject?: string; text?: string };
-      // A draft with words in it wins; otherwise the subject the parent came with (from a note).
-      setSubject(initialSubject && !draft.text ? initialSubject : (draft.subject ?? ""));
-      setText(draft.text ?? "");
-    } catch {
-      setSubject("");
-      setText("");
-    }
     loadContacts(child)
       .then((c) => live && setContacts(c))
       .catch((err) => live && setLoadError(err instanceof Error ? err.message : String(err)));
     return () => {
       live = false;
     };
-  }, [child, draftKey]);
+  }, [child]);
 
+  // What the parent writes is their draft to whoever it's to.
   useEffect(() => {
-    if (subject || text) localStorage.setItem(draftKey, JSON.stringify({ subject, text }));
-    else localStorage.removeItem(draftKey);
-  }, [subject, text, draftKey]);
+    if (!written || !recipient) return;
+    const to = draftTo(recipient.composePath);
+    store(saveDraft(stored(), to, { subject, text }, draftFrom.current));
+    draftFrom.current = subject || text ? to : null;
+  }, [subject, text, written, recipient, draftKey]);
+
+  /** The words gone, and their draft (sent or thrown away). */
+  const forget = () => {
+    if (recipient) store(saveDraft(stored(), draftTo(recipient.composePath), { subject: "", text: "" }, draftFrom.current));
+    draftFrom.current = null;
+    setWritten(false);
+    setSubject("");
+    setText("");
+  };
 
   // What each teacher teaches this child, from the timetable's teacher codes.
   const subjects = useMemo(() => {
@@ -187,6 +201,13 @@ function Writer({ child, initialTeacher, initialSubject }: { child: string; init
 
   const choose = async (r: MessageRecipient) => {
     setRecipient(r);
+    if (!written) {
+      // Nothing written yet: the draft to this person, if there is one, else the subject the parent came with.
+      const opened = openDraft(stored(), draftTo(r.composePath), initialSubject, !initialTeacher);
+      draftFrom.current = opened.from;
+      setSubject(opened.words.subject);
+      setText(opened.words.text);
+    }
     setStage({ kind: "preparing" });
     try {
       const form = await messageApi(child).prepare(r);
@@ -202,8 +223,7 @@ function Writer({ child, initialTeacher, initialSubject }: { child: string; init
     try {
       await messageApi(child).send(form, subject.trim(), text);
       setStage({ kind: "sent", to: form.recipients.join(", ") || recipient?.name || "" });
-      setSubject("");
-      setText("");
+      forget();
     } catch (err) {
       try {
         const fresh = recipient ? await preparedAgain(err, () => messageApi(child).prepare(recipient)) : null;
@@ -219,9 +239,7 @@ function Writer({ child, initialTeacher, initialSubject }: { child: string; init
   const discard = () => {
     const kept = localStorage.getItem(draftKey);
     const back = location.hash;
-    setSubject("");
-    setText("");
-    localStorage.removeItem(draftKey);
+    forget();
     go("inbox");
     showToast(t("Draft discarded"), () => {
       if (kept) localStorage.setItem(draftKey, kept);
@@ -267,6 +285,7 @@ function Writer({ child, initialTeacher, initialSubject }: { child: string; init
   }
 
   if (!recipient) {
+    const drafted = new Set(Object.keys(stored()));
     return (
       <div className="reader compose-page">
         {head}
@@ -277,6 +296,7 @@ function Writer({ child, initialTeacher, initialSubject }: { child: string; init
           query={query}
           setQuery={setQuery}
           teaches={teaches}
+          drafted={(r) => drafted.has(draftTo(r.composePath))}
           onPick={(r) => void choose(r)}
         />
       </div>
@@ -285,6 +305,7 @@ function Writer({ child, initialTeacher, initialSubject }: { child: string; init
 
   const form = "form" in stage ? stage.form : undefined;
   const to = form?.recipients.length ? form.recipients.join(", ") : recipient.name;
+  const saved = (written || draftFrom.current !== null) && Boolean(subject || text);
   return (
     <div className="reader compose-page">
       {head}
@@ -306,12 +327,12 @@ function Writer({ child, initialTeacher, initialSubject }: { child: string; init
           ref={subjectRef}
           className="subject"
           value={subject}
-          onChange={(e) => setSubject(e.target.value)}
+          onChange={(e) => (setSubject(e.target.value), setWritten(true))}
           placeholder={t("Subject")}
           aria-label={t("Subject")}
           disabled={stage.kind === "sending"}
         />
-        <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={t("Write your message")} aria-label={t("Your message")} disabled={stage.kind === "sending"} />
+        <textarea value={text} onChange={(e) => (setText(e.target.value), setWritten(true))} placeholder={t("Write your message")} aria-label={t("Your message")} disabled={stage.kind === "sending"} />
         {stage.kind === "error" ? (
           <div className="notice err composer-error">
             <span>{stage.message}</span>
@@ -341,8 +362,8 @@ function Writer({ child, initialTeacher, initialSubject }: { child: string; init
           </div>
         ) : (
           <div className="composer-foot">
-            <span className="hint">{subject || text ? t("Draft saved on this device") : t("Drafts stay on this device until you send")}</span>
-            {subject || text ? (
+            <span className="hint">{saved ? t("Draft saved on this device") : t("Drafts stay on this device until you send")}</span>
+            {saved ? (
               <button type="button" className="btn btn-quiet btn-sm" onClick={discard}>
                 {t("Discard draft")}
               </button>
@@ -368,6 +389,7 @@ function Picker({
   query,
   setQuery,
   teaches,
+  drafted,
   onPick,
 }: {
   contacts: Contacts | null;
@@ -376,6 +398,7 @@ function Picker({
   query: string;
   setQuery: (q: string) => void;
   teaches: (r: MessageRecipient) => string | null;
+  drafted: (r: MessageRecipient) => boolean;
   onPick: (r: MessageRecipient) => void;
 }) {
   if (error) return <div className="notice err">{error}</div>;
@@ -397,12 +420,16 @@ function Picker({
         .slice(0, 40)
     : [];
 
-  const person = (r: MessageRecipient, note: string | null) => (
-    <button key={`${r.group}|${r.composePath}`} className="person" onClick={() => onPick(r)}>
-      <span>{r.name}</span>
-      {note ? <small>{note}</small> : null}
-    </button>
-  );
+  // A draft to someone opens only when writing to them, so the list says who has one.
+  const person = (r: MessageRecipient, note: string | null) => {
+    const shown = drafted(r) ? [t("Draft"), note].filter(Boolean).join(" · ") : note;
+    return (
+      <button key={`${r.group}|${r.composePath}`} className="person" onClick={() => onPick(r)}>
+        <span>{r.name}</span>
+        {shown ? <small>{shown}</small> : null}
+      </button>
+    );
+  };
 
   return (
     <>

@@ -35,6 +35,7 @@ export const SV_FORMS: Record<string, string> = {
   "Sending…": "Skickar…",
   "Send now": "Skicka nu",
   "Draft saved on this device": "Utkastet har sparats på den här enheten",
+  "Draft": "Utkast",
   "Drafts stay on this device until you send": "Utkasten stannar på den här enheten tills du skickar dem",
   "Send…": "Skicka…",
   "Sample family: nothing was sent to {to}.": "Exempelfamilj: inget skickades till {to}.",
