@@ -8,9 +8,11 @@
     "build": "next build",
     "preview": "next build && wrangler dev",
     "deploy": "next build && wrangler deploy",
-    "lint": "next lint && tsc -p worker"
+    "lint": "next lint && tsc -p worker",
+    "capture:home-tour": "node scripts/capture-home-tour.mjs"
   },
   "dependencies": {
+    "gsap": "3.15.0",
     "next": "15.5.28",
     "react": "19.3.0",
     "react-dom": "19.3.0"
@@ -21,6 +23,8 @@
     "@types/react-dom": "19.3.0",
     "eslint": "^8.57.1",
     "eslint-config-next": "15.5.28",
+    "playwright-core": "1.64.1",
+    "sharp": "0.35.5",
     "typescript": "5.6.3",
     "wrangler": "4.152.0"
   }

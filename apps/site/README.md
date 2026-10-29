@@ -27,7 +27,19 @@ static files and served by Cloudflare Workers.
   reload, pick Kiia, and take Today's top 816. The page's `<Image>` sizes and the Open Graph size follow the
   pictures. The banner's `home-thumb-*.png` are Today's top 1305×870 at 480×320, and the main README's
   `assets/readme-home-top.png` its top 1305×372 at 2×.
-- `public/home-clip-*.mp4`, `.webm`, `.jpg` — the hero's silent 27-second loop (components/HomeClip.tsx; the share image stays `home-today`). Recorded the same way as the screenshots (sample family, clock frozen, No AI, the menu's corner hidden) with Playwright's `recordVideo` at 1305×816, an injected cursor that follows the mouse and a "⌘K" badge when the command menu opens: Today, a message with sign-up slots, ⌘K search, the Week, Grades, back to Today. Encoded with ffmpeg: H.264 (yuv420p, `+faststart`, CRF 28) and VP9, and the first frame as the poster.
+- `public/home-tour/<lang>/*.webp`, `lib/home-tour.json` — the hero's tour (components/HomeTour.tsx), made the
+  way the product tours in Antti's decks are: screens of the app put in motion with GSAP, in code, so it stays
+  up to date with a new capture instead of a new recording. `pnpm --filter @wilm-ai/site capture:home-tour`
+  (scripts/capture-home-tour.mjs) starts the app's dev server and takes them with Google Chrome the same way as the
+  screenshots (sample family, clock frozen, No AI, the menu's foot left out), 1305×816 at 2×: Today (the whole
+  page), the inbox where messages and bulletins mix with an answer being written, ⌘K search over Today, the
+  Week with a lesson's day open beside it, Grades. It writes each screen at 2×
+  (lossless) and 1× (phones), and in `lib/home-tour.json` where each screen's parts are (Today's school days and
+  Needs you, the inbox's rows and the answer, the search menu's field and results, the week's days and the open
+  day's schedule, the grade rows), which the
+  tour moves and lifts out as cards. A line under the window says what each part shows (`hero.tour.captions` in
+  `lib/home.ts`; on phones every caption must fit two lines, or the window moves). After a capture, check each section's still (`window.__homeTour.showStill(i)`
+  in the browser): a part that moved in the app moves in the tour with it, but a new part needs a line in the tour.
 - `public/_headers` — security and cache headers
 - `public/_redirects` — `/get/claude` (the Claude Desktop extension) and `/changes` (release notes, linked from the update notices)
 - `public/og-en.png`, `public/og-fi.png` — the share images (what a link shows in WhatsApp, Facebook and the like), made from `og/card.html`: open it with `?lang=en` or `?lang=fi` at 1200×630 and screenshot it. Its copy follows the hero; update both together

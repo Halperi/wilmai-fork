@@ -1337,20 +1337,282 @@ main {
   max-width: 960px;
 }
 
-.home-preview img,
-.home-preview video {
-  display: block;
-  width: 100%;
-  height: auto;
-  border: 2px solid var(--ink);
-  border-radius: 14px;
-  box-shadow: 8px 10px 0 rgba(27, 43, 52, 0.12);
+/* The hero's tour (components/HomeTour.tsx): the app's screens in a window, laid out in their own 2× pixels
+   (2610×1632) and scaled to the window's width, with its timeline underneath. */
+/* The line under the window: what the part on show is for. Two lines' room on narrow screens, so nothing moves. */
+.ht-caption {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 1.25em;
+  margin: 22px 0 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(19px, 2.4vw, 26px);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-align: center;
+  text-wrap: balance;
 }
 
-.home-preview figcaption {
+@media (max-width: 760px) {
+  .ht-caption {
+    min-height: 2.5em;
+    margin-top: 16px;
+  }
+}
+
+.ht-frame {
+  position: relative;
+  aspect-ratio: 2610 / 1632;
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: #eef1f6;
+  box-shadow: 8px 10px 0 rgba(27, 43, 52, 0.12);
+  cursor: pointer;
+}
+
+.ht-still .ht-frame {
+  cursor: default;
+}
+
+.ht-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.ht-scaled {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2610px;
+  height: 1632px;
+  transform-origin: 0 0;
+}
+
+.ht-screen,
+.ht-pop {
+  position: absolute;
+  inset: 0;
+}
+
+/* The screen keeps its layers (views, dim, menu) to itself, so the lifted cards always sit above them. */
+.ht-screen {
+  overflow: hidden;
+  isolation: isolate;
+  z-index: 0;
+}
+
+.ht-pop {
+  z-index: 1;
+  pointer-events: none;
+}
+
+.ht-view {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+}
+
+.ht-side,
+.ht-main {
+  position: absolute;
+  overflow: hidden;
+}
+
+.ht-mv {
+  position: absolute;
+  top: 0;
+}
+
+.ht-view img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+}
+
+.ht-sp,
+.ht-box,
+.ht-layer {
+  position: absolute;
+  background-repeat: no-repeat;
+}
+
+/* Above the views (which take z 1–2 as they change) */
+.ht-layer {
+  z-index: 10;
+}
+
+.ht-card {
+  border-radius: 28px;
+  visibility: hidden;
+}
+
+.ht-ring {
+  border: 6px solid #2340a0;
+  border-radius: 22px;
+}
+
+/* ⌘K's menu, as the app draws it (its dialog's corners and shadow) */
+.ht-menu {
+  border-radius: 32px;
+  box-shadow: 0 60px 160px rgba(15, 23, 42, 0.32);
+}
+
+.ht-paused {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font: 700 12px var(--font-body), sans-serif;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.ht-controls {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.ht-play {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  margin-top: -6px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Pause: two bars; paused, a play triangle */
+.ht-play::before,
+.ht-play::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  width: 3px;
+  height: 10px;
+  border-radius: 1px;
+  background: var(--ink);
+}
+
+.ht-play::before {
+  left: 9px;
+}
+
+.ht-play::after {
+  left: 15px;
+}
+
+.ht-play.is-paused::before {
+  left: 10px;
+  width: 0;
+  height: 0;
+  border-radius: 0;
+  background: none;
+  border-style: solid;
+  border-width: 5.5px 0 5.5px 9px;
+  border-color: transparent transparent transparent var(--ink);
+}
+
+.ht-play.is-paused::after {
+  display: none;
+}
+
+.ht-timeline {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: start;
+  gap: 10px;
+}
+
+/* Bars on one line whatever the labels' length */
+.ht-seg {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.ht-bar {
+  display: block;
+  position: relative;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(27, 43, 52, 0.15);
+}
+
+.ht-bar i {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+
+.ht-lbl {
+  display: block;
+  margin-top: 8px;
   font-size: 13px;
-  color: var(--ink-soft);
-  margin-top: 16px;
+  color: var(--ink);
+  opacity: 0.45;
+}
+
+.ht-seg:hover .ht-lbl {
+  opacity: 0.75;
+}
+
+.ht-seg.active .ht-lbl {
+  opacity: 1;
+  font-weight: 700;
+}
+
+.ht-seg:focus-visible,
+.ht-play:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}
+
+@media (max-width: 760px) {
+  .ht-timeline {
+    gap: 6px;
+  }
+
+  .ht-lbl {
+    font-size: 11.5px;
+  }
+}
+
+@media print {
+  .ht-scaled,
+  .ht-controls,
+  .ht-paused {
+    display: none;
+  }
+
+  .ht-poster {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
 }
 
 /* A few short lines, read at a glance. */

@@ -1,4 +1,5 @@
 import release from "./home-release.json";
+import type { TourLabels } from "../components/HomeTour";
 import type { Lang } from "./i18n";
 
 /**
@@ -36,8 +37,10 @@ export interface HomeCopy {
     more: string;
     requirements: string;
     sample: string;
-    /** The hero's clip, for screen readers. */
+    /** The hero's tour (components/HomeTour.tsx), for screen readers. */
     clip: string;
+    /** The tour's timeline and play button. */
+    tour: TourLabels;
   };
   /** Students and parents side by side, each with a screenshot (public/home-student-*.png, home-parent-*.png). */
   audiences: { eyebrow: string; title: string; students: Audience; parents: Audience };
@@ -103,7 +106,25 @@ const en: HomeCopy = {
     more: "What it does",
     requirements: "For Mac (Apple Silicon, macOS 13.3 or later) and Windows 10 or 11. Free and open, now in beta.",
     sample: "The app with a made-up sample family.",
-    clip: "WilmAI Home in use: today's view, a message with times to sign up for, search, two children's week side by side, and grades."
+    clip: "WilmAI Home in use: today's view, a message with times to sign up for, search, two children's week side by side, and grades.",
+    tour: {
+      sections: "Parts of the tour",
+      paused: "Paused",
+      play: "Play the tour",
+      pause: "Pause the tour",
+      today: "Today",
+      message: "Inbox",
+      search: "Search",
+      week: "Week",
+      grades: "Grades",
+      captions: {
+        today: ["Every child's day at a glance.", "Always know what needs you first."],
+        message: ["Messages, news and bulletins, all in one view.", "Reply right away, without opening Wilma."],
+        search: "Search everything at once.",
+        week: "Week and calendar views for the whole family.",
+        grades: "Grades and notes in one view, with averages and trends."
+      }
+    }
   },
   audiences: {
     eyebrow: "two ways to use it",
@@ -153,7 +174,7 @@ const en: HomeCopy = {
       signedIn: "Signed in",
       schools: [
         { name: "Espoon kaupunki", child: "Kiia" },
-        { name: "Tampereen kaupunki", child: "Otso" }
+        { name: "Helsingin kaupunki", child: "Otso" }
       ],
       add: "Add another school's Wilma",
       open: "Open WilmAI Home"
@@ -362,7 +383,25 @@ const fi: HomeCopy = {
     more: "Mitä se tekee",
     requirements: "Macille (Apple Silicon, macOS 13.3 tai uudempi) ja Windows 10:lle tai 11:lle. Ilmainen ja avoin, nyt beetana.",
     sample: "Sovellus kuvitteellisen esimerkkiperheen tiedoilla.",
-    clip: "WilmAI Home käytössä: päivän näkymä, viesti, jossa on aikoja ilmoittautua, haku, kahden lapsen viikko rinnakkain ja arvosanat."
+    clip: "WilmAI Home käytössä: päivän näkymä, viesti, jossa on aikoja ilmoittautua, haku, kahden lapsen viikko rinnakkain ja arvosanat.",
+    tour: {
+      sections: "Esittelyn osat",
+      paused: "Tauko",
+      play: "Jatka esittelyä",
+      pause: "Keskeytä esittely",
+      today: "Tänään",
+      message: "Viestit",
+      search: "Haku",
+      week: "Viikko",
+      grades: "Arvosanat",
+      captions: {
+        today: ["Jokaisen lapsen päivä yhdellä silmäyksellä.", "Tiedät aina, mikä vaatii sinua ensin."],
+        message: ["Viestit ja tiedotteet samassa näkymässä.", "Vastaa heti, avaamatta Wilmaa."],
+        search: "Hae kaikesta kerralla.",
+        week: "Viikko- ja kalenterinäkymä koko perheelle.",
+        grades: "Arvosanat ja merkinnät keskiarvoineen."
+      }
+    }
   },
   audiences: {
     eyebrow: "kaksi tapaa käyttää",
@@ -412,7 +451,7 @@ const fi: HomeCopy = {
       signedIn: "Kirjautunut",
       schools: [
         { name: "Espoon kaupunki", child: "Kiia" },
-        { name: "Tampereen kaupunki", child: "Otso" }
+        { name: "Helsingin kaupunki", child: "Otso" }
       ],
       add: "Lisää toisen koulun Wilma",
       open: "Avaa WilmAI Home"
