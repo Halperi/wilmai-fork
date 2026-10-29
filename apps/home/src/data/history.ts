@@ -13,13 +13,17 @@ import { useSyncExternalStore } from "react";
 /** Which WilmAI program saved a session, as the shared session file says ("home", "cli", "mcp"); null when it doesn't say. */
 export type Program = string | null;
 
-export type SessionHistoryEntry =
+export type SessionHistoryEntry = (
   /** This app logged in: with the password typed here, the CLI's saved login, or by itself (staying signed in). */
   | { at: number; kind: "signed-in"; how: "password" | "saved-login" | "automatic" }
   /** This app continued a live session another program saved (no login, nothing else ended). */
   | { at: number; kind: "continued"; by: Program; savedAt: number | null; midway: boolean }
   /** Wilma ended this app's session. `by`/`savedAt`: a newer login another WilmAI program saved, if any. */
-  | { at: number; kind: "ended"; by: Program; savedAt: number | null; lastOk: number | null; other: boolean };
+  | { at: number; kind: "ended"; by: Program; savedAt: number | null; lastOk: number | null; other: boolean }
+) & {
+  /** With more than one Wilma (data/logins.ts), whose: its school's name. */
+  wilma?: string;
+};
 
 const KEY = "wilmai.sessionHistory";
 const MAX = 30;

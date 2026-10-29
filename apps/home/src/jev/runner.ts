@@ -33,6 +33,7 @@ import { isUnexplained, labelKey } from "../data/notes";
 import { askDecisions } from "../luna/decisions";
 import { LunaError, openAIBlockedMessage, openAIReady } from "../luna/client";
 import { saveCompareReport } from "../luna/compare";
+import { aboutShown } from "../data/logins";
 import { t } from "../i18n";
 
 const MAX_TEXT = 6000;
@@ -131,8 +132,8 @@ function jobs(snap: Snapshot, who: Viewer): Job[] {
   const recent = (d: Date | null, days: number) => d && Date.parse(now) - d.getTime() < days * 86_400_000;
 
   for (const m of Object.values(snap.messages)) {
-    // The family's own message, not answered yet: nothing to ask about it until someone answers.
-    if ((!recent(m.sentAt, 60) && !m.unreadInWilma) || awaitingReply(m)) continue;
+    // The family's own message, not answered yet: nothing to ask about it until someone answers. An unticked child's isn't asked about.
+    if ((!recent(m.sentAt, 60) && !m.unreadInWilma) || awaitingReply(m) || !aboutShown(snap, m.children)) continue;
     const item: Record<string, Entry> = {
       type: "Wilma message",
       from: m.sender,
@@ -150,7 +151,7 @@ function jobs(snap: Snapshot, who: Viewer): Job[] {
     list.push({ key: `m:${m.id}`, ...triage, item, pupil: first(m.children), at: m.sentAt.getTime() });
   }
   for (const n of Object.values(snap.news)) {
-    if (!n.pinned && !recent(n.published, 45)) continue;
+    if ((!n.pinned && !recent(n.published, 45)) || !aboutShown(snap, n.children)) continue;
     const item: Record<string, Entry> = {
       type: "Wilma bulletin to families",
       from: n.author,

@@ -5,12 +5,15 @@
  * USD and a separate pause limit (luna/client.ts). The tokens and prices
  * behind the recorded spending are under Details.
  */
-import { useEffect, useRef, useState } from "react";
-import { getState, updateSettings, useApp } from "../data/store";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { getState, updateSettings, useApp, useViewer } from "../data/store";
 import { useLocalEdition } from "../data/edition";
 import { shortDate } from "../data/dates";
 import { AI_BUDGET_STEP, MAX_AI_BUDGET, MIN_AI_BUDGET, budgetText, normalizeAIBudget } from "../data/ai-budget";
-import { intelligenceOn, intelligenceProvider, type UsageBucket } from "../data/model";
+import { intelligenceOn, intelligenceProvider, type Settings as SettingsModel, type UsageBucket } from "../data/model";
+import { buildFeed } from "../data/feed";
+import { DEFAULT_TRANSLATOR, TRANSLATION_LANGUAGES, TRANSLATORS, itemsPerMonth, needsTranslation, translationAvailable, translationSource } from "../ai/translate";
+import { runTranslations } from "../data/translations";
 import { localPackStatus, stopLocalSetup } from "../ai/managed";
 import { LocalAISetup } from "./LocalAISetup";
 import { OpenAIBlocked } from "./OpenAIBlocked";
@@ -25,6 +28,91 @@ import { language, plural, t } from "../i18n";
 const money = (n: number): string => `$${n.toFixed(2)}`;
 const precise = (n: number) => `$${n.toFixed(n < 0.01 ? 4 : n < 1 ? 3 : 2)}`;
 const tokens = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)} M` : n >= 1e4 ? `${Math.round(n / 1e3)} k` : String(n));
+
+/** A sentence translated whole, with the part between asterisks wrapped in markup. */
+function marked(text: string, wrap: (part: string) => ReactNode): ReactNode {
+  const [before, part, after = ""] = text.split("*");
+  return part === undefined ? text : (
+    <>
+      {before}
+      {wrap(part)}
+      {after}
+    </>
+  );
+}
+
+/** A fraction of a cent, in dollars as OpenAI bills them: "$0.0001", "$0.005". */
+const dollars = (n: number) => `$${n.toFixed(Math.max(2, -Math.floor(Math.log10(n))))}`;
+
+/** With OpenAI, in the AI card: what messages are translated into as they come, or nothing, and which model translates (data/translations.ts). */
+function TranslationSettings({ settings }: { settings: SettingsModel }) {
+  const chosen = settings.translateTo ?? "off";
+  const translator = settings.translateModel ?? DEFAULT_TRANSLATOR;
+  const status = useApp((s) => s.translationStatus);
+  // A usual month's cost, from what this family gets in another language than the one chosen.
+  const snapshot = useApp((s) => s.snapshot);
+  const local = useApp((s) => s.local);
+  const monthly = useMemo(() => {
+    if (!snapshot || chosen === "off") return 0;
+    const items = buildFeed({ snapshot, local, jev: {}, luna: {} }).filter((i) => needsTranslation(translationSource(i, snapshot), chosen));
+    return Math.round(itemsPerMonth(items));
+  }, [snapshot, local, chosen]);
+  const change = (patch: Partial<SettingsModel>) => {
+    updateSettings(patch);
+    void runTranslations();
+  };
+  return (
+    <section className="ai-part" aria-labelledby="ai-translate-title">
+      <h3 id="ai-translate-title">
+        <Icon name="translate" /> {t("Translating messages")}
+      </h3>
+      <p>{t("Messages, bulletins and notes in another language are translated as they come in, titles too. Choose the language, or none.")}</p>
+      <div role="group" aria-label={t("Translate into")} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <button className="seg" aria-pressed={chosen === "off"} onClick={() => change({ translateTo: "off" })}>
+          {t("No translations")}
+        </button>
+        {Object.entries(TRANSLATION_LANGUAGES).map(([id, name]) => (
+          <button key={id} className="seg" lang={id} aria-pressed={chosen === id} onClick={() => change({ translateTo: id as keyof typeof TRANSLATION_LANGUAGES })}>
+            {name}
+          </button>
+        ))}
+      </div>
+      {chosen !== "off" ? (
+        <fieldset className="translator">
+          <legend>{t("Translator")}</legend>
+          {TRANSLATORS.map((x) => (
+            <label key={x.model} className="switch">
+              <input type="radio" name="translator" checked={translator === x.model} onChange={() => change({ translateModel: x.model })} />
+              <div>
+                <b>
+                  {t(x.label)}
+                  {x.model === DEFAULT_TRANSLATOR ? <span className="translator-badge">{t("Recommended")}</span> : null}
+                </b>
+                <span className="translator-cost">
+                  {monthly
+                    ? t("About {cost} a message, usually about {month} a month.", { cost: dollars(x.perMessage), month: dollars(monthly * x.perMessage) })
+                    : t("About {cost} a message.", { cost: dollars(x.perMessage) })}
+                </span>
+                <span>
+                  {t(x.help)}
+                </span>
+              </div>
+            </label>
+          ))}
+          <p className="help-line">
+            {monthly ? `${plural(monthly, "About {n} message, bulletin or note a month comes in another language.", "About {n} messages, bulletins and notes a month come in another language.")} ` : ""}
+            {t(
+              "Choosing a language also translates the last 30 days and the titles in your lists, once. That usually costs a few tens of cents, well within your monthly limit of {limit}, and WilmAI never spends more than the limit.",
+              { limit: budgetText(normalizeAIBudget(settings.aiMonthlyBudgetUsd)) }
+            )}
+          </p>
+          {status.running ? <p className="help-line">{t("Translating: {done} of {total}…", { done: status.done, total: status.total })}</p> : null}
+          {status.error ? <div className="notice err">{t("Translating stopped: {why}", { why: status.error })}</div> : null}
+        </fieldset>
+      ) : null}
+    </section>
+  );
+}
 
 const AI_CHOICES = [
   { value: "off", label: "No AI", badge: "Default", icon: "book", help: "You read and sort everything yourself.", detail: "Free" },
@@ -56,6 +144,7 @@ export function AISettings() {
   const usage = useApp((s) => s.usage);
   const luna = useApp((s) => s.luna);
   const on = intelligenceOn(settings);
+  const student = useViewer() === "student";
   const [choice, setChoice] = useState(settings.localAI?.setupPending ? "local" as const : intelligenceProvider(settings));
   const sourceGeneration = useRef(0);
   // The key being typed: shown when there's none yet, or while replacing it.
@@ -227,6 +316,15 @@ export function AISettings() {
           );
         })}
       </fieldset>
+      {/* What each AI sees, by the choice. */}
+      <p className="help-line">
+        {marked(
+          student
+            ? t("*OpenAI sees one item at a time,* with your first name and class, when you choose OpenAI. Local AI reads everything on this Mac, and No AI reads nothing.")
+            : t("*OpenAI sees one item at a time,* with your children's first names and classes, when you choose OpenAI. Local AI reads everything on this Mac, and No AI reads nothing."),
+          (part) => <b>{part}</b>
+        )}
+      </p>
       {choice === "local" ? (
         <>
           <LocalAISetup />
@@ -264,35 +362,35 @@ export function AISettings() {
         </>
       ) : (
         <>
-          <div className="ai-cost">
-            <div>
-              <span>{t("This month (USD)")}</span>
-              <b>{money(spent)}</b>
+          <div className="ai-month">
+            <div className="ai-month-line">
+              <span>{t("This month {spent} of {limit}", { spent: money(spent), limit: limitText })}</span>
+              {reading.running ? (
+                <span>{t("Reading: {done} of {total}…", { done: reading.done, total: reading.total })}</span>
+              ) : sorting.running ? (
+                <span>{t("Sorting: {done} of {total}…", { done: sorting.done, total: sorting.total })}</span>
+              ) : waiting && !errors.length && !blocked ? (
+                <span>{plural(waiting, "{n} item waits to be read.", "{n} items wait to be read.")}</span>
+              ) : null}
             </div>
-            <div>
-              <span>{t("Usually")}</span>
-              <b>{t("Tens of cents")}</b>
-              <small>{t("a month")}</small>
-            </div>
-            <div>
-              <span>{t("Monthly limit (USD)")}</span>
-              <b>{limitText}</b>
-              <small>{t("AI pauses there")}</small>
+            <div className="ai-meter" aria-hidden="true">
+              <i style={{ width: `${Math.min(100, (spent / limit) * 100)}%` }} />
             </div>
           </div>
-          <p className="help-line">
-            {t("OpenAI bills your key directly. If a month reaches the limit, WilmAI Intelligence pauses until {date} and says so here.", { date: shortDate(nextMonth()) })}
-          </p>
-          {sorting.running ? <p className="help-line">{t("Sorting: {done} of {total}…", { done: sorting.done, total: sorting.total })}</p> : null}
-          {reading.running ? <p className="help-line">{t("Reading: {done} of {total}…", { done: reading.done, total: reading.total })}</p> : null}
-          {!reading.running && waiting && !errors.length && !blocked ? <p className="help-line">{plural(waiting, "{n} item waits to be read.", "{n} items wait to be read.")}</p> : null}
           <OpenAIBlocked where="settings" />
           {errors.map((e) => (
             <div key={e} className="notice err">
               {e}
             </div>
           ))}
+        </>
+      )}
+      {check ? <div className={`notice ${check.ok ? "ok" : "err"}`}>{check.text}</div> : null}
+      {on && choice === "openai" && translationAvailable(settings) ? <TranslationSettings settings={settings} /> : null}
 
+      {on && choice === "openai" ? (
+        <details className="ai-details">
+          <summary>{t("OpenAI key, limit and usage")}</summary>
           <div className="field ai-key-row">
             <label htmlFor="openai-key">{t("OpenAI API key")}</label>
             {replacing ? (
@@ -312,24 +410,16 @@ export function AISettings() {
               {kept} {t("Sent only to OpenAI.")}
             </span>
           </div>
-        </>
-      )}
-      {choice === "openai" ? (
-        <>
           <div className="field ai-budget-control">
             <label htmlFor="ai-monthly-budget">{t("Monthly limit (USD)")} <output htmlFor="ai-monthly-budget">{limitText}</output></label>
             <input id="ai-monthly-budget" type="range" min={MIN_AI_BUDGET} max={MAX_AI_BUDGET} step={AI_BUDGET_STEP} value={limit} onChange={(e) => changeBudget(Number(e.target.value))} aria-valuetext={t("{amount} US dollars per month", { amount: limit })} aria-describedby="ai-budget-help" disabled={busy || reading.running || sorting.running} />
             <div className="ai-budget-scale" aria-hidden="true"><span>{budgetText(MIN_AI_BUDGET)}</span><span>{budgetText(MAX_AI_BUDGET)}</span></div>
-            <span id="ai-budget-help" className="help">{t("$0.50–$3 a month, $1 to start with. Today warns you at 80%, and AI pauses at the limit. Raising the limit picks up what's waiting.")}</span>
+            <span id="ai-budget-help" className="help">
+              {t("$0.50–$3 a month, $1 to start with. Today warns you at 80%, and AI pauses at the limit. Raising the limit picks up what's waiting.")}{" "}
+              {t("OpenAI bills your key directly. If a month reaches the limit, WilmAI Intelligence pauses until {date} and says so here.", { date: shortDate(nextMonth()) })}{" "}
+              {t("The first reading of your older messages costs a little more. Amounts are in US dollars, as OpenAI bills them.")}
+            </span>
           </div>
-          <p className="help-line">{t("The first reading of your older messages costs a little more. Amounts are in US dollars, as OpenAI bills them.")}</p>
-        </>
-      ) : null}
-      {check ? <div className={`notice ${check.ok ? "ok" : "err"}`}>{check.text}</div> : null}
-
-      {on && choice === "openai" ? (
-        <details className="ai-details">
-          <summary>{t("Details")}</summary>
           <div className="stats">
             <div>
               <b>{records.length}</b>

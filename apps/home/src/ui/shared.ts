@@ -10,12 +10,12 @@ import { language, t } from "../i18n";
 
 /* ---------- Routing (hash, so it works from a file or an extension page) ---------- */
 
-export type Route = { view: "today" | "inbox" | "week" | "calendar" | "exams" | "grades" | "notes" | "homework" | "settings"; item: string | null };
+export type Route = { view: "today" | "inbox" | "week" | "calendar" | "exams" | "grades" | "notes" | "homework" | "settings" | "wilmas"; item: string | null };
 
 function parse(): Route {
   const [view, ...rest] = location.hash.replace(/^#\/?/, "").split("/");
   const item = rest.length ? decodeURIComponent(rest.join("/")) : null;
-  if (view === "inbox" || view === "week" || view === "calendar" || view === "exams" || view === "grades" || view === "notes" || view === "homework" || view === "settings") return { view, item };
+  if (view === "inbox" || view === "week" || view === "calendar" || view === "exams" || view === "grades" || view === "notes" || view === "homework" || view === "settings" || view === "wilmas") return { view, item };
   return { view: "today", item: null };
 }
 

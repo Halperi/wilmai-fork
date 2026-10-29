@@ -64,6 +64,35 @@
   }
 }
 
+/* Dark chosen in the menu (theme in Settings), whatever the computer says. */
+:root[data-theme="dark"] {
+  --paper: #0e1322;
+  --paper-2: #121931;
+  --sheet: #171f37;
+  --ink: #e7ebf6;
+  --ink-2: #b0b8cf;
+  --ink-3: #7f89a5;
+  --rule: #263050;
+  --rule-2: #313c60;
+  --pen: #9cb2ff;
+  --pen-soft: #1f2b52;
+  --marker: #f2cf3a;
+  --marker-soft: #3a3313;
+  --on-marker: #18160a;
+  --on-pen: #0e1322;
+  --good: #5fd3a0;
+  --good-soft: #143326;
+  --warn: #ff917a;
+  --warn-soft: #3a1d18;
+  --c0: #6c9bff;
+  --c1: #ff8166;
+  --c2: #4cc794;
+  --c3: #e0a93a;
+  --c4: #b48cff;
+  --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 6px 20px rgb(0 0 0 / 25%);
+  color-scheme: dark;
+}
+
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
@@ -171,20 +200,36 @@ a { color: var(--pen); }
 .nav a:hover { background: var(--sheet); color: var(--ink); }
 .nav a[aria-current="page"] { background: var(--sheet); color: var(--ink); box-shadow: var(--shadow); }
 .nav a .badge { margin-left: auto; font-size: 12px; background: var(--marker); color: var(--on-marker); border-radius: 999px; padding: 2px 7px; font-weight: 700; }
-.nav-foot { position: relative; display: flex; align-items: center; gap: 6px; padding: 12px 2px 0 4px; border-top: 1px solid var(--rule); }
+/* The way back to the Wilma page (or out of the sample family): a menu item like Settings, its school (or how many
+   Wilmas) under it, and what's stored where on hover. */
+.nav-wilmas-wrap { position: relative; }
+.nav .nav-wilmas { display: flex; align-items: center; gap: 11px; width: 100%; padding: 9px 10px; border: 0; border-radius: 10px; background: none; font: inherit; font-weight: 600; color: var(--ink-2); text-align: left; text-decoration: none; cursor: pointer; }
+.nav .nav-wilmas:hover { background: var(--sheet); color: var(--ink); }
+.nav .nav-wilmas:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--pen); }
+.nav-wilmas .nav-label { display: grid; min-width: 0; line-height: 1.25; white-space: normal; } /* the label wraps rather than cut: it says where it goes */
+.nav-wilmas small { color: var(--ink-3); font-size: 12px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nav-tip { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); padding: 10px 12px; border-radius: 10px; background: var(--ink); color: var(--paper); font-size: 13px; line-height: 1.45; box-shadow: var(--shadow); opacity: 0; transform: translateY(4px); pointer-events: none; transition: opacity 120ms, transform 120ms; z-index: 30; }
-.nav-account:hover + .nav-tip, .nav-account:focus-visible + .nav-tip { opacity: 1; transform: none; transition-delay: 250ms; }
+.nav-tip-schools { display: block; margin-bottom: 4px; }
+.nav-wilmas:hover + .nav-tip, .nav-wilmas:focus-visible + .nav-tip { opacity: 1; transform: none; transition-delay: 250ms; }
 .rail .nav-tip { display: none; }
-.nav .nav-account { flex: 1; min-width: 0; display: grid; gap: 1px; padding: 4px 6px; border-radius: 8px; font-size: 12.5px; font-weight: 400; cursor: default; outline: none; }
-.nav .nav-account:focus-visible { box-shadow: 0 0 0 2px var(--pen); }
-.nav-account b { color: var(--ink-2); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nav-account span { display: flex; align-items: center; gap: 5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nav-account .icon { width: 12px; height: 12px; flex: none; }
 /* The version, under the account: opens Settings' Updates card */
 .nav .nav-version { display: block; margin: 2px 2px 0 4px; padding: 2px 6px; border: 0; border-radius: 6px; background: none; color: var(--ink-3); font-size: 11.5px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
 .nav .nav-version:hover { color: var(--ink-2); }
 .nav .nav-version.has-update span { color: var(--pen); font-weight: 600; }
 .rail .nav-version { display: none; }
+/* The foot, under a rule: the theme (light, dark, or the computer's) and the fold button, then the version. */
+.nav-meta { display: grid; gap: 4px; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--rule); }
+.nav-meta-row { display: flex; align-items: center; justify-content: space-between; padding: 0 0 0 4px; }
+.nav-meta .nav-version { margin-top: 0; }
+.rail .nav-meta { width: 48px; }
+.rail .nav-meta-row { justify-content: center; padding: 0; }
+.theme-choice.compact { display: flex; flex: none; gap: 1px; }
+.theme-choice.compact button { all: unset; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; color: var(--ink-3); cursor: pointer; }
+.theme-choice.compact button:hover { color: var(--ink); }
+.theme-choice.compact button[aria-pressed="true"] { background: var(--sheet); color: var(--ink); box-shadow: inset 0 0 0 1px var(--rule-2); }
+.theme-choice.compact button:focus-visible { box-shadow: 0 0 0 2px var(--pen); }
+.theme-choice.compact .icon { width: 14px; height: 14px; }
+.rail .theme-choice.compact { display: none; }
 
 .main { min-width: 0; display: flex; flex-direction: column; }
 .topbar {
@@ -480,7 +525,7 @@ a { color: var(--pen); }
 .continue-as > span > small { color: inherit; opacity: .78; font-size: 12px; font-weight: 400; }
 .remember { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; cursor: pointer; }
 .remember input { margin-top: 3px; }
-.remember span { display: flex; flex-direction: column; gap: 2px; }
+.remember > span { display: flex; flex-direction: column; gap: 2px; }
 .remember small { color: var(--ink-3); font-size: 12.5px; }
 .demo-pv { background: var(--sheet); border-radius: var(--radius); box-shadow: var(--shadow); max-width: 520px; padding: 6px 0; }
 
@@ -503,7 +548,7 @@ a { color: var(--pen); }
     position: fixed; z-index: 20; bottom: 0; left: 0; right: 0; top: auto; height: auto; flex-direction: row;
     padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); border-right: 0; border-top: 1px solid var(--rule); justify-content: space-around;
   }
-  .brand, .nav-foot, .nav .nav-version { display: none; }
+  .brand, .nav-wilmas-wrap, .nav-meta { display: none; }
   .nav a { flex-direction: column; gap: 2px; font-size: 11.5px; padding: 6px 10px; }
   .nav a .badge { position: absolute; margin: -4px 0 0 18px; font-size: 10px; padding: 1px 5px; }
   .main { padding-bottom: 70px; }
@@ -699,11 +744,9 @@ a { color: var(--pen); }
 .rail .brand { font-size: 0; padding: 0 0 18px; gap: 0; }
 .rail .brand small { display: none; }
 .rail .brand-mark { margin: -4px 0; }
-.rail .nav a { position: relative; width: 48px; height: 44px; justify-content: center; padding: 0; gap: 0; }
+.rail .nav a, .rail .nav .nav-wilmas { position: relative; width: 48px; height: 44px; justify-content: center; padding: 0; gap: 0; }
 .rail .nav-label { display: none; }
 .rail .nav a .badge { position: absolute; top: 3px; right: 2px; margin: 0; font-size: 10px; padding: 1px 5px; }
-.rail .nav-foot { padding: 10px 0 0; justify-content: center; }
-.rail .nav-account { display: none; }
 
 .details-docked { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; border-left: 1px solid var(--rule); background: var(--sheet); }
 .details-docked[hidden] { display: none; }
@@ -898,10 +941,13 @@ a { color: var(--pen); }
 .nk-praise { --k: var(--good); --k-soft: var(--good-soft); }
 .nk-other { --k: var(--ink-3); --k-soft: var(--paper-2); }
 @media (prefers-color-scheme: dark) {
-  .nk-late { --k: #f0b45c; --k-soft: #3a2a10; }
-  .nk-forgot { --k: #f2a065; --k-soft: #3a2414; }
-  .nk-remark { --k: #c3a2f5; --k-soft: #2c2142; }
+  :root:not([data-theme="light"]) .nk-late { --k: #f0b45c; --k-soft: #3a2a10; }
+  :root:not([data-theme="light"]) .nk-forgot { --k: #f2a065; --k-soft: #3a2414; }
+  :root:not([data-theme="light"]) .nk-remark { --k: #c3a2f5; --k-soft: #2c2142; }
 }
+:root[data-theme="dark"] .nk-late { --k: #f0b45c; --k-soft: #3a2a10; }
+:root[data-theme="dark"] .nk-forgot { --k: #f2a065; --k-soft: #3a2414; }
+:root[data-theme="dark"] .nk-remark { --k: #c3a2f5; --k-soft: #2c2142; }
 .note-counts { padding: 14px 18px 10px; margin-bottom: 24px; }
 .nc-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 4px 0; }
 .nc-row + .nc-row { border-top: 1px solid var(--rule); padding-top: 10px; margin-top: 6px; }
@@ -1107,7 +1153,6 @@ button.hwm-cell.lesson:focus-visible::after { box-shadow: 0 0 0 2px var(--sheet)
   .nav-sep { display: none; }
   .nav a.nav-settings { margin: 0; }
 }
-.desktop .nav-account { -webkit-app-region: no-drag; }
 
 /* A quiet dot on Exams: an exam today or tomorrow */
 .nav-dot { margin-left: auto; width: 7px; height: 7px; border-radius: 50%; background: var(--marker); box-shadow: 0 0 0 2px color-mix(in srgb, var(--marker) 30%, transparent); }
@@ -1357,11 +1402,16 @@ button.gt-term[aria-pressed="true"], button.gt-now[aria-pressed="true"] { color:
 /* Settings → AI: the key, what it costs, the details folded away */
 .ai-key { display: flex; gap: 8px; flex-wrap: wrap; }
 .ai-key .input { flex: 1 1 260px; min-width: 0; }
-.ai-cost { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 16px 0 4px; }
-.ai-cost > div { border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.ai-cost span { color: var(--ink-3); font-size: 12.5px; font-weight: 600; }
-.ai-cost b { font-family: var(--display); font-size: 21px; letter-spacing: -0.01em; line-height: 1.2; }
-.ai-cost small { color: var(--ink-3); font-size: 12.5px; }
+/* OpenAI on: this month against the limit, one line and a thin bar */
+.ai-month { margin: 16px 0 4px; display: grid; gap: 6px; }
+.ai-month-line { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 14px; color: var(--ink-2); }
+.ai-month-line > span:first-child { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ai-meter { height: 5px; border-radius: 999px; background: var(--paper-2); overflow: hidden; }
+.ai-meter i { display: block; height: 100%; border-radius: inherit; background: var(--pen); }
+/* A part of the AI card under its own heading (translating messages) */
+.ai-part { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--rule); }
+.ai-part h3 { display: flex; align-items: center; gap: 8px; font-size: 16px; margin: 0 0 6px; }
+.ai-part > p { margin: 0 0 10px; color: var(--ink-2); }
 .ai-on { margin-left: 10px; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; color: var(--good); background: var(--good-soft); border-radius: 999px; padding: 3px 9px; vertical-align: middle; }
 .ai-reassure { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--paper-2); color: var(--ink-2); font-size: 14px; }
 .ai-reassure .icon, .ai-reassure svg { flex: none; margin-top: 2px; color: var(--pen); }
@@ -1386,6 +1436,66 @@ button.gt-term[aria-pressed="true"], button.gt-now[aria-pressed="true"] { color:
 .ai-blocked small { display: block; margin-top: 6px; font-size: 12.5px; opacity: 0.8; overflow-wrap: anywhere; }
 .ai-settings .ai-blocked { margin-bottom: 0; }
 @media (max-width: 760px) { .ai-budget-warning, .ai-blocked { align-items: flex-start; flex-direction: column; } }
+/* The Wilma page (Wilmas.tsx): who uses the app, each Wilma with its children, adding one, staying signed in */
+/* From the top, so filling it in grows it downwards only (no jump) */
+/* Centred in the panel, from the top once it's taller: auto margins never cut the top off, as centring would. */
+.wilmas .signin-panel { justify-content: flex-start; overflow-y: auto; }
+.wilmas-body { margin-block: auto; display: flex; flex-direction: column; gap: 16px; }
+/* The school chosen takes the search field's place at its height, so the centred page doesn't move. */
+.field .picked { min-height: 45px; padding-block: 4px; }
+.wilma-page { display: flex; flex-direction: column; gap: 18px; }
+.wilma-page[hidden] { display: none; }
+.wilma-page h2 { margin-bottom: -4px; }
+.who-choice { display: flex; gap: 6px; flex-wrap: wrap; }
+.wilma-list { display: flex; flex-direction: column; }
+.wilma-row { border-top: 1px solid var(--rule); padding: 12px 0; display: flex; flex-direction: column; gap: 10px; }
+.wilma-row:last-child { border-bottom: 1px solid var(--rule); }
+.wilma-head { display: flex; align-items: center; gap: 10px; }
+.wilma-head > div { flex: 1; min-width: 0; }
+.wilma-head small { display: block; color: var(--ink-3); font-size: 13px; overflow-wrap: anywhere; }
+.wilma-head .btn { flex: none; }
+.wilma-on { color: var(--good); }
+.wilma-off { color: var(--warn); }
+.wilma-kids, .wilma-ask, .wilma-head + .wilma-remove, .wilma-kids + .wilma-remove, .wilma-ask + .wilma-remove { margin-left: 30px; }
+.wilma-kids { display: flex; flex-direction: column; gap: 6px; }
+.wilma-kids .help-line { margin: 0; }
+.wilma-ask { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700; }
+.wilma-fields { display: flex; flex-direction: column; gap: 12px; }
+.wilma-remove { align-self: flex-start; font-size: 13px; color: var(--ink-3); }
+/* Cancel for a new Wilma, or a changed login: top right, by the school's label. */
+.wilma-new { position: relative; }
+.wilma-cancel { position: absolute; top: 6px; right: 0; color: var(--ink-3); }
+.login-remove { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.login-remove span { flex: 1 1 260px; }
+.add-wilma { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.add-wilma .help { color: var(--ink-3); font-size: 13px; }
+.signing-in .switch { padding: 8px 0; }
+.signing-in .help-line { margin: 6px 0 0; }
+.wilmas-go { justify-content: center; }
+.wilmas-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 12px; border-top: 1px solid var(--rule); }
+.wilmas-foot .btn { gap: 6px; margin-left: -8px; }
+.wilma-signing { margin: -8px 0 0; text-align: center; }
+/* The Wilma page's settings, sliding in over the panel's form (the panel itself stays) */
+.wilmas .signin-panel { overflow-x: hidden; }
+.drawer { display: flex; flex-direction: column; gap: 26px; animation: drawer-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.drawer-head { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.drawer-head .btn { gap: 6px; margin-left: -8px; }
+.drawer-head h2 { font-family: var(--display); font-size: 26px; letter-spacing: -0.02em; margin: 0; }
+.drawer section h3 { font-size: 15px; margin: 0 0 6px; }
+/* Deleting data: apart, below Done, and quiet until it asks (the red is in the asking). */
+.drawer-danger { display: flex; flex-direction: column; gap: 14px; padding-top: 20px; border-top: 1px solid var(--rule); }
+.drawer-danger h3 { color: var(--ink-2); }
+.drawer-danger-item .help-line { font-size: 13px; }
+.drawer .help-line { margin: 0 0 10px; }
+.drawer .settings-reset-confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.drawer .settings-reset-confirm p { flex-basis: 100%; margin: 0; }
+.drawer .settings-reset-confirm .btn + .btn { margin-left: 0; }
+@keyframes drawer-in { from { transform: translateX(40px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .drawer { animation: none; } }
+/* The school search's matches drop down over the page instead of pushing it */
+.school-search { position: relative; }
+.school-search .schools { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20; background: var(--sheet); box-shadow: var(--shadow); }
+@media (max-width: 520px) { .wilma-head { flex-wrap: wrap; } .wilma-head > div { flex-basis: calc(100% - 40px); } .wilma-head > .btn:first-of-type { margin-left: 30px; } }
 @media (max-width: 760px) { .ai-cost { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .luna-usage { font-size: 12px; } .luna-usage th, .luna-usage td { padding: 5px 4px; } }
 /* An exam read from a teacher's note or a message: where it's from, in the school's own words */

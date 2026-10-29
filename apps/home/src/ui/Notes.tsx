@@ -16,6 +16,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import type { LessonNote } from "@wilma-client/src/core";
 import { markOpened, useApp, useViewer } from "../data/store";
 import { loadYearNotes, isDemo } from "../data/engine";
+import { wilmaPage } from "../data/logins";
 import { noteGroups, type NoteGroup } from "../data/feed";
 import { NOTE_KINDS, NOTE_KIND_LABEL, noteKind, useNoteKinds, type NoteKind } from "../data/notes";
 import { subjectNamer, teacherCodeFor } from "../data/schedule";
@@ -241,7 +242,7 @@ export function Notes({ itemKey }: { itemKey: string | null }) {
                   row={r}
                   many={children.length > 1}
                   highlight={r.group.key === itemKey}
-                  baseUrl={snap.account.baseUrl}
+                  wilma={wilmaPage(snap, r.child.number, "attendance")}
                   teacherCode={teacherCodeFor(snap.perChild[r.child.number], r.group.teachers[0])}
                 />
               ))}
@@ -357,7 +358,7 @@ function NoteMatrix({ matrix, kinds, filter, many, onPick }: { matrix: Matrix; k
   );
 }
 
-function NoteRow({ row, many, highlight, baseUrl, teacherCode }: { row: Row; many: boolean; highlight: boolean; baseUrl: string; teacherCode: string | null }) {
+function NoteRow({ row, many, highlight, wilma, teacherCode }: { row: Row; many: boolean; highlight: boolean; wilma: string; teacherCode: string | null }) {
   const w = useWilma();
   const student = useViewer() === "student";
   const { child, group, kind, lessons, from, subjects } = row;
@@ -400,7 +401,7 @@ function NoteRow({ row, many, highlight, baseUrl, teacherCode }: { row: Row; man
         {kind === "explain" && student ? (
           <span className="chip">{t("A guardian explains it in Wilma")}</span>
         ) : kind === "explain" && !isDemo() ? (
-          <a className="btn btn-sm btn-primary" href={`${baseUrl}/!${child.number}/attendance`} target="_blank" rel="noreferrer noopener">
+          <a className="btn btn-sm btn-primary" href={wilma} target="_blank" rel="noreferrer noopener">
             {t("Explain in Wilma")} ↗
           </a>
         ) : kind === "explain" ? (

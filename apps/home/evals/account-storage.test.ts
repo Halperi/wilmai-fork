@@ -3,7 +3,7 @@ import "fake-indexeddb/auto";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { get, set } from "idb-keyval";
-import { accountKey, accountScope, accountStorageKey, activateAccount, flushPersisted, getState, loadPersisted, saveSession, savedSession, setState, updateSettings } from "../src/data/store.ts";
+import { accountKey, accountScope, accountStorageKey, activateAccount, flushPersisted, getState, loadPersisted, passwordOf, saveSession, savedSession, setState, updateSettings } from "../src/data/store.ts";
 import { leaveDemo, resetApp, resume, signInDemo, signOut } from "../src/data/engine.ts";
 import { DEFAULT_SETTINGS, emptySnapshot, type AccountInfo, type LunaRecord } from "../src/data/model.ts";
 import { overrideBridge } from "../src/wilma/transport.ts";
@@ -52,10 +52,10 @@ test("normal sign-out survives restart and reuses unchanged AI answers with no c
     await saveSession({ account: own, state: "fictional-cookie" });
     await signOut();
     assert.equal(getState().phase, "signed-out");
-    assert.equal(getState().snapshot, null);
+    assert.equal(getState().snapshot?.account.username, "Parent", "the family stays on the Wilma page");
     assert.equal(getState().settings.openaiKey, "fictional-test-key");
-    assert.equal(getState().settings.wilmaPassword, "");
-    assert.equal(getState().settings.staySignedIn, false);
+    assert.equal(passwordOf(own), "fictional-password", "kept for signing in again with one click");
+    assert.equal(getState().settings.staySignedIn, true, "the parent's choice stays; nothing signs in from the start page");
     assert.equal(await savedSession(), null);
     assert.deepEqual(getState().usage, usage);
     const loaded = await loadPersisted();
@@ -71,10 +71,11 @@ test("normal sign-out survives restart and reuses unchanged AI answers with no c
   } finally { overrideBridge(null); await signOut(); }
 });
 
-test("the Wilma password is remembered unless turned off, and a deliberate sign-out forgets it", async () => {
+test("the Wilma password is remembered unless turned off, and signing out keeps it", async () => {
   await resetApp();
   installAccount();
-  const kept = () => localStorage.getItem("wilmai.wilmaPassword");
+  // The one login's password from before there were several Wilmas, or (once the family changes) kept by login.
+  const kept = () => localStorage.getItem("wilmai.wilmaPassword") ?? localStorage.getItem("wilmai.passwords");
   updateSettings({ ...DEFAULT_SETTINGS, wilmaPassword: "fictional-password" });
   assert.ok(kept(), "remembered by default, without staying signed in");
   assert.ok(!kept()!.includes("fictional-password"), "scrambled, not as typed");
@@ -84,8 +85,10 @@ test("the Wilma password is remembered unless turned off, and a deliberate sign-
   assert.ok(kept(), "staying signed in keeps it either way");
   updateSettings({ staySignedIn: false, rememberPassword: true });
   await signOut();
-  assert.equal(getState().settings.wilmaPassword, "");
-  assert.equal(kept(), null, "a deliberate sign-out forgets it");
+  assert.ok(kept(), "signing out keeps it: the start page signs in again with one click");
+  assert.equal(passwordOf(own), "fictional-password");
+  updateSettings({ rememberPassword: false, wilmaPassword: "", passwords: {} });
+  assert.equal(kept(), null, "forgotten when the parent asks");
 });
 
 test("sample family and two Wilma accounts keep overlapping item IDs and drafts separate", async () => {

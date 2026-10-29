@@ -21,9 +21,10 @@ function buildStamp(): string {
   return `${commit}${dirty} · ${when}`;
 }
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode, command }) => ({
   plugins: [react(), bridge()],
-  define: { __APP_BUILD__: JSON.stringify(buildStamp()) },
+  // The test Wilmas (src/demo/test-wilma.ts) only with the development server (the browser setup and `pnpm app`).
+  define: { __APP_BUILD__: JSON.stringify(buildStamp()), __TEST_WILMAS__: JSON.stringify(command === "serve") },
   // The desktop app loads its files from disk, so paths stay relative.
   base: mode === "tauri" ? "./" : "/",
   resolve: {

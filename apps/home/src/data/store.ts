@@ -39,11 +39,8 @@ export interface JevStatus {
 }
 
 export interface AppState {
+  /** Signed out: not every Wilma of the family is signed in, and the Wilmas page shows (data/logins.ts). */
   phase: "loading" | "signed-out" | "ready";
-  /** Why the parent is looking at the sign-in page again, if it isn't the first time. */
-  signedOutReason: string | null;
-  /** Staying signed in, while signed out: when the app signs in again (a pause while Wilma is in use elsewhere), or why it can't. */
-  rejoin: { at: number | null; failed: string | null };
   snapshot: Snapshot | null;
   local: LocalState;
   jev: Record<string, JevRecord>;
@@ -66,6 +63,19 @@ export interface AppState {
   update: import("./update-state").UpdateState;
   /** OpenAI couldn't be reached from this network (blocked, or no connection), and since when: AI waits (luna/client.ts). */
   openaiBlocked: { at: number; reason: "network" | "intercepted"; detail: string | null } | null;
+  /** Each Wilma login's session, by slot (data/logins.ts). */
+  loginStatus: Record<number, LoginStatus>;
+}
+
+/** A Wilma login's session: live, or not (why, and when staying signed in tries again). */
+export interface LoginStatus {
+  live: boolean;
+  /** Why it isn't live, for the parent (null: not signed in yet this time). */
+  why: string | null;
+  /** Staying signed in: when it signs in again by itself (a pause while that Wilma is in use elsewhere). */
+  rejoinAt: number | null;
+  /** Signing in again by itself didn't work: the parent signs in. */
+  failed: string | null;
 }
 
 export interface SavedSession {
@@ -90,6 +100,7 @@ const SETTINGS_KEY = "wilmai.settings";
 const JEV_KEY = "wilmai.jevKey";
 const OPENAI_KEY = "wilmai.openaiKey";
 const WILMA_PASSWORD = "wilmai.wilmaPassword";
+const PASSWORDS = "wilmai.passwords";
 /** Set once the key in the old keychain place has been looked for (so macOS asks at most once more). */
 const MOVED_KEY = "wilmai.keyMoved";
 const SECRET_PREFIX = "wilmai::";
@@ -109,12 +120,21 @@ function unscramble(value: string | null): string | null {
   }
 }
 
+function passwordsOf(json: string | null): Record<string, string> {
+  try {
+    const saved = JSON.parse(json ?? "{}") as unknown;
+    return saved && typeof saved === "object" ? (saved as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
 function loadSettings(): Settings {
   try {
     // An older browser setup kept the key in the settings as it was; it moves out on the next save.
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings>;
     // The app reads with GPT-6 Luna (another model was a choice during the experiment; the eval suite still tries others).
-    return {
+    const loaded: Settings = {
       ...DEFAULT_SETTINGS,
       ...saved,
       aiMonthlyBudgetUsd: normalizeAIBudget(saved.aiMonthlyBudgetUsd),
@@ -122,7 +142,10 @@ function loadSettings(): Settings {
       jevKey: unscramble(localStorage.getItem(JEV_KEY)) ?? saved.jevKey ?? "",
       openaiKey: unscramble(localStorage.getItem(OPENAI_KEY)) ?? "",
       wilmaPassword: unscramble(localStorage.getItem(WILMA_PASSWORD)) ?? "",
+      passwords: passwordsOf(unscramble(localStorage.getItem(PASSWORDS))),
     };
+    // Asked each time, but closed before the sign-in settings were: what was kept goes now.
+    return keepsPassword(loaded) ? loaded : { ...loaded, wilmaPassword: "", passwords: {} };
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
@@ -130,8 +153,6 @@ function loadSettings(): Settings {
 
 let state: AppState = {
   phase: "loading",
-  signedOutReason: null,
-  rejoin: { at: null, failed: null },
   snapshot: null,
   local: { opened: {}, done: {} },
   jev: {},
@@ -147,6 +168,7 @@ let state: AppState = {
   lunaStatus: { running: false, done: 0, total: 0, error: null },
   update: { available: null, current: null, checkedAt: null, error: null, phase: "idle", progress: null },
   openaiBlocked: null,
+  loginStatus: {},
 };
 
 // A key an older version kept plainly in the settings moves to its scrambled place now.
@@ -216,6 +238,8 @@ function rememberAccount() {
 /** Keep the current account and restore the next one's cache before syncing Wilma. */
 export function activateAccount(account: AccountInfo | null) {
   rememberAccount();
+  // The one login's remembered password from before there were several Wilmas goes with its family, by login.
+  if (state.settings.wilmaPassword && state.snapshot && state.snapshot.account.via !== "demo") rememberPasswordOf(state.snapshot.account, state.settings.wilmaPassword);
   const cached = account ? accounts[accountKey(account)!] : undefined;
   setState({
     snapshot: cached?.snapshot && account ? { ...cached.snapshot, account } : null,
@@ -225,8 +249,65 @@ export function activateAccount(account: AccountInfo | null) {
     sync: { running: false, step: null, error: null, lastOk: cached?.snapshot?.syncedAt?.getTime() ?? null },
     jevStatus: { running: false, done: 0, total: 0, error: null, calls: 0, inputTokens: 0, newItems: 0, changedItems: 0, changedParts: {} },
     lunaStatus: { running: false, done: 0, total: 0, error: null },
-    signedOutReason: null, rejoin: { at: null, failed: null },
+    loginStatus: {},
   });
+}
+
+/** The family on this computer that has this login (as its first or an added one), by its first login. */
+export function familyFor(account: AccountInfo): AccountInfo | null {
+  const key = accountKey(account);
+  rememberAccount();
+  if (accounts[key!]?.snapshot) return accounts[key!].snapshot!.account;
+  for (const { snapshot } of Object.values(accounts)) {
+    if (snapshot?.logins?.some((l) => accountKey(l.account) === key)) return snapshot.account;
+  }
+  return null;
+}
+
+/** A login's remembered password ("" when none): by login, or (from before there were several Wilmas) the one login's. */
+export function passwordOf(account: AccountInfo): string {
+  const { settings, snapshot } = state;
+  // Asked each time: none is used, even before they're deleted (forgetPasswordsIfAsked).
+  if (!keepsPassword(settings)) return "";
+  const key = accountKey(account)!;
+  return settings.passwords[key] ?? (key === accountKey(snapshot?.account) ? settings.wilmaPassword : "");
+}
+
+/** With the password asked each time, none is kept: the ones kept before go (the sign-in settings closing, the app starting). */
+export function forgetPasswordsIfAsked() {
+  const { settings } = state;
+  if (!keepsPassword(settings) && (Object.keys(settings.passwords).length || settings.wilmaPassword)) updateSettings({ wilmaPassword: "", passwords: {} });
+}
+
+/** Remember a login's password (when passwords are kept), or forget it (null). */
+export function rememberPasswordOf(account: AccountInfo, password: string | null) {
+  const { settings, snapshot } = state;
+  const key = accountKey(account)!;
+  if (password !== null && !keepsPassword(settings)) return;
+  const { [key]: _, ...rest } = settings.passwords;
+  updateSettings({ passwords: password === null ? rest : { ...rest, [key]: password }, ...(key === accountKey(snapshot?.account) ? { wilmaPassword: "" } : {}) });
+}
+
+/**
+ * The families signed in on this computer before (not the sample family): what the start page offers back, one click
+ * when their passwords are remembered. Each with its Wilma logins (the usernames always stay).
+ */
+export function knownFamilies(): { account: AccountInfo; logins: { slot: number; account: AccountInfo }[]; viewer: Viewer }[] {
+  rememberAccount();
+  return Object.values(accounts)
+    .flatMap(({ snapshot, local }) => (snapshot && snapshot.account.via !== "demo" ? [{ snapshot, local }] : []))
+    .map(({ snapshot, local }) => ({ account: snapshot.account, logins: snapshot.logins ?? [{ slot: 0, account: snapshot.account }], viewer: viewerOf(snapshot.account, local) }));
+}
+
+/** Forget a family on this computer: its data, AI answers and passwords (Reset app does it for all). */
+export function forgetFamily(account: AccountInfo) {
+  const key = accountKey(account)!;
+  const family = accounts[key]?.snapshot;
+  const gone = new Set((family?.logins ?? [{ account }]).map((l) => accountKey(l.account)));
+  accounts = Object.fromEntries(Object.entries(accounts).filter(([k]) => k !== key));
+  updateSettings({ passwords: Object.fromEntries(Object.entries(state.settings.passwords).filter(([k]) => !gone.has(k))) });
+  dirty.add("snapshot");
+  void flushPersisted();
 }
 
 /** Drafts and child filters belong to the account, even when item IDs overlap. */
@@ -245,11 +326,13 @@ function migrateAccountStorage() {
 }
 
 function saveSettings() {
-  const { jevKey, openaiKey, wilmaPassword, ...rest } = state.settings;
+  const { jevKey, openaiKey, wilmaPassword, passwords, ...rest } = state.settings;
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(rest));
   // The Wilma password while it's remembered (one-click sign-in) or staying signed in needs it.
   if (wilmaPassword && keepsPassword(rest)) localStorage.setItem(WILMA_PASSWORD, scramble(wilmaPassword));
   else localStorage.removeItem(WILMA_PASSWORD);
+  if (Object.keys(passwords ?? {}).length && keepsPassword(rest)) localStorage.setItem(PASSWORDS, scramble(JSON.stringify(passwords)));
+  else localStorage.removeItem(PASSWORDS);
   if (jevKey) localStorage.setItem(JEV_KEY, scramble(jevKey));
   else localStorage.removeItem(JEV_KEY);
   if (openaiKey) localStorage.setItem(OPENAI_KEY, scramble(openaiKey));
@@ -332,6 +415,8 @@ export async function loadPersisted(): Promise<{ session: SavedSession | null }>
   accounts = savedAccounts ?? {};
   rememberAccount(); // Migrate the existing installation without losing its AI results.
   migrateAccountStorage();
+  // The one login's remembered password from before there were several Wilmas, kept by login from now on.
+  if (state.settings.wilmaPassword && state.snapshot && state.snapshot.account.via !== "demo") rememberPasswordOf(state.snapshot.account, state.settings.wilmaPassword);
   return { session: upgradeSession(session) };
 }
 
@@ -342,6 +427,27 @@ export async function savedSession(): Promise<SavedSession | null> {
 
 export function saveSession(session: SavedSession | null) {
   writes = writes.then(() => session ? set("session", session) : del("session")).catch(() => {});
+  return writes;
+}
+
+/** The other Wilma logins' sessions (data/logins.ts; the first login's is "session") kept for the next start, by login (accountKey). */
+export async function savedLinkedSessions(): Promise<Record<string, SavedSession>> {
+  await writes; // One just ended or kept is read as written.
+  const saved = await get<Record<string, SavedSession>>("linkedSessions").catch(() => undefined);
+  return Object.fromEntries(Object.entries(saved ?? {}).flatMap(([key, s]) => (upgradeSession(s) ? [[key, s]] : [])));
+}
+
+/** Keep one of those sessions (null: forget it), or forget them all (no account). */
+export function saveLinkedSession(account: AccountInfo | null, session: SavedSession | null) {
+  writes = writes
+    .then(async () => {
+      if (!account) return del("linkedSessions");
+      const saved = { ...((await get<Record<string, SavedSession>>("linkedSessions")) ?? {}) };
+      if (session) saved[accountKey(account)!] = session;
+      else delete saved[accountKey(account)!];
+      await set("linkedSessions", saved);
+    })
+    .catch(() => {});
   return writes;
 }
 

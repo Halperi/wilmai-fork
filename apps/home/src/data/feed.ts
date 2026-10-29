@@ -15,6 +15,7 @@ import { clock, deadlineDay, shortDate } from "./dates";
 import { t } from "../i18n";
 import { examSuperseded, noteExam, type PupilExam } from "./note-exams";
 import { aiNoteKinds, noteKind, type NoteKind } from "./notes";
+import { aboutShown, firstSyncOf, loginOfChild, loginOfId } from "./logins";
 
 export type ItemKind = "message" | "news" | "note";
 
@@ -265,12 +266,13 @@ export function buildFeed(state: Pick<AppState, "snapshot" | "local" | "jev" | "
   const snap = state.snapshot;
   if (!snap) return [];
   const now = today();
-  const firstSync = snap.firstSyncAt ?? 0;
   // A student's own login: signing up for a meeting and explaining an absence are a guardian's to do, not the pupil's.
   const student = viewerOf(snap.account, state.local) === "student";
   const items: FeedItem[] = [];
 
   for (const m of Object.values(snap.messages)) {
+    // An unticked child's (data/logins.ts) stays in the snapshot, unshown.
+    if (!aboutShown(snap, m.children)) continue;
     const key = `m:${m.id}`;
     const text = m.thread?.content ?? null;
     // The family's own message, not answered yet, isn't read (an earlier reading of it doesn't show either).
@@ -308,7 +310,7 @@ export function buildFeed(state: Pick<AppState, "snapshot" | "local" | "jev" | "
       text,
       preview: preview(text),
       // What the family just sent isn't news to them.
-      isNew: !waiting && !state.local.opened[key] && (m.unreadInWilma || m.sentAt.getTime() > firstSync),
+      isNew: !waiting && !state.local.opened[key] && (m.unreadInWilma || m.sentAt.getTime() > firstSyncOf(snap, loginOfId(m.id))),
       done: Boolean(state.local.done[key]),
       upcoming: [...new Set([...inviteDates, ...upcomingOf(waiting ? undefined : state.luna[key])])].sort(),
       dated: Boolean(!waiting && state.luna[key]?.events.length) || inviteDates.length > 0,
@@ -326,6 +328,7 @@ export function buildFeed(state: Pick<AppState, "snapshot" | "local" | "jev" | "
     });
   }
   for (const n of Object.values(snap.news)) {
+    if (!aboutShown(snap, n.children)) continue;
     const key = `n:${n.id}`;
     const text = n.detail?.content ?? null;
     const at = n.published ?? new Date(0);
@@ -340,7 +343,7 @@ export function buildFeed(state: Pick<AppState, "snapshot" | "local" | "jev" | "
       at,
       text,
       preview: preview(text, n.subtitle ?? ""),
-      isNew: !state.local.opened[key] && at.getTime() > firstSync,
+      isNew: !state.local.opened[key] && at.getTime() > firstSyncOf(snap, loginOfId(n.id)),
       done: Boolean(state.local.done[key]),
       upcoming: upcomingOf(state.luna[key]),
       dated: Boolean(state.luna[key]?.events.length),
@@ -372,7 +375,7 @@ export function buildFeed(state: Pick<AppState, "snapshot" | "local" | "jev" | "
         at,
         text: note.note,
         preview: preview(note.note, note.subjects.join(", ")),
-        isNew: !state.local.opened[key] && at.getTime() > firstSync,
+        isNew: !state.local.opened[key] && at.getTime() > firstSyncOf(snap, loginOfChild(child.number)),
         done: Boolean(state.local.done[key]),
         upcoming: [],
         dated: false,

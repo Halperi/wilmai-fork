@@ -8,6 +8,7 @@
     "updater:default",
     "core:window:allow-start-dragging",
     "core:window:allow-toggle-maximize",
+    "core:window:allow-set-theme",
     {
       "identifier": "opener:allow-open-url",
       "allow": [{ "url": "https://*" }]

@@ -11,6 +11,7 @@ import type { MessageForm } from "@wilma-client/src/write";
 import { accountStorageKey, useApp } from "../data/store";
 import { isDemo, isSessionEnded, loadContacts, messageApi, preparedAgain, signInAgain, SESSION_CHANGED_NOTE } from "../data/engine";
 import { draftTo, openDraft, readDrafts, saveDraft, writeDrafts, type Drafts } from "../data/drafts";
+import { loginOfChild } from "../data/logins";
 import type { Contacts } from "../data/model";
 import { Icon, Tab } from "./bits";
 import { go, hrefFor, useChildFilter } from "./shared";
@@ -226,7 +227,7 @@ function Writer({ child, initialTeacher, initialSubject }: { child: string; init
       forget();
     } catch (err) {
       try {
-        const fresh = recipient ? await preparedAgain(err, () => messageApi(child).prepare(recipient)) : null;
+        const fresh = recipient ? await preparedAgain(err, () => messageApi(child).prepare(recipient), loginOfChild(child)) : null;
         if (fresh) setStage({ kind: "confirm", form: fresh, note: SESSION_CHANGED_NOTE });
         else if (!recipient) throw err;
       } catch (again) {
@@ -337,7 +338,7 @@ function Writer({ child, initialTeacher, initialSubject }: { child: string; init
           <div className="notice err composer-error">
             <span>{stage.message}</span>
             {stage.ended ? (
-              <button type="button" className="btn btn-sm" onClick={() => signInAgain()}>
+              <button type="button" className="btn btn-sm" onClick={() => signInAgain(loginOfChild(child))}>
                 {t("Sign in again")}
               </button>
             ) : null}

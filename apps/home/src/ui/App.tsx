@@ -1,23 +1,26 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { accountKey, accountStorageKey, getState, useApp } from "../data/store";
 import { intelligenceProvider } from "../data/model";
 import { OPENAI_PAUSE_MS } from "../luna/client";
 import { checkOpenAIAgain } from "../luna/events";
 import { buildFeed, forChildren, needsYou } from "../data/feed";
-import { getBack, keepAlive, syncNow, isDemo } from "../data/engine";
+import { getBack, keepAlive, leaveDemo, syncNow, isDemo } from "../data/engine";
+import { logins, schoolOf } from "../data/logins";
 import { isDesktopApp } from "../wilma/transport";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { notificationsAvailable, showWindow, startNotifications, trayLabels } from "../data/notify";
 import { addDays, today, weekday } from "../data/dates";
 import { examResults, isNewResult } from "../data/grades";
 import { Brand, Icon, Tab } from "./bits";
 import { plural, resolveLanguage, setLanguage, t } from "../i18n";
 import { ChildFilter, DetailsHost, go, hrefFor, navFolded, setFamily, setSegment, tSense, useRoute, type Route } from "./shared";
-import { SignIn } from "./SignIn";
+import { Wilmas } from "./Wilmas";
+import { screenFor } from "../data/logins";
 import { Today } from "./Today";
 import { Inbox } from "./Inbox";
 import { Week } from "./Week";
 import { Calendar } from "./Calendar";
-import { Settings } from "./Settings";
+import { Settings, ThemeChoice } from "./Settings";
 import { Exams } from "./Exams";
 import { Grades } from "./Grades";
 import { Notes } from "./Notes";
@@ -30,10 +33,19 @@ import { Shortcuts } from "./Shortcuts";
 export function App() {
   const phase = useApp((s) => s.phase);
   const account = useApp((s) => accountKey(s.snapshot?.account));
+  const via = useApp((s) => s.snapshot?.account.via ?? null);
+  const route = useRoute();
   // Before anything renders: the app's words and dates in the chosen language (the menu bar's menu too).
   const language = resolveLanguage(useApp((s) => s.settings.language) ?? "auto");
   setLanguage(language);
   useEffect(() => trayLabels(), [language, phase]);
+  // Light or dark as chosen (styles.css data-theme); the computer's when automatic.
+  const theme = useApp((s) => s.settings.theme ?? "auto");
+  useLayoutEffect(() => {
+    if (theme === "auto") delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = theme;
+    if (isDesktopApp) void getCurrentWindow().setTheme(theme === "auto" ? null : theme).catch(() => {});
+  }, [theme]);
 
   // Check Wilma again every ten minutes, and on coming back to the page, signed in or not. In the desktop app it goes
   // on with the window closed (the app stays in the menu bar), so what's new can notify (data/notify.ts); the native
@@ -69,10 +81,17 @@ export function App() {
     }, Math.max(0, blockedAt + OPENAI_PAUSE_MS - Date.now()));
     return () => clearTimeout(t);
   }, [blockedAt]);
-  if (phase === "loading") return null;
-  if (phase === "signed-out") return <SignIn />;
-  return <Shell key={account} />;
+  // The app once every Wilma is signed in; otherwise the Wilma page (data/logins.ts screenFor).
+  switch (screenFor(phase, via, route.view)) {
+    case "loading":
+      return null;
+    case "wilmas":
+      return <Wilmas />;
+    default:
+      return <Shell key={account} />;
+  }
 }
+
 
 function useSelected(): [string[], (s: string[]) => void] {
   const filterKey = accountStorageKey("children");
@@ -310,31 +329,48 @@ function Shell() {
           <div className="nav-sep" aria-hidden="true" />
           {nav.filter((n) => n.group === "records").map(navLink)}
           {nav.filter((n) => n.group === "settings").map(navLink)}
-          <div className="nav-foot">
-            {/* The school and where the data is, in one quiet line; the full sentence on hover. */}
-            <span className="nav-account" tabIndex={0} aria-describedby="nav-account-tip">
-              <b>{snap.account.tenantName ?? new URL(snap.account.baseUrl).host}</b>
-              <span>
-                <Icon name="lock" />
-                {isDesktopApp ? t("Only on this computer") : t("Only in this browser")}
-              </span>
-            </span>
-            {/* Drawn here: the desktop app's web view shows no native tooltips. */}
-            <span className="nav-tip" id="nav-account-tip" role="tooltip">
-              {isDesktopApp ? t("Everything here is stored on this computer only.") : t("Everything here is stored in this browser only.")}{" "}
+          {/* Back to the Wilma page (signing in, the schools' Wilmas, the children), a menu item like Settings; the sample family's way out. */}
+          <div className="nav-wilmas-wrap">
+            {isDemo() ? (
+              <button type="button" className="nav-wilmas" onClick={() => { go("today"); void leaveDemo(); }} aria-describedby="nav-wilmas-tip" title={rail ? t("Leave the sample family") : undefined}>
+                <Icon name="back" />
+                <span className="nav-label">
+                  {t("Leave the sample family")}
+                  <small>{t("Back to signing in")}</small>
+                </span>
+              </button>
+            ) : (
+              <a className="nav-wilmas" href={hrefFor("wilmas")} aria-describedby="nav-wilmas-tip" title={rail ? t("Wilma accounts") : undefined}>
+                <Icon name="user" />
+                <span className="nav-label">
+                  {t("Wilma accounts")}
+                  <small>{logins(snap).length > 1 ? plural(logins(snap).length, "{n} Wilma", "{n} Wilmas") : schoolOf(logins(snap)[0].account)}</small>
+                </span>
+              </a>
+            )}
+            {/* Drawn here: the desktop app's web view shows no native tooltips. With several Wilmas, which ones. */}
+            <span className="nav-tip" id="nav-wilmas-tip" role="tooltip">
+              {!isDemo() && logins(snap).length > 1 ? <b className="nav-tip-schools">{logins(snap).map((l) => schoolOf(l.account)).join(" · ")}</b> : null}
+              {isDesktopApp ? t("Everything here is stored on this computer only.") : t("Everything here is stored in this app only.")}{" "}
               {t("No WilmAI server stores or passes on anything.")}
             </span>
-            <button
-              className="btn btn-quiet btn-sm nav-fold"
-              onClick={() => navFolded.set(!rail)}
-              aria-pressed={rail}
-              title={rail ? t("Show the full menu (⌘\\)") : t("Fold the menu to icons (⌘\\)")}
-              aria-label={rail ? t("Show the full menu") : t("Fold the menu to icons")}
-            >
-              <Icon name="sidebar" />
-            </button>
           </div>
-          <VersionLine />
+          {/* The foot: the theme and the fold button (only it, folded), then the version. */}
+          <div className="nav-meta">
+            <div className="nav-meta-row">
+              <ThemeChoice compact />
+              <button
+                className="btn btn-quiet btn-sm nav-fold"
+                onClick={() => navFolded.set(!rail)}
+                aria-pressed={rail}
+                title={rail ? t("Show the full menu (⌘\\)") : t("Fold the menu to icons (⌘\\)")}
+                aria-label={rail ? t("Show the full menu") : t("Fold the menu to icons")}
+              >
+                <Icon name="sidebar" />
+              </button>
+            </div>
+            <VersionLine />
+          </div>
         </nav>
         <div className="main">
           <header className="topbar">

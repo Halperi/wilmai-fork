@@ -80,7 +80,8 @@ export function SessionHistory() {
               <li key={`${entry.at}-${entry.kind}-${i}`} className={tone === "warn" ? "warn" : undefined}>
                 <Icon name={icon} />
                 <div>
-                  <b>{text}</b>
+                  {/* A Wilma added for another town's school (data/logins.ts) says which one. */}
+                  <b>{entry.wilma ? `${entry.wilma}: ${text}` : text}</b>
                   {detail ? <span>{detail}</span> : null}
                 </div>
                 <time dateTime={new Date(entry.at).toISOString()}>{stamp(entry.at)}</time>

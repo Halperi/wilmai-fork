@@ -40,9 +40,9 @@ export const FI_COMMON: Record<string, string> = {
   "Add your OpenAI API key": "Lisää OpenAI-avaimesi",
   "For a family, OpenAI usually costs tens of cents a month. OpenAI bills your key directly, and the app pauses AI if a month reaches your limit ({limit}).":
     "Perheen käytössä OpenAI maksaa yleensä kymmeniä senttejä kuussa. OpenAI laskuttaa suoraan avaimesi kautta, ja sovellus pysäyttää tekoälyn, jos kuukauden raja ({limit}) tulee vastaan.",
-  "Tens of cents": "Kymmeniä senttejä",
   "Monthly limit (USD)": "Kuukausiraja (USD)",
-  "AI pauses there": "tekoäly pysähtyy siihen",
+  "This month {spent} of {limit}": "Tässä kuussa {spent} / {limit}",
+  "OpenAI key, limit and usage": "OpenAI-avain, raja ja käyttö",
   "$0.50–$3 a month, $1 to start with. Today warns you at 80%, and AI pauses at the limit. Raising the limit picks up what's waiting.":
     "0,50–3 dollaria kuussa, aluksi 1. Tänään-näkymä varoittaa 80 %:n kohdalla, ja tekoäly pysähtyy rajalla. Kun nostat rajaa, odottavat asiat luetaan.",
   "The first reading of your older messages costs a little more. Amounts are in US dollars, as OpenAI bills them.":
@@ -77,16 +77,11 @@ export const FI_COMMON: Record<string, string> = {
   "Free up some disk space first.": "Vapauta ensin levytilaa.",
 
   // A student's own login (Settings → Who uses this account)
-  "Who uses this account": "Kuka käyttää tätä tiliä",
   // The menu corner: the version and whether it is the newest
   "Update available": "Päivitys saatavilla",
   "Up to date": "Ajan tasalla",
   "A parent": "Huoltaja",
   "A student": "Oppilas",
-  "Wilma says this is a student's own login.": "Wilman mukaan tämä on oppilaan oma tunnus.",
-  "Wilma says this is a guardian's login.": "Wilman mukaan tämä on huoltajan tunnus.",
-  "A student sees their own steps first: what to do, bring and hand in. A guardian's steps, such as sign-ups and absence reports, are left out. Changing this has the AI read the messages again.":
-    "Oppilaalle näytetään ensin omat tehtävät: mitä tehdä, tuoda ja palauttaa. Huoltajan asiat, kuten ilmoittautumiset ja poissaoloilmoitukset, jätetään pois. Vaihto saa tekoälyn lukemaan viestit uudelleen.",
   "*OpenAI sees one item at a time,* with your first name and class, when you choose OpenAI. Local AI reads everything on this Mac, and No AI reads nothing.":
     "*OpenAI näkee yhden asian kerrallaan* sekä etunimesi ja luokkasi, kun valitset OpenAI:n. Paikallinen tekoäly lukee kaiken tällä Macilla, ja Ei tekoälyä -valinnalla mitään ei lueta.",
   "A student sees their own tasks, exams and homework first.": "Oppilaalle näytetään ensin omat tehtävät, kokeet ja läksyt.",
@@ -151,8 +146,6 @@ export const FI_COMMON: Record<string, string> = {
   "All exams": "Kaikki kokeet",
   "Go to Exams": "Siirry: Kokeet",
   // The menu's corner
-  "Only on this computer": "Vain tällä koneella",
-  "Only in this browser": "Vain tässä selaimessa",
   // Notes (tuntimerkinnät)
   Notes: "Merkinnät",
   "Reading this school year from Wilma…": "Haetaan lukuvuoden merkinnät Wilmasta…",

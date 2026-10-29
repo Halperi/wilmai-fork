@@ -25,28 +25,91 @@ import { bridgeCall, clearReports, isDesktopApp, savedLoginSecret, sharedKeyFor,
 import { totpCallback } from "../wilma/totp";
 import { recordSession, sessionCookieOf } from "./history";
 import { addDays, clock, dateOf, daysBetween, mondayOf, today } from "./dates";
-import { emptySnapshot, firstName, type AccountInfo, type Child, type Contacts, type MessageRec, type NewsRec, type Snapshot, type Viewer } from "./model";
-import { accountKey, accountScope, activateAccount, flushPersisted, forgetEverything, getState, savedSession, saveSession, setState, setViewAs, updateSettings, type SavedSession } from "./store";
+import { emptySnapshot, intelligenceOn, type AccountInfo, type Contacts, type Login, type MessageRec, type NewsRec, type Snapshot, type Viewer } from "./model";
+import {
+  accountKey,
+  accountScope,
+  activateAccount,
+  familyFor,
+  flushPersisted,
+  forgetEverything,
+  forgetFamily,
+  knownFamilies,
+  getState,
+  passwordOf,
+  rememberPasswordOf,
+  savedLinkedSessions,
+  savedSession,
+  saveLinkedSession,
+  saveSession,
+  setState,
+  setViewAs,
+  updateSettings,
+  viewer,
+  type LoginStatus,
+  type SavedSession,
+} from "./store";
+import { aboutShown, accountOf, familyChild, familyChildren, familyId, loginOf, loginOfChild, loginOfId, logins, sameWilma, schoolOf, slotFor, wilmaIdOf, wilmaNumber } from "./logins";
 import { demoContacts, demoSnapshot } from "../demo/demo";
 import { runJev } from "../jev/runner";
 import { runLuna } from "../luna/events";
 import { t } from "../i18n";
 import { retainedScheduleWeeks } from "./schedule";
+import { TENANTS } from "./tenants";
 
-/** The signed-in Wilma: wilma-client, which never logs in again by itself here (see signIn). */
-let api: { client: WilmaClient; account: AccountInfo; sharedKey?: string } | null = null;
+type Session = { client: WilmaClient; account: AccountInfo; sharedKey?: string };
+type Student = { studentNumber: string; name: string; role?: Viewer };
+/** A login waiting for the two-step code the parent types, or done (null). */
+type Next = { mfa: (code: string) => Promise<void> } | null;
+
+/** The family's signed-in Wilmas, by slot (data/logins.ts): wilma-client, which never logs in again by itself here. */
+const sessions = new Map<number, Session>();
 let syncing: Promise<void> | null = null;
+let syncAgain = false;
 let endingSession: Promise<unknown> = Promise.resolve();
 
-/** The client for one child. */
+const sessionOf = (slot: number): Session | null => sessions.get(slot) ?? null;
+
+/** The client for one child, on the child's own Wilma. */
 function kid(number: string): WilmaClient {
-  if (!api) throw new SessionEndedError();
-  return api.client.forStudent(number);
+  const session = sessionOf(loginOfChild(number));
+  if (!session) throw new SessionEndedError();
+  return session.client.forStudent(wilmaNumber(number));
 }
 
-/** Keep the session (Wilma's cookies) for the next start. */
-function keepSession() {
-  if (api) saveSession({ account: api.account, state: api.client.exportSession(), sharedKey: api.sharedKey });
+/** Keep a login's session (Wilma's cookies) for the next start: the first login's in its own place, as before there were more. */
+function keep(slot: number) {
+  const session = sessions.get(slot);
+  if (!session) return;
+  const saved = { account: session.account, state: session.client.exportSession(), sharedKey: session.sharedKey };
+  if (slot) void saveLinkedSession(session.account, saved);
+  else void saveSession(saved);
+}
+
+/** Forget a login's kept session, or keep only its shared key (the next check continues another WilmAI program's session). */
+function forgetSession(slot: number, account: AccountInfo, sharedKey?: string) {
+  const ended = sharedKey ? { account, state: "", sharedKey } : null;
+  return slot ? saveLinkedSession(account, ended) : saveSession(ended);
+}
+
+function setStatus(slot: number, status: LoginStatus | null) {
+  setState((s) => {
+    const loginStatus = { ...s.loginStatus };
+    if (status) loginStatus[slot] = status;
+    else delete loginStatus[slot];
+    return { loginStatus };
+  });
+}
+
+const LIVE: LoginStatus = { live: true, why: null, rejoinAt: null, failed: null };
+
+/** Every Wilma of the family signed in: the app shows. Otherwise the Wilmas page, where the parent signs in. */
+function settle() {
+  const snap = getState().snapshot;
+  if (!snap || snap.account.via === "demo") return;
+  const all = logins(snap);
+  const ready = all.length > 0 && all.every((l) => sessions.has(l.slot));
+  if ((getState().phase === "ready") !== ready) setState({ phase: ready ? "ready" : "signed-out" });
 }
 
 /** Client options: this app's transport, never logging in by itself, and WilmAI's shared session when the login's key is known. */
@@ -54,17 +117,23 @@ function clientOptions(sharedKey: string | undefined) {
   return { transport: wilmaTransport, sharedSession: sharedKey ? sharedSessionFor(sharedKey) : undefined };
 }
 
+/** With more than one Wilma, the sign-in history names each entry's. */
+function labelOf(account: AccountInfo): { wilma?: string } {
+  const snap = getState().snapshot;
+  return snap && logins(snap).some((l) => !sameWilma(l.account.baseUrl, account.baseUrl)) ? { wilma: schoolOf(account) } : {};
+}
+
 /**
  * Note in the sign-in history when the client, finding this app's session
  * ended, continued the one another WilmAI program saved (that program's
  * login is what ended it).
  */
-function watchSession(client: WilmaClient, shared: ReturnType<typeof sharedSessionFor> | undefined) {
+function watchSession(client: WilmaClient, shared: ReturnType<typeof sharedSessionFor> | undefined, slot: number, account: AccountInfo) {
   client.onSessionEvent((event) => {
     if (event !== "adopted") return;
     const last = shared?.last;
-    recordSession({ kind: "continued", by: last?.by ?? null, savedAt: last?.savedAt ?? null, midway: true });
-    keepSession();
+    recordSession({ kind: "continued", by: last?.by ?? null, savedAt: last?.savedAt ?? null, midway: true, ...labelOf(account) });
+    keep(slot);
   });
 }
 
@@ -91,19 +160,22 @@ function limiter(max: number, current = () => true) {
 /*
  * Wilma allows one live session per account, and every login ends the
  * parent's others (their own Wilma tab, the phone app). So the app logs in
- * only when the parent signs in here, or (Settings, Stay signed in) when the
- * parent has asked it to sign in again by itself. It shares its session with
- * the other WilmAI programs on this computer (the CLI, assistants'
- * connectors) through the CLI's session file: when Wilma ends the app's
- * session, the client first continues one of theirs. Only when no WilmAI
- * session is alive does the sign-in page say so; everything already read
- * stays.
+ * only when the parent signs in here, or (Stay signed in) when the parent
+ * has asked it to sign in again by itself. It shares its sessions with the
+ * other WilmAI programs on this computer (the CLI, assistants' connectors)
+ * through the CLI's session file: when Wilma ends the app's session, the
+ * client first continues one of theirs.
+ *
+ * A family can have a login on each school's Wilma (data/logins.ts). The app
+ * shows only when every one of them is signed in; when Wilma ends one, the
+ * Wilmas page shows until it's back, and everything already read stays.
+ * Different Wilmas don't touch each other's sessions.
  *
  * While signed out, every check (getBack) first looks for a live session
  * another WilmAI program saved (no login), then, staying signed in, signs in.
  * A session the app signed into by itself that Wilma ends again within
- * minutes means Wilma is in use elsewhere (a browser): the app waits, longer
- * each time, rather than race the parent.
+ * minutes means that Wilma is in use elsewhere (a browser): the app waits,
+ * longer each time, rather than race the parent.
  */
 
 /** A session the app signed into by itself, ended sooner than this: Wilma is in use elsewhere. */
@@ -111,8 +183,9 @@ const RACE_MS = 15 * 60_000;
 /** Then the app waits this long before signing in again, doubling each time up to the most. */
 const PAUSE_MS = 30 * 60_000;
 const MOST_PAUSE_MS = 2 * 3_600_000;
-let lastAutomatic = 0;
-let pause = 0;
+/** Staying signed in, per login: when the app last signed it in by itself, and its pause now. */
+const paces = new Map<number, { last: number; pause: number }>();
+const gettingBack = new Map<number, Promise<boolean>>();
 
 /**
  * Staying signed in, a session just ended: how long to wait before signing in again (0: at once). Ended soon after
@@ -132,62 +205,112 @@ export async function resume(saved: SavedSession | null) {
     void runLuna();
     return;
   }
+  if (!snapshot) {
+    setState({ phase: "signed-out" });
+    return;
+  }
   // Browser development: a session from "Continue as" made before sessions were shared learns its login's key.
   if (saved && !saved.sharedKey && saved.account.via === "cli") {
     saved.sharedKey = (await cliAccounts()).find((a) => a.index === (saved.account.cliIndex ?? 0))?.key;
   }
-  // The app's own session, or (when Wilma ended it) the one another WilmAI program saved.
-  let state = saved?.state || null;
-  const shared = !state && saved?.sharedKey ? await sharedSessionFor(saved.sharedKey).entry().catch(() => null) : null;
-  state ||= shared?.state ?? null;
-  const options = clientOptions(saved?.sharedKey);
-  const client = saved && state ? WilmaClient.resumeSession(saved.account.baseUrl, state, options) : null;
-  if (!saved || !client || !snapshot) {
-    setState({ phase: "signed-out" });
-    return;
-  }
-  if (shared) recordSession({ kind: "continued", by: shared.by, savedAt: shared.savedAt, midway: false });
-  watchSession(client, options.sharedSession);
-  api = { client, account: saved.account, sharedKey: saved.sharedKey };
-  setState({ phase: "ready" });
+  await restoreSessions(saved);
+  setState({ phase: "signed-out" });
+  settle();
+  if (getState().phase !== "ready") return;
   void runJev();
   void runLuna();
   void syncNow();
 }
 
+/**
+ * The family's sessions as the last start left them, or (when Wilma ended one) the session another WilmAI program
+ * saved for that login. One with neither waits for the parent (the Wilmas page) or, staying signed in, getBack.
+ */
+async function restoreSessions(first: SavedSession | null) {
+  const snap = getState().snapshot;
+  if (!snap) return;
+  const scope = accountScope();
+  const others = await savedLinkedSessions();
+  await Promise.all(
+    logins(snap).map(async ({ slot, account }) => {
+      if (sessions.has(slot)) return;
+      const kept = slot ? others[accountKey(account)!] : first && accountKey(first.account) === accountKey(account) ? first : null;
+      let state = kept?.state || null;
+      const shared = !state && kept?.sharedKey ? await sharedSessionFor(kept.sharedKey).entry().catch(() => null) : null;
+      state ||= shared?.state ?? null;
+      const options = clientOptions(kept?.sharedKey);
+      const client = state ? WilmaClient.resumeSession(account.baseUrl, state, options) : null;
+      if (scope !== accountScope() || sessions.has(slot)) return;
+      if (!client) return setStatus(slot, { live: false, why: null, rejoinAt: null, failed: null });
+      sessions.set(slot, { client, account, sharedKey: kept?.sharedKey });
+      if (shared) recordSession({ kind: "continued", by: shared.by, savedAt: shared.savedAt, midway: false, ...labelOf(account) });
+      watchSession(client, options.sharedSession, slot, account);
+      setStatus(slot, LIVE);
+    })
+  );
+}
+
 /** What finishing a sign-in notes in the sign-in history. */
 type HistoryEvent = Parameters<typeof recordSession>[0] & { kind: "signed-in" | "continued" };
 
-async function finishSignIn(
+/**
+ * A login's Wilma is signed in: its session kept, its children as Wilma lists them now, and its password remembered
+ * when passwords are kept. Only the family's first login can be a student's own: a student has one Wilma.
+ */
+async function finishLogin(
+  slot: number,
   account: AccountInfo,
   client: WilmaClient,
   sharedKey: string | undefined,
   event: HistoryEvent,
-  known?: { studentNumber: string; name: string; role?: Viewer }[],
-  /** Who signed in, as chosen on the sign-in page: it decides over Wilma's role (viewerOf). */
-  viewAs?: Viewer
+  opts: { scope: number; students?: Student[]; password?: string; automatic?: boolean; wait?: boolean }
 ) {
-  recordSession(event);
+  const students = opts.students?.length ? opts.students : await client.students();
+  // Signed out, or another family, meanwhile: this login isn't theirs.
+  if (opts.scope !== accountScope() || !getState().snapshot) {
+    await client.logout().catch(() => {});
+    return;
+  }
+  const role = roleOf(students);
+  if (role === "student" && logins(getState().snapshot!).some((l) => l.slot !== slot)) {
+    await client.logout().catch(() => {});
+    throw new Error(t("That's a student's own login. Only a guardian's login can be added."));
+  }
+  recordSession({ ...event, ...labelOf(account) });
   const shared = sharedKey ? sharedSessionFor(sharedKey) : undefined;
   client.useSharedSession(shared);
-  watchSession(client, shared);
-  api = { client, account, sharedKey };
-  keepSession();
-  if (accountKey(getState().snapshot?.account) !== accountKey(account)) activateAccount(account);
-  if (viewAs) setViewAs(viewAs);
-  const snapshot: Snapshot = getState().snapshot ? { ...getState().snapshot!, account } : emptySnapshot(account);
-  const scope = accountScope();
-  const students = known?.length ? known : await client.students();
-  if (scope !== accountScope() || api?.client !== client) return;
-  snapshot.children = toChildren(students);
+  const before = sessions.get(slot);
+  // Another username on the same Wilma: its session isn't needed any more.
+  if (before && before.client !== client && before.account.username.toLowerCase() !== account.username.toLowerCase()) void before.client.logout().catch(() => {});
+  const known = loginOf(getState().snapshot!, slot);
   // A student's own login reads as a student; the choice in Settings still wins (viewerOf).
-  const wilmaRole = roleOf(students) ?? snapshot.account.wilmaRole;
-  if (wilmaRole) {
-    snapshot.account = { ...snapshot.account, wilmaRole };
-    api.account = snapshot.account;
-  }
-  setState({ snapshot, phase: "ready", signedOutReason: null });
-  await syncNow();
+  const wilmaRole = role ?? known?.account.wilmaRole ?? account.wilmaRole;
+  const signedIn: AccountInfo = { ...account, ...(wilmaRole ? { wilmaRole } : {}) };
+  sessions.set(slot, { client, account: signedIn, sharedKey });
+  watchSession(client, shared, slot, signedIn);
+  keep(slot);
+  if (opts.password !== undefined && signedIn.via === "password") rememberPasswordOf(signedIn, opts.password);
+  // Another user in this Wilma's place: the one before's password isn't needed any more.
+  if (known && accountKey(known.account) !== accountKey(signedIn)) rememberPasswordOf(known.account, null);
+  const pace = paces.get(slot) ?? { last: 0, pause: 0 };
+  paces.set(slot, opts.automatic ? { ...pace, last: Date.now() } : { last: 0, pause: 0 });
+  patchSnapshot((s) => {
+    const { signedOut: _, ...was } = loginOf(s, slot) ?? { slot, account: signedIn };
+    // An empty answer from Wilma keeps the children it listed before.
+    const listed = students.length ? students.map((x) => ({ number: familyChild(slot, x.studentNumber), name: x.name })) : (was.students ?? []);
+    const next = [...logins(s).filter((l) => l.slot !== slot), { ...was, slot, account: signedIn, students: listed }].sort((a, b) => a.slot - b.slot);
+    return {
+      ...s,
+      account: accountKey(s.account) === accountKey(signedIn) ? signedIn : s.account,
+      logins: next,
+      lastSlot: Math.max(s.lastSlot ?? 0, slot),
+      children: familyChildren(next),
+    };
+  }, opts.scope);
+  setStatus(slot, LIVE);
+  settle();
+  if (opts.wait) await syncNow(true);
+  else void syncNow(true);
 }
 
 /** Wilma's refusals in words for the sign-in page. */
@@ -214,31 +337,17 @@ export class SignInAgainError extends Error {
 }
 
 /**
- * Log in with the parent's username and password. When Wilma asks for a
- * two-step code, returns `mfa` for the code the parent types; a refused code
- * can be typed again once (Wilma's own limit for one login). A saved login
- * (`saved`) answers the code itself when it has the authenticator key.
+ * One login to a Wilma, then `finish` with the client. With the authenticator key the code is made here; without it,
+ * when Wilma asks for a two-step code, returns `mfa` for the code the parent types, and a refused code can be typed
+ * again once (Wilma's own limit for one login).
  */
-export async function signInWithPassword(
-  baseUrl: string,
-  username: string,
-  password: string,
-  saved?: { account: AccountInfo; totpSecret: string | null },
-  automatic = false,
-  viewAs?: Viewer
-): Promise<{ mfa: (code: string) => Promise<void> } | null> {
-  await endingSession;
-  const account: AccountInfo = saved?.account ?? { baseUrl: baseUrl.replace(/\/$/, ""), username, tenantName: null, via: "password" };
-  const event: HistoryEvent = { kind: "signed-in", how: automatic ? "automatic" : saved ? "saved-login" : "password" };
-  if (!automatic) manualSignIn();
-  // The CLI's key for this login: the app and the other WilmAI programs then share one session.
-  const sharedKey = await sharedKeyFor(account.baseUrl, username, password);
+async function logIn(credentials: { baseUrl: string; username: string; password: string }, totpSecret: string | null | undefined, sharedKey: string, finish: (client: WilmaClient) => Promise<void>): Promise<Next> {
   const options = { ...clientOptions(sharedKey), relogin: false };
-  if (saved?.totpSecret) {
-    const client = await WilmaClient.login({ baseUrl: account.baseUrl, username, password }, totpCallback(saved.totpSecret), options).catch((err) => {
+  if (totpSecret) {
+    const client = await WilmaClient.login(credentials, totpCallback(totpSecret), options).catch((err) => {
       throw signInError(err);
     });
-    await finishSignIn(account, client, sharedKey, event, undefined, viewAs);
+    await finish(client);
     return null;
   }
   let giveCode: ((code: string) => void) | null = null;
@@ -249,12 +358,12 @@ export async function signInWithPassword(
       giveCode = resolve;
       codeAsked();
     });
-  const login = WilmaClient.login({ baseUrl: account.baseUrl, username, password }, onMfa, options);
+  const login = WilmaClient.login(credentials, onMfa, options);
   const first = await Promise.race([login.then((client) => client), asked.then(() => null)]).catch((err) => {
     throw signInError(err);
   });
   if (first) {
-    await finishSignIn(account, first, sharedKey, event, undefined, viewAs);
+    await finish(first);
     return null;
   }
   return {
@@ -266,13 +375,16 @@ export async function signInWithPassword(
         throw new SignInAgainError(t("{error} Sign in again with your password.", { error: signInError(err).message }));
       });
       if (!client) throw new Error(t("Wilma didn't accept that code. Type the newest code from your authenticator app."));
-      await finishSignIn(account, client, sharedKey, event, undefined, viewAs);
+      await finish(client);
     },
   };
 }
 
-/** A login the WilmAI CLI saved on this computer (no secrets): what "Continue as" offers. */
-export interface CliAccount {
+/**
+ * A login the WilmAI CLI saved on this computer (no secrets). New sign-ins type the password; logins made with the
+ * CLI's saved login before still sign in with it (signInLogin).
+ */
+interface CliAccount {
   index: number;
   /** The CLI's id for the login (desktop app). */
   id?: string;
@@ -284,7 +396,7 @@ export interface CliAccount {
   key?: string;
 }
 
-export async function cliAccounts(): Promise<CliAccount[]> {
+async function cliAccounts(): Promise<CliAccount[]> {
   try {
     return (await bridgeCall<{ accounts: CliAccount[] }>("cli/accounts")).accounts;
   } catch {
@@ -292,19 +404,24 @@ export async function cliAccounts(): Promise<CliAccount[]> {
   }
 }
 
+type Finish = (account: AccountInfo, client: WilmaClient, sharedKey: string | undefined, event: HistoryEvent, students?: Student[]) => Promise<void>;
+
 /**
- * One click with the CLI's saved login. First a live session another WilmAI
- * program saved (no login, so Wilma on the phone stays signed in too), and
- * only when there is none, a login with the saved password (and code, when
- * the CLI keeps the authenticator key). Returns `mfa` when Wilma asks for a
- * code the saved login can't make.
+ * A login made with the CLI's saved login, signed in again with it. First a live session another WilmAI program saved
+ * (no login, so Wilma on the phone stays signed in too), and only when there is none, a login with the saved password
+ * (and code, when the CLI keeps the authenticator key). Returns `mfa` when Wilma asks for a code it can't make.
  */
-export async function signInWithCli(saved: CliAccount, automatic = false): Promise<{ mfa: (code: string) => Promise<void> } | null> {
-  await endingSession;
-  const account: AccountInfo = { baseUrl: saved.baseUrl.replace(/\/$/, ""), username: saved.username, tenantName: saved.tenantName, via: "cli", cliIndex: saved.index };
-  if (!automatic) manualSignIn();
-  if (!isDesktopApp) return signInThroughBridge(account, saved.index);
-  const secret = await savedLoginSecret(saved.id ?? "").catch((err) => {
+async function cliLogIn(account: AccountInfo, cli: CliAccount, automatic: boolean, finish: Finish): Promise<Next> {
+  if (!isDesktopApp) {
+    // Browser development: the bridge continues or makes the CLI's session itself and hands it over.
+    const data = await bridgeCall<{ tenantName: string | null; students: Student[]; state: string; key: string; continued: { savedAt: number | null; by: string | null } | null }>("cli/session", { body: { index: cli.index } });
+    const client = WilmaClient.resumeSession(account.baseUrl, data.state, clientOptions(data.key));
+    if (!client) throw new Error(t("The CLI's login has no Wilma session."));
+    const event: HistoryEvent = data.continued ? { kind: "continued", ...data.continued, midway: false } : { kind: "signed-in", how: "saved-login" };
+    await finish({ ...account, tenantName: data.tenantName ?? account.tenantName }, client, data.key, event, data.students);
+    return null;
+  }
+  const secret = await savedLoginSecret(cli.id ?? "").catch((err) => {
     throw new Error(t(err instanceof Error ? err.message : String(err)));
   });
   const sharedKey = await sharedKeyFor(account.baseUrl, account.username, secret.password);
@@ -313,128 +430,415 @@ export async function signInWithCli(saved: CliAccount, automatic = false): Promi
   if (entry && client) {
     try {
       const students = await client.students();
-      await finishSignIn(account, client, sharedKey, { kind: "continued", by: entry.by, savedAt: entry.savedAt, midway: false }, students);
+      await finish(account, client, sharedKey, { kind: "continued", by: entry.by, savedAt: entry.savedAt, midway: false }, students);
       return null;
     } catch (err) {
       // Ended too: sign in below. Anything else (Wilma unreachable) is for the parent to see.
       if (!(err instanceof SessionEndedError)) throw err;
     }
   }
-  return signInWithPassword(account.baseUrl, account.username, secret.password, { account, totpSecret: secret.totpSecret }, automatic);
+  const event: HistoryEvent = { kind: "signed-in", how: automatic ? "automatic" : "saved-login" };
+  return logIn({ baseUrl: account.baseUrl, username: account.username, password: secret.password }, secret.totpSecret, sharedKey, (c) => finish(account, c, sharedKey, event));
 }
 
-/** The parent signed in: staying signed in starts over (no pause, nothing failed). */
-function manualSignIn() {
-  pause = 0;
-  lastAutomatic = 0;
-  setState({ rejoin: { at: null, failed: null } });
-}
-
-let gettingBack: Promise<boolean> | null = null;
+/** The school's name for a Wilma address, from the list of Wilmas. */
+const tenantNameOf = (baseUrl: string): string | null => TENANTS.find((x) => sameWilma(x.url, baseUrl))?.name ?? null;
 
 /**
- * While signed out (the background check, every ten minutes): back into Wilma without the parent, if there's a way.
- * First a live session another WilmAI program saved on this computer (no login); then, staying signed in and not
- * pausing, a login of the app's own (the CLI's saved login, or the kept password). Wilma asking for a two-step code
- * the app can't give, or refusing the login, ends trying until the parent signs in. True when back in.
+ * The first sign-in on the start page: a new family, or (a login of a family on this computer, its first or one added
+ * to it) that family back, with its other Wilmas to sign in too.
  */
-export function getBack(): Promise<boolean> {
-  gettingBack ??= (async () => {
-    const { phase, snapshot, settings, rejoin } = getState();
-    if (phase !== "signed-out" || !snapshot || snapshot.account.via === "demo") return false;
-    const saved = await savedSession();
-    if (!saved) return false;
-    // 1. Another WilmAI program's live session: continue it.
-    if (saved.sharedKey) {
-      const entry = await sharedSessionFor(saved.sharedKey).entry().catch(() => null);
-      const client = entry ? WilmaClient.resumeSession(saved.account.baseUrl, entry.state, clientOptions(saved.sharedKey)) : null;
-      if (entry && client) {
-        try {
-          const students = await client.students();
-          await finishSignIn(saved.account, client, saved.sharedKey, { kind: "continued", by: entry.by, savedAt: entry.savedAt, midway: false }, students);
-          return true;
-        } catch (err) {
-          if (!(err instanceof SessionEndedError)) return false; // Wilma unreachable: the next check tries again
-        }
-      }
-    }
-    // 2. Staying signed in: the app's own login, unless it's pausing or failed.
-    if (!settings.staySignedIn || rejoin.failed || (rejoin.at && Date.now() < rejoin.at)) return false;
+async function startFamily(account: AccountInfo, client: WilmaClient, sharedKey: string | undefined, event: HistoryEvent, students: Student[] | undefined, viewAs: Viewer | undefined, password?: string) {
+  // Read before the family shows, so the screens go straight from the start page to signed in (no wait in between).
+  const listed = students?.length ? students : await client.students();
+  const family = familyFor(account) ?? account;
+  if (accountKey(getState().snapshot?.account) !== accountKey(family)) activateAccount(family);
+  if (!getState().snapshot) setState({ snapshot: emptySnapshot(account) });
+  if (viewAs) setViewAs(viewAs);
+  const snap = getState().snapshot!;
+  const known = logins(snap).find((l) => sameWilma(l.account.baseUrl, account.baseUrl));
+  const slot = known?.slot ?? (logins(snap).some((l) => l.slot === 0) ? slotFor(snap, account) : 0);
+  await finishLogin(slot, account, client, sharedKey, event, { scope: accountScope(), students: listed, password });
+}
+
+/**
+ * Sign in on the start page with the parent's username and password. When Wilma asks for a two-step code, returns
+ * `mfa` for the code the parent types. A saved login (`saved`) answers the code itself when it has the authenticator
+ * key.
+ */
+export async function signInWithPassword(
+  baseUrl: string,
+  username: string,
+  password: string,
+  saved?: { account: AccountInfo; totpSecret: string | null },
+  automatic = false,
+  viewAs?: Viewer
+): Promise<Next> {
+  await endingSession;
+  const base = baseUrl.replace(/\/$/, "");
+  const account: AccountInfo = saved?.account ?? { baseUrl: base, username, tenantName: tenantNameOf(base), via: "password" };
+  const event: HistoryEvent = { kind: "signed-in", how: automatic ? "automatic" : saved ? "saved-login" : "password" };
+  // The CLI's key for this login: the app and the other WilmAI programs then share one session.
+  const sharedKey = await sharedKeyFor(account.baseUrl, username, password);
+  return logIn({ baseUrl: account.baseUrl, username, password }, saved?.totpSecret, sharedKey, (client) =>
+    startFamily(account, client, sharedKey, event, undefined, viewAs, account.via === "password" ? password : undefined)
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  The family's Wilmas                                                */
+/* ------------------------------------------------------------------ */
+
+/** Whether a Wilma can be added: to a parent's family only (a student has one Wilma), and each Wilma once. */
+function checkAddable(baseUrl: string): Snapshot {
+  const snap = getState().snapshot;
+  if (!snap || snap.account.via === "demo") throw new Error(t("Sign in to your own Wilma first."));
+  if (viewer() === "student") throw new Error(t("Only a parent's account can have other Wilmas added."));
+  if (logins(snap).some((l) => sameWilma(l.account.baseUrl, baseUrl))) throw new Error(t("This Wilma is in the app already."));
+  return snap;
+}
+
+/** Add a guardian's login on another school's Wilma. Returns `mfa` when Wilma asks for a two-step code. */
+export async function addWilma(baseUrl: string, username: string, password: string): Promise<Next> {
+  const base = baseUrl.replace(/\/$/, "");
+  const snap = checkAddable(base);
+  const slot = slotFor(snap, { baseUrl: base });
+  const account: AccountInfo = { baseUrl: base, username, tenantName: tenantNameOf(base), via: "password" };
+  const sharedKey = await sharedKeyFor(base, username, password);
+  const scope = accountScope();
+  return logIn({ baseUrl: base, username, password }, null, sharedKey, (client) => finishLogin(slot, account, client, sharedKey, { kind: "signed-in", how: "password" }, { scope, password }));
+}
+
+/** Whether a login signs in without the parent typing: its password is remembered, or it's the CLI's saved login. */
+export function loginKept(account: AccountInfo): boolean {
+  return account.via === "cli" || Boolean(passwordOf(account));
+}
+
+/**
+ * Sign one of the family's Wilmas in: with the password typed, else the remembered one or the CLI's saved login. With
+ * another `username`, that user takes the Wilma's place (signed in, its children are the ones Wilma lists for them).
+ * Returns `mfa` when Wilma asks for a two-step code.
+ */
+export async function signInLogin(slot: number, password?: string, automatic = false, username?: string): Promise<Next> {
+  await endingSession;
+  const snap = getState().snapshot;
+  const known = snap ? accountOf(snap, slot) : null;
+  if (!known) throw new Error(t("That Wilma isn't in the app any more."));
+  const account = otherUser(known, username) ? { ...known, username: username!.trim(), via: "password" as const } : known;
+  const scope = accountScope();
+  if (account.via === "cli" && !password) {
+    const cli = (await cliAccounts()).find((a) => sameWilma(a.baseUrl, account.baseUrl) && a.username.toLowerCase() === account.username.toLowerCase());
+    if (!cli) throw new Error(t("The WilmAI CLI's saved login isn't on this computer any more."));
+    return cliLogIn(account, cli, automatic, (named, client, sharedKey, event, students) => finishLogin(slot, named, client, sharedKey, event, { scope, students, automatic }));
+  }
+  const typed = password || passwordOf(account);
+  if (!typed) throw new Error(t("Type the password for this Wilma."));
+  const sharedKey = await sharedKeyFor(account.baseUrl, account.username, typed);
+  const event: HistoryEvent = { kind: "signed-in", how: automatic ? "automatic" : "password" };
+  const signedIn = account.via === "cli" ? { ...account, via: "password" as const } : account;
+  try {
+    return await logIn({ baseUrl: account.baseUrl, username: account.username, password: typed }, null, sharedKey, (client) =>
+      finishLogin(slot, signedIn, client, sharedKey, event, { scope, password: typed, automatic })
+    );
+  } catch (err) {
+    // Changed in Wilma: forgotten, so the parent types the new one.
+    if (err instanceof PasswordRefusedError && !password) rememberPasswordOf(account, null);
+    throw err;
+  }
+}
+
+/** Another username than the Wilma's own, typed on the Wilma page. */
+const otherUser = (account: AccountInfo, username?: string) => Boolean(username?.trim()) && username!.trim().toLowerCase() !== account.username.toLowerCase();
+
+/** A Wilma back in without a login: the live session another WilmAI program saved for it, if there's one. */
+async function continueShared(slot: number): Promise<boolean> {
+  const snap = getState().snapshot;
+  const account = snap ? accountOf(snap, slot) : null;
+  if (!account || sessions.has(slot)) return false;
+  const scope = accountScope();
+  const kept = slot ? (await savedLinkedSessions())[accountKey(account)!] : await savedSession();
+  if (!kept?.sharedKey || accountKey(kept.account) !== accountKey(account)) return false;
+  const entry = await sharedSessionFor(kept.sharedKey).entry().catch(() => null);
+  const client = entry ? WilmaClient.resumeSession(account.baseUrl, entry.state, clientOptions(kept.sharedKey)) : null;
+  if (!entry || !client) return false;
+  try {
+    const students = await client.students();
+    await finishLogin(slot, account, client, kept.sharedKey, { kind: "continued", by: entry.by, savedAt: entry.savedAt, midway: false }, { scope, students });
+    return true;
+  } catch (err) {
+    if (err instanceof SessionEndedError) return false;
+    throw err;
+  }
+}
+
+/** What signing a Wilma in came to: in, a code or the password to ask, or why not. */
+export type Attempt = { ok: true } | { mfa: (code: string) => Promise<void> } | { password: true } | { error: string };
+
+/** What came of signing in, in words for the page: in, a code or the password to ask, or why not. */
+async function attempt(sign: () => Promise<Next>): Promise<Attempt> {
+  try {
+    const next = await sign();
+    return next ? { mfa: next.mfa } : { ok: true };
+  } catch (err) {
+    if (err instanceof PasswordRefusedError) return { password: true };
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/** One Wilma in: another WilmAI program's live session first (no login), else a login with what's typed or kept. */
+export async function signInOne(slot: number, password?: string): Promise<Attempt> {
+  return attempt(async () => {
+    const snap = getState().snapshot;
+    const account = snap ? accountOf(snap, slot) : null;
+    if (!password && (await continueShared(slot))) return null;
+    if (!password && account && !loginKept(account)) throw new PasswordRefusedError();
+    return signInLogin(slot, password);
+  });
+}
+
+/** Every Wilma of the family that isn't signed in, at once (signInOne each), with the passwords typed, by slot; less `skip`. */
+export async function signInAll(typed: Record<number, string> = {}, skip: number[] = []): Promise<Record<number, Attempt>> {
+  const snap = getState().snapshot;
+  if (!snap) return {};
+  const waiting = logins(snap).filter((l) => !sessions.has(l.slot) && !skip.includes(l.slot));
+  const results = await Promise.all(waiting.map(async (l) => [l.slot, await signInOne(l.slot, typed[l.slot] || undefined)] as const));
+  return Object.fromEntries(results);
+}
+
+/**
+ * A signed-out Wilma of the family signed in as another login (Change user on the Wilma page): another user, another
+ * school's Wilma, or both. With one Wilma that's another account: its own family, as on an empty page (this one stays
+ * on this computer, back when its login signs in). With more, that Wilma's place: the same school's other user, or
+ * the other school's Wilma instead of it (once it's in). The same login is just signed in.
+ */
+export async function changeLogin(slot: number, baseUrl: string, username: string, password: string, viewAs?: Viewer): Promise<Attempt> {
+  const known = getState().snapshot ? loginOf(getState().snapshot!, slot) : null;
+  const base = baseUrl.replace(/\/$/, "");
+  if (known && sameWilma(base, known.account.baseUrl) && !otherUser(known.account, username)) return signInOne(slot, password || undefined);
+  return attempt(async () => {
+    const snap = getState().snapshot;
+    const login = snap ? loginOf(snap, slot) : null;
+    if (!snap || !login) throw new Error(t("That Wilma isn't in the app any more."));
+    const school = sameWilma(base, login.account.baseUrl);
+    if (!password) throw new PasswordRefusedError();
+    if (logins(snap).length === 1) return signInWithPassword(base, username.trim(), password, undefined, false, viewAs);
+    if (school) return signInLogin(slot, password, false, username);
+    const next = await addWilma(base, username.trim(), password);
+    if (!next) return void (await removeWilma(slot)), null;
+    return { mfa: async (code: string) => (await next.mfa(code), await removeWilma(slot)) };
+  });
+}
+
+/**
+ * While signed out (the background check, every ten minutes): each Wilma not signed in back without the parent, if
+ * there's a way (getBackLogin). True when every Wilma is in.
+ */
+export async function getBack(): Promise<boolean> {
+  const snap = getState().snapshot;
+  if (getState().phase !== "signed-out" || !snap || snap.account.via === "demo") return false;
+  await Promise.all(logins(snap).filter((l) => !sessions.has(l.slot)).map((l) => getBackLogin(l.slot)));
+  return getState().phase === "ready";
+}
+
+/**
+ * One Wilma back without the parent: another WilmAI program's live session (no login), else, staying signed in and
+ * not pausing, a login with what's kept. Never one the parent signed out of. Wilma asking for a two-step code the app
+ * can't give, or refusing the login, ends trying until the parent signs it in.
+ */
+function getBackLogin(slot: number): Promise<boolean> {
+  const pending = gettingBack.get(slot);
+  if (pending) return pending;
+  const attempt = (async () => {
+    const { snapshot, settings, loginStatus } = getState();
+    const login = snapshot ? loginOf(snapshot, slot) : null;
+    if (!login || login.signedOut || sessions.has(slot)) return false;
+    const scope = accountScope();
     try {
-      let needsCode: unknown = null;
-      if (saved.account.via === "cli") {
-        const login = (await cliAccounts()).find((a) => a.index === (saved.account.cliIndex ?? 0));
-        if (!login) throw new Error(t("The WilmAI CLI's saved login isn't on this computer any more."));
-        needsCode = await signInWithCli(login, true);
-      } else if (settings.wilmaPassword) {
-        needsCode = await signInWithPassword(saved.account.baseUrl, saved.account.username, settings.wilmaPassword, undefined, true);
-      } else return false;
-      if (needsCode) throw new Error(t("Wilma asked for a two-step code."));
-      lastAutomatic = Date.now();
-      setState({ rejoin: { at: null, failed: null } });
+      if (await continueShared(slot)) return true;
+    } catch {
+      return false; // Wilma unreachable: the next check tries again
+    }
+    const status = loginStatus[slot];
+    if (!settings.staySignedIn || !loginKept(login.account) || status?.failed || (status?.rejoinAt && Date.now() < status.rejoinAt)) return false;
+    try {
+      if (await signInLogin(slot, undefined, true)) throw new Error(t("Wilma asked for a two-step code."));
       return true;
     } catch (err) {
       const why = err instanceof Error ? err.message : String(err);
-      setState({ phase: "signed-out", rejoin: { at: null, failed: why }, signedOutReason: t("Wilma ended the session, and signing in again didn't work: {why}", { why }) });
+      if (scope === accountScope()) setStatus(slot, { live: false, why: t("Signing in again didn't work: {why}", { why }), rejoinAt: null, failed: why });
       return false;
     }
-  })().finally(() => {
-    gettingBack = null;
-  });
-  return gettingBack;
+  })().finally(() => gettingBack.delete(slot));
+  gettingBack.set(slot, attempt);
+  return attempt;
 }
 
-/** Browser development: the bridge continues or makes the CLI's session itself and hands it over. */
-async function signInThroughBridge(account: AccountInfo, index: number): Promise<null> {
-  const data = await bridgeCall<{
-    tenantName: string | null;
-    students: { studentNumber: string; name: string }[];
-    state: string;
-    key: string;
-    continued: { savedAt: number | null; by: string | null } | null;
-  }>("cli/session", { body: { index } });
-  const client = WilmaClient.resumeSession(account.baseUrl, data.state, clientOptions(data.key));
-  if (!client) throw new Error(t("The CLI's login has no Wilma session."));
-  const event: HistoryEvent = data.continued ? { kind: "continued", ...data.continued, midway: false } : { kind: "signed-in", how: "saved-login" };
-  await finishSignIn({ ...account, tenantName: data.tenantName ?? account.tenantName }, client, data.key, event, data.students);
-  return null;
+/**
+ * Wilma ended a login's session: Sign in again shows until it's back. Staying signed in, it signs in again by
+ * itself, at once or (ended soon after the app's own sign-in: that Wilma is in use elsewhere) after a pause.
+ */
+function endLogin(slot: number) {
+  const session = sessions.get(slot);
+  if (!session) return;
+  sessions.delete(slot);
+  void recordEnd(session.client.exportSession(), session.sharedKey, labelOf(session.account).wilma);
+  // Its shared key stays: the next check continues a session another WilmAI program saved meanwhile.
+  void forgetSession(slot, session.account, session.sharedKey);
+  const { settings, loginStatus } = getState();
+  if (settings.staySignedIn && !loginStatus[slot]?.failed) {
+    const pace = paces.get(slot) ?? { last: 0, pause: 0 };
+    pace.pause = rejoinPause(pace.last, Date.now(), pace.pause);
+    paces.set(slot, pace);
+    const at = pace.pause ? Date.now() + pace.pause : null;
+    setStatus(slot, {
+      live: false,
+      why: at ? t("Wilma ended the session again soon after: it seems to be in use elsewhere. The app signs in again at {time}.", { time: clock(new Date(at)) }) : t("Wilma ended the session. Signing in again…"),
+      rejoinAt: at,
+      failed: null,
+    });
+    settle();
+    if (!at) void getBackLogin(slot);
+    return;
+  }
+  setStatus(slot, { live: false, why: t("Wilma ended the session."), rejoinAt: null, failed: null });
+  settle();
+}
+
+/** Sign out of one Wilma (to use it in a browser, say): Sign in again shows until the parent signs it in. Its password stays. */
+export async function signOutWilma(slot: number) {
+  const snap = getState().snapshot;
+  const login = snap ? loginOf(snap, slot) : null;
+  if (!login) return;
+  const session = sessions.get(slot);
+  sessions.delete(slot);
+  patchSnapshot((s) => ({ ...s, logins: logins(s).map((l) => (l.slot === slot ? { ...l, signedOut: true } : l)) }));
+  setStatus(slot, { live: false, why: t("You signed out."), rejoinAt: null, failed: null });
+  settle();
+  await forgetSession(slot, login.account);
+  await session?.client.logout().catch(() => {});
+}
+
+/** Take a Wilma out of the app: its session ends, and its children and what was read from it go. The last one signs out. */
+export async function removeWilma(slot: number) {
+  const snap = getState().snapshot;
+  const login = snap ? loginOf(snap, slot) : null;
+  if (!snap || !login) return;
+  if (logins(snap).length === 1) return signOut();
+  const session = sessions.get(slot);
+  sessions.delete(slot);
+  paces.delete(slot);
+  rememberPasswordOf(login.account, null);
+  patchSnapshot((s) => {
+    const theirs = (child: string) => loginOfChild(child) === slot;
+    const ours = <T,>(items: Record<number, T>) => Object.fromEntries(Object.entries(items).filter(([id]) => loginOfId(Number(id)) !== slot)) as Record<number, T>;
+    const next = logins(s).filter((l) => l.slot !== slot);
+    return {
+      ...s,
+      logins: next,
+      lastSlot: Math.max(s.lastSlot ?? 0, slot),
+      children: familyChildren(next),
+      perChild: Object.fromEntries(Object.entries(s.perChild).filter(([child]) => !theirs(child))),
+      messages: ours(s.messages),
+      news: ours(s.news),
+    };
+  });
+  setStatus(slot, null);
+  settle();
+  await forgetSession(slot, login.account);
+  await session?.client.logout().catch(() => {});
+  if (getState().phase === "ready") void syncNow();
+}
+
+/** Show a child (ticked) or not. An unticked child isn't read from Wilma, and what was read about them stays. */
+export function setChildShown(child: string, shown: boolean) {
+  const slot = loginOfChild(child);
+  patchSnapshot((s) => {
+    const next = logins(s).map((l): Login => {
+      if (l.slot !== slot) return l;
+      const hidden = (l.hidden ?? []).filter((c) => c !== child);
+      return { ...l, hidden: shown ? hidden : [...hidden, child] };
+    });
+    return { ...s, logins: next, children: familyChildren(next) };
+  });
+  if (shown && getState().phase === "ready") void syncNow(true);
+}
+
+/** A family signed in here before, back on the Wilma page (one click to sign in when its passwords are kept). */
+export function openFamily(account: AccountInfo) {
+  activateAccount(account);
+  setState({ phase: "signed-out" });
+}
+
+/** End every session of the family on this computer (Wilma's own Log out), without waiting. */
+function endSessions() {
+  const previous = [...sessions.values()];
+  sessions.clear();
+  paces.clear();
+  endingSession = Promise.all(previous.map((session) => session.client.logout().catch(() => {})));
 }
 
 export async function signInDemo() {
-  api = null;
+  endSessions();
   const demo = demoSnapshot();
   activateAccount(demo.account);
-  updateSettings({ staySignedIn: false, wilmaPassword: "" });
   setState({ snapshot: getState().snapshot ?? demo, phase: "ready" });
   await saveSession(null);
+  await saveLinkedSession(null, null);
   await flushPersisted();
   void runJev();
   void runLuna();
 }
 
-/** Back to sign-in with each family's data and AI answers kept separately. */
-export function leaveDemo() {
-  return signOut();
+/** Back from the sample family to the Wilma page: the family signed in here last, or an empty page. */
+export async function leaveDemo() {
+  activateAccount(null);
+  const [family] = knownFamilies();
+  if (family) openFamily(family.account);
+  setState({ phase: "signed-out" });
+  await flushPersisted();
 }
 
-export async function signOut() {
-  const previous = api;
-  api = null;
-  endingSession = previous?.client.logout().catch(() => {}) ?? Promise.resolve();
+/** Delete this family's data from this computer (its children, AI answers and passwords): an empty Wilma page, as at first. */
+export async function forgetThisFamily() {
+  const snap = getState().snapshot;
+  endSessions();
   activateAccount(null);
-  updateSettings({ staySignedIn: false, wilmaPassword: "" });
+  if (snap) forgetFamily(snap.account);
+  setState({ phase: "signed-out" });
+  await saveSession(null);
+  await saveLinkedSession(null, null);
+  await flushPersisted();
+  await endingSession;
+}
+
+/**
+ * Sign out of every Wilma of the family: the Wilma page shows, with the family as it was and (as chosen there) its
+ * passwords, so signing in again is one click. Signed out by the parent, nothing signs in by itself.
+ */
+export async function signOut() {
+  endSessions();
+  const snap = getState().snapshot;
+  if (snap && snap.account.via !== "demo") {
+    patchSnapshot((s) => ({ ...s, logins: logins(s).map((l) => ({ ...l, signedOut: true })) }));
+    for (const l of logins(snap)) setStatus(l.slot, { live: false, why: t("You signed out."), rejoinAt: null, failed: null });
+  }
   setState({ phase: "signed-out" });
   await saveSession(null); // Deliberate sign-out must never automatically rejoin.
+  await saveLinkedSession(null, null);
   await flushPersisted();
   await endingSession;
 }
 
 /** Explicit destructive reset, separate from ending a Wilma session. */
 export async function resetApp() {
-  const leaving = signOut();
+  endSessions();
+  activateAccount(null);
   setState({ phase: "loading" });
   try {
-    await leaving;
+    await saveSession(null);
+    await saveLinkedSession(null, null);
+    await flushPersisted();
+    await endingSession;
     await forgetEverything();
     await clearReports();
   } finally {
@@ -451,34 +855,12 @@ function roleOf(students: { role?: Viewer }[]): Viewer | undefined {
   return students.some((s) => s.role === "guardian") ? "guardian" : undefined;
 }
 
-function toChildren(students: { studentNumber: string; name: string }[]): Child[] {
-  return students.map((s, i) => ({ number: s.studentNumber, name: s.name, first: firstName(s.name), color: i }));
-}
+/** A session that Wilma ended, or a login it refused. */
+const sessionGone = (err: unknown) => err instanceof SessionEndedError || err instanceof AuthenticationError;
 
-function handleError(err: unknown) {
-  if (err instanceof SessionEndedError || err instanceof AuthenticationError) {
-    if (api) void recordEnd(api.client.exportSession(), api.sharedKey);
-    // Keep the login's shared key: the next start continues a session another WilmAI program saved meanwhile.
-    saveSession(api?.sharedKey ? { account: api.account, state: "", sharedKey: api.sharedKey } : null);
-    api = null;
-    const { settings, rejoin } = getState();
-    if (settings.staySignedIn && !rejoin.failed) {
-      // Ended soon after the app's own sign-in: Wilma is in use elsewhere (a browser). Wait, longer each time; else at once.
-      pause = rejoinPause(lastAutomatic, Date.now(), pause);
-      const at = pause ? Date.now() + pause : null;
-      setState({
-        phase: "signed-out",
-        rejoin: { at, failed: null },
-        signedOutReason: at
-          ? t("Wilma ended the session again soon after: it seems to be in use elsewhere. The app signs in again at {time}.", { time: clock(new Date(at)) })
-          : t("Wilma ended the session. Signing in again…"),
-      });
-      if (!at) void getBack();
-      return;
-    }
-    setState({ phase: "signed-out", signedOutReason: t("Wilma ended the session. Sign in again to refresh; everything already here stays.") });
-    return;
-  }
+/** What went wrong reading Wilma: a login's session ended (`slot`: whose), or anything else, said in the sync line. */
+function handleError(err: unknown, slot = 0) {
+  if (sessionGone(err)) return endLogin(slot);
   setState((s) => ({ sync: { ...s.sync, running: false, step: null, error: err instanceof Error ? err.message : String(err) } }));
 }
 
@@ -488,7 +870,7 @@ function handleError(err: unknown) {
  * app's) is what ended it, or none did, which leaves Wilma on a phone or in
  * a browser, or Wilma's own time limit.
  */
-async function recordEnd(ourState: string, sharedKey: string | undefined) {
+async function recordEnd(ourState: string, sharedKey: string | undefined, wilma?: string) {
   const entry = sharedKey ? await sharedSessionFor(sharedKey).entry().catch(() => null) : null;
   // A session this app saved itself isn't another program's login (its cookie may since have been renewed).
   const other = Boolean(entry && entry.by !== "home" && sessionCookieOf(entry.state) && sessionCookieOf(entry.state) !== sessionCookieOf(ourState));
@@ -498,34 +880,39 @@ async function recordEnd(ourState: string, sharedKey: string | undefined) {
     by: other ? (entry?.by ?? null) : null,
     savedAt: other ? (entry?.savedAt ?? null) : null,
     lastOk: getState().sync.lastOk,
+    ...(wilma ? { wilma } : {}),
   });
 }
 
 /**
  * Wilma ended the session while the parent was doing something (writing a
- * message): note it in the history and show the sign-in page, where the
- * saved login is one click. The route stays, so the parent comes back to
- * the same screen, and drafts are kept on this device.
+ * message): note it in the history and show the Wilmas page, where a
+ * remembered password is one click. The route stays, so the parent comes
+ * back to the same screen, and drafts are kept on this device.
  */
-export function signInAgain(): void {
-  handleError(new SessionEndedError());
+export function signInAgain(slot = 0): void {
+  handleError(new SessionEndedError(), slot);
 }
 
 export const isSessionEnded = (err: unknown): boolean => err instanceof SessionEndedError;
 
 /**
- * Keep the session alive while the app is open but out of sight (Wilma ends
+ * Keep the sessions alive while the app is open but out of sight (Wilma ends
  * idle sessions; the app refreshes every ten minutes only while it shows).
- * One small read; never a login. A session found ended goes the usual way.
+ * One small read each; never a login. A session found ended goes the usual way.
  */
 export async function keepAlive(): Promise<void> {
-  if (!api || syncing) return;
+  if (!sessions.size || syncing) return;
   const scope = accountScope();
-  try {
-    await api.client.students();
-  } catch (err) {
-    if (scope === accountScope() && (err instanceof SessionEndedError || err instanceof AuthenticationError)) handleError(err);
-  }
+  await Promise.all(
+    [...sessions].map(async ([slot, session]) => {
+      try {
+        await session.client.students();
+      } catch (err) {
+        if (scope === accountScope() && sessionOf(slot) === session && sessionGone(err)) handleError(err, slot);
+      }
+    })
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -598,7 +985,8 @@ export function withSent(next: Record<number, MessageRec>, before: Record<number
 /** Wilma's Sent folder read again after a message goes, so it shows at once, with its text. */
 async function loadSent(child: string) {
   const scope = accountScope();
-  const sent = await kid(child).messages.list("outbox");
+  const slot = loginOfChild(child);
+  const sent = (await kid(child).messages.list("outbox")).map((m) => ({ ...m, wilmaId: familyId(slot, m.wilmaId) }));
   if (scope !== accountScope()) return;
   patchSnapshot((s) => ({ ...s, messages: withSent({ ...s.messages }, s.messages, [[child, sent]]) }), scope);
   const unread = sent.filter((m) => !getState().snapshot?.messages[m.wilmaId]?.thread).slice(0, 3);
@@ -639,116 +1027,198 @@ function mergeNews(current: Record<number, NewsRec>, lists: [string, NewsItem[]]
   return next;
 }
 
-export function syncNow(): Promise<void> {
-  if (!api) return Promise.resolve();
-  const scope = accountScope();
-  syncing ??= runSync().finally(() => {
+/**
+ * Read Wilma now (one sync at a time). `again`: something changed that a running sync may have missed (a Wilma was
+ * added), so read once more after it.
+ */
+export function syncNow(again = false): Promise<void> {
+  if (!sessions.size) return Promise.resolve();
+  if (syncing) {
+    syncAgain ||= again;
+    return syncing;
+  }
+  syncing = (async () => {
+    do {
+      syncAgain = false;
+      const scope = accountScope();
+      await runSync();
+      // Another account meanwhile: read it too.
+      if (scope !== accountScope()) syncAgain = true;
+    } while (syncAgain && sessions.size);
+  })().finally(() => {
     syncing = null;
-    if (scope !== accountScope() && api) void syncNow();
   });
   return syncing;
 }
 
+/** What one login's Wilma listed for its children, with family ids (data/logins.ts). */
+interface LoginLists {
+  messages: [string, Message[]][];
+  sent: [string, Message[]][];
+  news: [string, NewsItem[]][];
+  invites: [string, InvitationListing[]][];
+}
+
+/** One login's records of the family's messages or bulletins (their ids carry the login). */
+function ofLogin<T>(items: Record<number, T>, slot: number): Record<number, T> {
+  return Object.fromEntries(Object.entries(items).filter(([id]) => loginOfId(Number(id)) === slot)) as Record<number, T>;
+}
+
 async function runSync() {
   const scope = accountScope();
-  const client = api?.client;
-  const current = () => scope === accountScope() && Boolean(api);
+  const current = () => scope === accountScope() && sessions.size > 0;
   const patch = (update: (snap: Snapshot) => Snapshot) => patchSnapshot(update, scope);
   const snap = getState().snapshot;
-  if (!snap || !client) return;
+  if (!snap || !sessions.size) return;
   const step = (text: string) => current() && setState((s) => ({ sync: { ...s.sync, running: true, step: text, error: null } }));
   step(t("Checking Wilma"));
-  const limit = limiter(3, current);
   const now = today();
   const monday = mondayOf(now);
+  const reading = new Map(sessions);
+  // At most three requests at a time to each Wilma.
+  const limits = new Map([...reading.keys()].map((slot) => [slot, limiter(3, () => current() && Boolean(sessionOf(slot)))] as const));
+  const lists = new Map<number, LoginLists>();
+  const failed = new Map<number, unknown>();
   try {
-    if (!snap.children.length || (!snap.account.wilmaRole && !roleAsked.has(snap.account.username))) {
-      // An installation from before the role was read learns it here, once per run (Wilmas without the roles API never say).
-      roleAsked.add(snap.account.username);
-      const students = await client.students();
-      const wilmaRole = roleOf(students);
-      patch((s) => ({ ...s, children: s.children.length ? s.children : toChildren(students), account: wilmaRole ? { ...s.account, wilmaRole } : s.account }));
-    }
+    // A login whose Wilma listed no children when it signed in asks again; an installation from before the role was
+    // read learns it, once per run (Wilmas without the roles API never say).
+    await Promise.all(
+      logins(snap).map(async (login) => {
+        const session = reading.get(login.slot);
+        const identity = accountKey(login.account) === accountKey(snap.account);
+        const askRole = identity && !snap.account.wilmaRole && !roleAsked.has(snap.account.username);
+        if (!session || (login.students?.length && !askRole)) return;
+        if (identity) roleAsked.add(snap.account.username);
+        try {
+          const students = await session.client.students();
+          const wilmaRole = roleOf(students);
+          patch((s) => {
+            const next = logins(s).map((l) => (l.slot !== login.slot ? l : { ...l, students: l.students?.length ? l.students : students.map((x) => ({ number: familyChild(l.slot, x.studentNumber), name: x.name })) }));
+            return { ...s, logins: next, children: familyChildren(next), account: identity && wilmaRole ? { ...s.account, wilmaRole } : s.account };
+          });
+        } catch (err) {
+          failed.set(login.slot, err);
+        }
+      })
+    );
     if (!current()) return;
     const children = getState().snapshot!.children;
-    const messageLists: [string, Message[]][] = [];
-    const sentLists: [string, Message[]][] = [];
-    const newsLists: [string, NewsItem[]][] = [];
-    const inviteLists: [string, InvitationListing[]][] = [];
 
+    // Each Wilma at once: one ending its session leaves the others' reading as it is.
     await Promise.all(
-      children.map(async (child) => {
-        const c = kid(child.number);
-        const overview = await limit(() => c.overview.get());
-        const [lessons, messages, sent, news, notes, calendar, invites] = await Promise.all([
-          limit(() => c.schedule.list({ from: monday, to: addDays(monday, 13) })),
-          limit(() => c.messages.list("inbox")),
-          // What the family sent and nobody has answered yet is only in the Sent folder.
-          limit(() => c.messages.list("outbox")),
-          limit(() => c.news.list()),
-          // The weeks ahead too: a teacher may note a make-up exam on a coming lesson (for the calendar).
-          limit(() => c.attendance.list({ from: addDays(now, -20), to: addDays(now, 60) })),
-          // Start times are a bonus; upcoming exams themselves come with the overview.
-          limit(() => c.exams.calendarOrEmpty()),
-          limit(() => c.invitations.list().catch((err) => (err instanceof SessionEndedError ? Promise.reject(err) : []))),
-        ]);
-        const exams = addExamTimes(overview.upcomingExams, calendar);
-        // The class, once a week (one page): the readers tell an "8. lk" event from the child's own by it.
-        const known = getState().snapshot?.perChild[child.number]?.className;
-        const className =
-          known && Date.now() - new Date(known.fetchedAt).getTime() < 7 * 86_400_000
-            ? known
-            : await limit(() => c.student.get())
-                .then((details) => ({ value: details.className, fetchedAt: new Date() }))
-                .catch((err) => (err instanceof SessionEndedError ? Promise.reject(err) : known));
-        messageLists.push([child.number, messages], [child.number, invites.map((i) => i.message)]);
-        sentLists.push([child.number, sent]);
-        newsLists.push([child.number, news]);
-        inviteLists.push([child.number, invites]);
-        patch((s) => ({
-          ...s,
-          // What the views read when shown (past exams, the grade book, other weeks, the year's notes, contacts) stays.
-          perChild: { ...s.perChild, [child.number]: { ...s.perChild[child.number], overview, lessons, notes, exams, className, weeks: retainedScheduleWeeks(s.perChild[child.number], new Date()), syncedAt: new Date() } },
-        }));
-        step(t("Read {name}'s Wilma", { name: child.first }));
+      [...reading.keys()].filter((slot) => !failed.has(slot)).map(async (slot) => {
+        const limit = limits.get(slot)!;
+        const read: LoginLists = { messages: [], sent: [], news: [], invites: [] };
+        // Wilma's ids, as the family's (the first login's stay as they are).
+        const ours = <T extends { wilmaId: number }>(list: T[]) => list.map((m) => ({ ...m, wilmaId: familyId(slot, m.wilmaId) }));
+        try {
+          await Promise.all(
+            children.filter((child) => loginOfChild(child.number) === slot).map(async (child) => {
+              const c = kid(child.number);
+              const overview = await limit(() => c.overview.get());
+              const [lessons, messages, sent, news, notes, calendar, invites] = await Promise.all([
+                limit(() => c.schedule.list({ from: monday, to: addDays(monday, 13) })),
+                limit(() => c.messages.list("inbox")),
+                // What the family sent and nobody has answered yet is only in the Sent folder.
+                limit(() => c.messages.list("outbox")),
+                limit(() => c.news.list()),
+                // The weeks ahead too: a teacher may note a make-up exam on a coming lesson (for the calendar).
+                limit(() => c.attendance.list({ from: addDays(now, -20), to: addDays(now, 60) })),
+                // Start times are a bonus; upcoming exams themselves come with the overview.
+                limit(() => c.exams.calendarOrEmpty()),
+                limit(() => c.invitations.list().catch((err) => (err instanceof SessionEndedError ? Promise.reject(err) : []))),
+              ]);
+              const exams = addExamTimes(overview.upcomingExams, calendar);
+              // The class, once a week (one page): the readers tell an "8. lk" event from the child's own by it.
+              const known = getState().snapshot?.perChild[child.number]?.className;
+              const className =
+                known && Date.now() - new Date(known.fetchedAt).getTime() < 7 * 86_400_000
+                  ? known
+                  : await limit(() => c.student.get())
+                      .then((details) => ({ value: details.className, fetchedAt: new Date() }))
+                      .catch((err) => (err instanceof SessionEndedError ? Promise.reject(err) : known));
+              read.messages.push([child.number, ours(messages)], [child.number, ours(invites.map((i) => i.message))]);
+              read.sent.push([child.number, ours(sent)]);
+              read.news.push([child.number, ours(news)]);
+              read.invites.push([child.number, invites.map((i) => ({ ...i, message: { ...i.message, wilmaId: familyId(slot, i.message.wilmaId) } }))]);
+              patch((s) => ({
+                ...s,
+                // What the views read when shown (past exams, the grade book, other weeks, the year's notes, contacts) stays.
+                perChild: { ...s.perChild, [child.number]: { ...s.perChild[child.number], overview, lessons, notes, exams, className, weeks: retainedScheduleWeeks(s.perChild[child.number], new Date()), syncedAt: new Date() } },
+              }));
+              step(t("Read {name}'s Wilma", { name: child.first }));
+            })
+          );
+          lists.set(slot, read);
+        } catch (err) {
+          failed.set(slot, err);
+        }
       })
     );
 
     if (!current()) return;
-    patch((s) => ({
-      ...s,
-      messages: withInvites(withSent(mergeMessages(s.messages, messageLists), s.messages, sentLists), s.messages, inviteLists),
-      news: mergeNews(s.news, newsLists),
-      firstSyncAt: s.firstSyncAt ?? Date.now(),
-    }));
+    // Each login read replaces its own records; one that wasn't read keeps what it had, and so do unticked children.
+    patch((s) => {
+      const messages = { ...s.messages };
+      const news = { ...s.news };
+      const unshown = <T extends { children: string[] }>(items: Record<number, T>) => Object.fromEntries(Object.entries(items).filter(([, x]) => !aboutShown(s, x.children)));
+      for (const [slot, read] of lists) {
+        const before = ofLogin(s.messages, slot);
+        for (const id of Object.keys(before)) delete messages[Number(id)];
+        Object.assign(messages, unshown(before), withInvites(withSent(mergeMessages(before, read.messages), before, read.sent), before, read.invites));
+        const beforeNews = ofLogin(s.news, slot);
+        for (const id of Object.keys(beforeNews)) delete news[Number(id)];
+        Object.assign(news, unshown(beforeNews), mergeNews(beforeNews, read.news));
+      }
+      return {
+        ...s,
+        messages,
+        news,
+        firstSyncAt: s.firstSyncAt ?? Date.now(),
+        // The first login's is the snapshot's own (from before there were more).
+        logins: s.logins?.map((l) => (l.slot && lists.has(l.slot) && !l.firstSyncAt ? { ...l, firstSyncAt: Date.now() } : l)),
+      };
+    });
 
     // Details: recent bulletins, and messages Wilma already shows as read (or all, if allowed).
     const s = getState().snapshot!;
-    const allowUnread = getState().settings.backgroundRead;
+    // Opening unread messages ahead (Wilma then shows them as read) is for the AI: without one, they wait for the parent.
+    const allowUnread = getState().settings.backgroundRead && intelligenceOn(getState().settings);
+    const wasRead = (id: number) => lists.has(loginOfId(id));
     const news = Object.values(s.news)
-      .filter((n) => !n.detail && (n.pinned || (n.published && daysBetween(dateOf(n.published), now) <= 45)))
+      .filter((n) => wasRead(n.id) && !n.detail && (n.pinned || (n.published && daysBetween(dateOf(n.published), now) <= 45)))
       .sort((a, b) => (b.published?.getTime() ?? 0) - (a.published?.getTime() ?? 0))
       .slice(0, 20);
     // A thread read before its opening message's own time was kept is read once more, for that time.
     const messages = Object.values(s.messages)
-      .filter((m) => (!m.thread || (m.thread.replies.length > 0 && !m.thread.sentAt)) && (allowUnread || !m.unreadInWilma) && daysBetween(dateOf(m.sentAt), now) <= 120)
+      .filter((m) => wasRead(m.id) && (!m.thread || (m.thread.replies.length > 0 && !m.thread.sentAt)) && (allowUnread || !m.unreadInWilma) && daysBetween(dateOf(m.sentAt), now) <= 120)
       .sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime())
       .slice(0, 30);
     if (news.length || messages.length) step(t("Reading new messages and bulletins"));
     // One that doesn't load (a slow or busy network) doesn't fail the check: it's tried again next time. None loading is worth saying.
-    const failed: unknown[] = [];
-    const detail = (load: () => Promise<void>) =>
-      limit(load).catch((err) => {
-        if (err instanceof SessionEndedError || err instanceof AuthenticationError) throw err;
-        failed.push(err);
+    const missed: unknown[] = [];
+    const detail = (id: number, load: () => Promise<void>) => {
+      const slot = loginOfId(id);
+      return limits.get(slot)!(load).catch((err) => {
+        if (!sessionGone(err)) return void missed.push(err);
+        failed.set(slot, err);
       });
-    await Promise.all([...news.map((n) => detail(() => loadNews(n.id))), ...messages.map((m) => detail(() => loadThread(m.id)))]);
-    if (failed.length && failed.length === news.length + messages.length) throw failed[0];
+    };
+    await Promise.all([...news.map((n) => detail(n.id, () => loadNews(n.id))), ...messages.map((m) => detail(m.id, () => loadThread(m.id)))]);
+    if (missed.length && missed.length === news.length + messages.length) throw missed[0];
 
     if (!current()) return;
-    keepSession();
-    patch((x) => ({ ...x, syncedAt: new Date() }));
-    setState({ sync: { running: false, step: null, error: null, lastOk: Date.now() } });
+    // A Wilma whose session ended waits for signing in again (the Wilmas page); what the others read stands.
+    for (const [slot, err] of failed) if (sessionGone(err) && sessionOf(slot) === reading.get(slot)) handleError(err, slot);
+    for (const slot of lists.keys()) if (!failed.has(slot)) keep(slot);
+    if (lists.size) patch((x) => ({ ...x, syncedAt: new Date() }));
+    // A Wilma that couldn't be read (a slow network, not an ended session) is said in the sync line, by its school when there are more.
+    const [slot, unread] = [...failed].find(([, err]) => !sessionGone(err)) ?? [0, null];
+    const account = getState().snapshot ? accountOf(getState().snapshot!, slot) : null;
+    const why = unread instanceof Error ? unread.message : unread ? String(unread) : null;
+    const many = getState().snapshot ? logins(getState().snapshot!).length > 1 : false;
+    const error = why && many && account ? t("Couldn't read {school}: {why}", { school: schoolOf(account), why }) : why;
+    setState((x) => ({ sync: { running: false, step: null, error, lastOk: lists.size ? Date.now() : x.sync.lastOk } }));
   } catch (err) {
     if (current()) handleError(err);
   }
@@ -762,7 +1232,7 @@ async function loadThread(id: number) {
   const patch = (update: (snap: Snapshot) => Snapshot) => patchSnapshot(update, scope);
   const rec = getState().snapshot?.messages[id];
   if (!rec) return;
-  const message = await kid(rec.children[0]).messages.get(id);
+  const message = await kid(rec.children[0]).messages.get(wilmaIdOf(id));
   patch((s) => {
     const current = s.messages[id];
     if (!current) return s;
@@ -797,7 +1267,7 @@ async function loadNews(id: number) {
   const patch = (update: (snap: Snapshot) => Snapshot) => patchSnapshot(update, scope);
   const rec = getState().snapshot?.news[id];
   if (!rec) return;
-  const item = await kid(rec.children[0]).news.get(id);
+  const item = await kid(rec.children[0]).news.get(wilmaIdOf(id));
   patch((s) => {
     const current = s.news[id];
     if (!current) return s;
@@ -819,34 +1289,34 @@ async function loadNews(id: number) {
 /** Open a message in the app: reads it from Wilma when its text isn't here yet (Wilma then shows it as read). */
 export async function openMessage(id: number) {
   const rec = getState().snapshot?.messages[id];
-  if (!rec || rec.thread || !api) return;
+  if (!rec || rec.thread || !sessionOf(loginOfId(id))) return;
   try {
     await loadThread(id);
     void runJev();
     void runLuna();
   } catch (err) {
-    handleError(err);
+    handleError(err, loginOfId(id));
   }
 }
 
 export async function openNews(id: number) {
   const rec = getState().snapshot?.news[id];
-  if (!rec || rec.detail || !api) return;
+  if (!rec || rec.detail || !sessionOf(loginOfId(id))) return;
   try {
     await loadNews(id);
     void runJev();
     void runLuna();
   } catch (err) {
-    handleError(err);
+    handleError(err, loginOfId(id));
   }
 }
 
 export function replyApi(messageId: number) {
   const rec = getState().snapshot?.messages[messageId];
-  if (!rec || !api) return null;
+  if (!rec || !sessionOf(loginOfId(messageId))) return null;
   const child = kid(rec.children[0]);
   return {
-    prepare: () => write.prepareReply(child, messageId),
+    prepare: () => write.prepareReply(child, wilmaIdOf(messageId)),
     send: async (form: write.ReplyForm, text: string) => {
       await write.sendReply(child, form, text);
       await loadThread(messageId);
@@ -874,7 +1344,7 @@ export async function answerInvitation(messageId: number, slotId: string, action
     return action === "apply" ? t("Sample family: signed up here only.") : t("Sample family: cancelled here only.");
   }
   try {
-    const { notice } = await write.answerInvitation(kid(rec.children[0]), messageId, slotId, action);
+    const { notice } = await write.answerInvitation(kid(rec.children[0]), wilmaIdOf(messageId), slotId, action);
     return notice;
   } finally {
     // Whatever happened, show the invitation as Wilma has it now.
@@ -904,7 +1374,7 @@ export async function declineInvitation(messageId: number, undo = false): Promis
     return undo ? t("Sample family: taken back here only.") : t("Sample family: answered here only.");
   }
   try {
-    const { notice } = await write.declineInvitation(kid(rec.children[0]), messageId, { undo });
+    const { notice } = await write.declineInvitation(kid(rec.children[0]), wilmaIdOf(messageId), { undo });
     return notice;
   } finally {
     await loadThread(messageId).catch(() => undefined);
@@ -931,7 +1401,7 @@ export async function loadGradebook(child: string): Promise<GradebookEntry[]> {
     });
     return entries;
   } catch (err) {
-    if (scope === accountScope() && err instanceof SessionEndedError) handleError(err);
+    if (scope === accountScope() && err instanceof SessionEndedError) handleError(err, loginOfChild(child));
     throw err;
   }
 }
@@ -964,7 +1434,7 @@ export async function loadPastExams(child: string): Promise<PastExam[]> {
     if (scope === accountScope()) void runJev();
     return exams;
   } catch (err) {
-    if (scope === accountScope() && err instanceof SessionEndedError) handleError(err);
+    if (scope === accountScope() && err instanceof SessionEndedError) handleError(err, loginOfChild(child));
     throw err;
   }
 }
@@ -985,7 +1455,7 @@ export async function loadYearNotes(child: string): Promise<LessonNote[]> {
     });
     return notes;
   } catch (err) {
-    if (scope === accountScope() && err instanceof SessionEndedError) handleError(err);
+    if (scope === accountScope() && err instanceof SessionEndedError) handleError(err, loginOfChild(child));
     throw err;
   }
 }
@@ -1010,7 +1480,7 @@ export async function loadWeek(child: string, monday: string): Promise<ScheduleL
     });
     return lessons;
   } catch (err) {
-    if (scope === accountScope() && err instanceof SessionEndedError) handleError(err);
+    if (scope === accountScope() && err instanceof SessionEndedError) handleError(err, loginOfChild(child));
     throw err;
   }
 }
@@ -1042,7 +1512,7 @@ export async function loadContacts(child: string, refresh = false): Promise<Cont
     }));
     return contacts;
   } catch (err) {
-    if (scope === accountScope() && err instanceof SessionEndedError) handleError(err);
+    if (scope === accountScope() && err instanceof SessionEndedError) handleError(err, loginOfChild(child));
     throw err;
   }
 }
@@ -1069,11 +1539,11 @@ export function messageApi(child: string) {
       }
       try {
         await write.sendMessage(kid(child), form, { subject, text });
-        keepSession();
+        keep(loginOfChild(child));
         // Sent: it shows in the inbox now, not only once someone answers. A failure here doesn't undo the sending.
         void loadSent(child).catch(() => {});
       } catch (err) {
-        if (err instanceof SessionEndedError) handleError(err);
+        if (err instanceof SessionEndedError) handleError(err, loginOfChild(child));
         throw err;
       }
     },
@@ -1129,12 +1599,12 @@ export async function sendAbsenceReport(child: string, form: write.AbsenceReport
  * again under the session now in use and return it; when no session is alive,
  * show the sign-in page (drafts stay) and return null.
  */
-export async function preparedAgain<T>(err: unknown, prepare: () => Promise<T>): Promise<T | null> {
+export async function preparedAgain<T>(err: unknown, prepare: () => Promise<T>, slot = 0): Promise<T | null> {
   if (!(err instanceof SessionEndedError)) throw err;
   try {
     return await prepare();
   } catch (again) {
-    handleError(again);
+    handleError(again, slot);
     return null;
   }
 }

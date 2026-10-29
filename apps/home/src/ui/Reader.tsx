@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { accountStorageKey, markOpened, setState, toggleDone, togglePinned, useApp, useViewer } from "../data/store";
 import { toggleDoneWithUndo } from "./done";
 import { answerInvitation, declineInvitation, isDemo, isSessionEnded, openMessage, openNews, replyApi, preparedAgain, signInAgain, SESSION_CHANGED_NOTE } from "../data/engine";
+import { loginOfId, wilmaPage } from "../data/logins";
 import { showToast } from "./Toast";
 import { slotState, type InvitationSlot as InviteSlot } from "@wilma-client/src/core";
 import { NEEDS_YOU, isNeedsYou, type FeedItem } from "../data/feed";
@@ -188,7 +189,7 @@ export function Reader({
             <span className="chip">{t("Sample family: no real Wilma")}</span>
           ) : (
             // A note to explain: Wilma's "Selvitä" page lists exactly those.
-            <a className="btn btn-primary btn-sm" href={`${snap.account.baseUrl}/!${item.children[0]}/attendance`} target="_blank" rel="noreferrer noopener">
+            <a className="btn btn-primary btn-sm" href={wilmaPage(snap, item.children[0], "attendance")} target="_blank" rel="noreferrer noopener">
               {item.task.label} ↗
             </a>
           )}
@@ -778,7 +779,7 @@ function Composer({ messageId, to, collated, onSent }: { messageId: number; to: 
       onSent();
     } catch (err) {
       try {
-        const fresh = await preparedAgain(err, () => replyApi(messageId)!.prepare());
+        const fresh = await preparedAgain(err, () => replyApi(messageId)!.prepare(), loginOfId(messageId));
         if (fresh)
           setStage({
             kind: "confirm",
@@ -849,7 +850,7 @@ function Composer({ messageId, to, collated, onSent }: { messageId: number; to: 
         <div className="notice err composer-error">
           <span>{stage.message}</span>
           {stage.ended ? (
-            <button type="button" className="btn btn-sm" onClick={() => signInAgain()}>
+            <button type="button" className="btn btn-sm" onClick={() => signInAgain(loginOfId(messageId))}>
               {t("Sign in again")}
             </button>
           ) : null}

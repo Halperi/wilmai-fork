@@ -26,6 +26,7 @@ import { buildFeed, isNeedsYou, needsYou, type FeedItem } from "./feed";
 import { addDays, dateOf, deadlineDay, shortDate } from "./dates";
 import { isDesktopApp, onWindows } from "../wilma/transport";
 import type { LocalState, Snapshot } from "./model";
+import { firstSyncOf, loginOfItem, logins } from "./logins";
 import { t } from "../i18n";
 
 /** New items notify for this long after they arrive. */
@@ -73,7 +74,8 @@ export function toNotify(items: FeedItem[], local: LocalState, snap: Snapshot, n
   for (const i of items) {
     if (!isNeedsYou(i) || i.done) continue;
     const at = i.at.getTime();
-    if (!sent[i.key] && !local.opened[i.key] && at >= from && nowMs - at <= FRESH_MS) {
+    // A Wilma added to the app later notifies from when it was first read (data/logins.ts).
+    if (!sent[i.key] && !local.opened[i.key] && at >= Math.max(from, firstSyncOf(snap, loginOfItem(i))) && nowMs - at <= FRESH_MS) {
       const due = dueDay(i);
       out.push({ id: i.key, key: i.key, title: titleOf(i, snap), body: due ? `${stepOf(i)} · ${t("by {date}", { date: shortDate(due) })}` : stepOf(i) });
       continue;
@@ -102,9 +104,13 @@ function trayTitle(title: string) {
 
 /** Signed out with nothing bringing the app back by itself: the parent is needed. */
 function needsSigningIn(): boolean {
-  const { phase, snapshot, settings, rejoin } = getState();
-  return phase === "signed-out" && Boolean(snapshot) && snapshot!.account.via !== "demo" && (!settings.staySignedIn || Boolean(rejoin.failed));
+  const { phase, snapshot, settings, loginStatus } = getState();
+  const stuck = snapshot ? logins(snapshot).some((l) => l.signedOut || loginStatus[l.slot]?.failed) : false;
+  return phase === "signed-out" && Boolean(snapshot) && snapshot!.account.via !== "demo" && (!settings.staySignedIn || stuck);
 }
+
+/** Why a Wilma of the family couldn't be signed in again by itself, if one couldn't. */
+const failedWhy = (): string | null => Object.values(getState().loginStatus).find((s) => s.failed)?.failed ?? null;
 
 /** Notify what's new, and keep the menu bar's count, after the app's state changes (a little later, once things settle). */
 function schedule() {
@@ -124,8 +130,9 @@ function schedule() {
       trayTitle(needed ? "!" : "");
       if (needed && !signOutNotified && state.settings.notify !== false && document.visibilityState === "hidden") {
         signOutNotified = true;
-        const body = state.rejoin.failed
-          ? t("Wilma signed WilmAI Home out, and signing in again didn't work: {why}", { why: state.rejoin.failed })
+        const failed = failedWhy();
+        const body = failed
+          ? t("Wilma signed WilmAI Home out, and signing in again didn't work: {why}", { why: failed })
           : t("Wilma signed WilmAI Home out. Sign in to keep getting notifications.");
         void invoke("notify", { title: "WilmAI Home", body, key: "signin" }).catch(() => {});
       }

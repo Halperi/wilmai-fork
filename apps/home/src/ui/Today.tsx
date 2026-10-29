@@ -15,6 +15,7 @@
  */
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { absenceDay, isDemo, prepareAbsenceReport, preparedAgain, sendAbsenceReport, SESSION_CHANGED_NOTE } from "../data/engine";
+import { loginOfChild } from "../data/logins";
 import type { AbsenceReportForm as AbsenceForm } from "@wilma-client/src/write";
 import { markOpened, useApp, useViewer } from "../data/store";
 import { agenda, examsNeedingAttention, forChildren, isNeedsYou, needsYou, type AgendaEntry, type FeedItem } from "../data/feed";
@@ -601,7 +602,7 @@ function AbsenceRow({ child }: { child: Child }) {
       setNoting(false);
     } catch (err) {
       try {
-        const fresh = await preparedAgain(err, () => prepareAbsenceReport(child.number));
+        const fresh = await preparedAgain(err, () => prepareAbsenceReport(child.number), loginOfChild(child.number));
         if (fresh) setStage({ kind: "form", form: fresh, note: SESSION_CHANGED_NOTE });
       } catch {
         setStage({ kind: "error", message: err instanceof Error ? err.message : String(err), form });

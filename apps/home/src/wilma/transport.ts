@@ -193,9 +193,11 @@ export interface SharedEntry {
  * `entry()` also says who saved it; `last` is the entry the client last loaded.
  */
 export function sharedSessionFor(key: string): SharedSession & { entry(): Promise<SharedEntry | null>; last: SharedEntry | null } {
+  const test = key.startsWith(TEST_KEY);
   const shared = {
     last: null as SharedEntry | null,
     entry: async (): Promise<SharedEntry | null> => {
+      if (test) return testShared.has(key) ? { state: testShared.get(key)!, savedAt: null, by: "home" } : null;
       const found = await bridgeCall<{ state: string | null; savedAt?: number | null; by?: string | null } | null>("session/get", { body: { key } });
       return found?.state ? { state: found.state, savedAt: found.savedAt ?? null, by: found.by ?? null } : null;
     },
@@ -204,11 +206,17 @@ export function sharedSessionFor(key: string): SharedSession & { entry(): Promis
       return shared.last?.state ?? null;
     },
     save: async (state: string) => {
-      await bridgeCall("session/set", { body: { key, state } });
+      if (test) testShared.set(key, state);
+      else await bridgeCall("session/set", { body: { key, state } });
     },
   };
   return shared;
 }
+
+/** The development server's test Wilmas (demo/test-wilma.ts): answered in memory, their sessions kept out of the shared file. */
+const isTestWilma = (url: string) => typeof __TEST_WILMAS__ !== "undefined" && __TEST_WILMAS__ && /^https:\/\/[^/]+\.wilmai\.test(\/|$)/i.test(url);
+const TEST_KEY = "test:";
+const testShared = new Map<string, string>();
 
 /** One saved login's password and authenticator key, read when the parent clicks "Continue as" (desktop app). */
 export function savedLoginSecret(id: string): Promise<{ password: string; totpSecret: string | null }> {
@@ -219,11 +227,14 @@ export function savedLoginSecret(id: string): Promise<{ password: string; totpSe
 export async function sharedKeyFor(baseUrl: string, username: string, password: string): Promise<string> {
   const text = `${baseUrl.replace(/\/$/, "")}\n${username.toLowerCase()}\n${password}`;
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const key = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return isTestWilma(baseUrl) ? TEST_KEY + key : key;
 }
 
 /** wilma-client's transport: one exchange through the native command or the bridge. */
 export const wilmaTransport: WilmaTransport = async (req) => {
+  // Written out, so a release build drops the test Wilmas whole.
+  if (typeof __TEST_WILMAS__ !== "undefined" && __TEST_WILMAS__ && isTestWilma(req.url)) return (await import("../demo/test-wilma")).testWilma(req);
   const extra = Object.fromEntries(
     Object.entries(req.headers).filter(([name]) => name === "accept" || name === "x-requested-with")
   );
@@ -249,7 +260,8 @@ export const wilmaTransport: WilmaTransport = async (req) => {
   const headers = new Headers();
   if (answer.contentType) headers.set("content-type", answer.contentType);
   if (answer.location) headers.set("location", answer.location);
-  if (import.meta.env.DEV) logExchange(wire, answer);
+  // Node (the tests) has no Vite env.
+  if (import.meta.env?.DEV) logExchange(wire, answer);
   return { status: answer.status, headers, setCookies: answer.setCookie, body: answer.body };
 };
 

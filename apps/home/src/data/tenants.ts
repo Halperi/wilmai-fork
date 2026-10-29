@@ -15,7 +15,13 @@ export interface Tenant {
   municipalities: { name_fi: string; name_sv: string }[];
 }
 
-export const TENANTS = (tenantList as { wilmat: Tenant[] }).wilmat;
+/** The development server: two test schools, answered in memory, for trying several Wilmas by hand (demo/test-wilma.ts). */
+const TEST_TENANTS: Tenant[] = [
+  { url: "https://pohjoinen.wilmai.test", name: "Testikoulu Pohjoinen (testi)", municipalities: [{ name_fi: "Testi", name_sv: "Test" }] },
+  { url: "https://etela.wilmai.test", name: "Testikoulu Etelä (testi)", municipalities: [{ name_fi: "Testi", name_sv: "Test" }] },
+];
+
+export const TENANTS = [...(tenantList as { wilmat: Tenant[] }).wilmat, ...(typeof __TEST_WILMAS__ !== "undefined" && __TEST_WILMAS__ ? TEST_TENANTS : [])];
 
 function towns(t: Tenant): string[] {
   return t.municipalities.flatMap((m) => [m.name_fi, m.name_sv]).filter(Boolean).map((s) => s.toLowerCase());

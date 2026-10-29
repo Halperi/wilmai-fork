@@ -56,14 +56,16 @@ pnpm dev
 
 Then open http://127.0.0.1:5199.
 
-- **Continue as …**: one click with the login the WilmAI CLI saved on this
-  computer (`wilma login`). It continues a WilmAI session that's still alive
-  (no login, so nothing else is signed out), and otherwise signs in with the
-  saved password, and the two-step code when the CLI keeps the authenticator
-  key. Nothing happens without the click. The released app would keep its own
-  login in the system keychain instead.
 - **Sign in** with a school, username and password (two-step codes work). The
-  password goes only to the school's Wilma and isn't saved.
+  password goes only to the school's Wilma. The app doesn't offer the WilmAI
+  CLI's saved logins: it signs in with what the parent types here (a login
+  made with one before still signs in with it).
+- **Test schools** (the development server only, `pnpm dev` or `pnpm app`):
+  search "testi" for Testikoulu Pohjoinen and Testikoulu Etelä, answered in
+  memory with anonymised real pages (`src/demo/test-wilma.ts`). Pohjoinen:
+  `huoltaja` / `testi` (Aino, listed twice as after a school change, and
+  Veeti), `oppilas` / `testi` (Aino's own login). Etelä: `huoltaja` / `testi`
+  (Eino). Release builds leave them out.
 - **Look around with a sample family**: made-up data, safe for screenshots.
 - **Settings → WilmAI Intelligence**: choose No AI, recommended OpenAI
   with the parent's own key, or local AI (Clef-flash + Qwen3.5 4B). On a
@@ -91,9 +93,9 @@ Then open http://127.0.0.1:5199.
   the sign-in history it happened 5–6 times a day, never by another WilmAI
   program): the checks go on while signed out. Each one first continues a
   live session another WilmAI program on this computer saved (no login).
-  - *Stay signed in* (Settings → Reading from Wilma, off by default): the
-    app signs in again by itself, with the WilmAI CLI's saved login or the
-    password typed here (then kept scrambled, only while this is on). A
+  - *Keep the app signed in* (recommended; the Wilma page and Settings,
+    "When Wilma signs the app out"): the app signs in again by itself, with
+    the password kept here, scrambled. A
     session the app signed into itself that Wilma ends within 15 minutes
     means Wilma is in use elsewhere (a browser): it waits 30 minutes, then
     an hour, at most two, so it doesn't race the parent. A login Wilma
@@ -102,6 +104,62 @@ Then open http://127.0.0.1:5199.
     the phone app competes too.
   - Off (or failed): one notification ("Wilma signed WilmAI Home out"),
     "!" beside the menu bar icon, and "Sign in to Wilma…" in its menu.
+- **Signing in, and the family's Wilmas**: one page, the Wilma page
+  (`src/ui/Wilmas.tsx`, `src/data/logins.ts`). The app shows once every Wilma
+  of the family is signed in; otherwise the Wilma page (`screenFor`). The
+  menu item under Settings opens it (Wilma accounts, with the school, or how
+  many Wilmas, under it; the schools on hover); in the sample family that
+  item leaves it. Under them, the theme and the fold button, then the
+  version. On the Wilma page, all at once:
+  - who uses the app: a parent (any number of schools' Wilmas, the children
+    to show) or a student (one Wilma); the app's Settings doesn't ask again;
+  - each Wilma: signed in, its school and username, its children to tick
+    and Sign out; signed out, a login form filled in as a browser fills one
+    (the school, the username, dots for a kept password, typed over to
+    change it), the code when Wilma asks; no children until it's in.
+    Another school or user there signs in that login: with one Wilma it's
+    another account, its own family (this one stays on this computer);
+    with more, it takes that Wilma's place (`changeLogin`). A new Wilma's
+    row has Cancel by its label. Each can be removed. New ones to fill
+    in (the school, a username filled in from the last time, a password),
+    and Add another school's Wilma (a school in another town, an upper
+    secondary school or a private school with its own Wilma);
+  - one Sign in for everything, right under the Wilmas, with a line saying
+    what happens when Wilma signs the app out (Change). When every Wilma is
+    in, the app opens; a Wilma just added keeps the page open to show the
+    children it lists;
+  - Settings (the button under everything), sliding in over the form within
+    the panel (Done, Back or Esc returns): the app's language and theme
+    (light, dark or the computer's; also beside the version under the menu);
+    choosing to be asked for the password each time stops using the kept
+    passwords at once and deletes them when the settings close (so trying
+    the choices on the way to another loses nothing);
+    when Wilma
+    signs the app out (keep
+    the app signed in, recommended and chosen for a first setup; ask and
+    sign in with one click; or ask for the password each time, nothing
+    kept); then, apart below Done and quiet until they ask, deleting this
+    family's data from this computer and resetting the app. The app's own
+    Settings has none of these.
+  - Sign out (a Wilma's own, on the page) keeps the family and, as chosen,
+    its password: Sign in is one click. Signed out by the parent, nothing
+    signs in by itself. The sample family is on the page only, not in
+    Settings.
+  - Only a guardian's login can be added, one per Wilma. Each Wilma numbers
+    its own children, messages and bulletins, so an added login's carry its
+    slot (child `12345@1`, ids slot × 2³² + Wilma's own); the first login's
+    keep Wilma's own numbers, so nothing stored before changes. Any Wilma
+    can be removed, the first too.
+  - A child at a new school gets a new profile, even on the same Wilma, so
+    Wilma can list them twice for a while: the parent unticks the old one.
+    An unticked child isn't read from Wilma or shown, and what was read
+    stays for ticking again.
+  - An added Wilma's items count as new, and notify, only from when the app
+    first read it. Signing in with any of the family's logins brings the
+    family back.
+  - Tested against two fake Wilmas with the same numbers
+    (`evals/logins.test.ts`) and by hand with the test schools; not yet with
+    a real second Wilma.
 
 **Secrets on this computer**, kept the way the WilmAI CLI keeps its saved
 logins: the Wilma session (cookies) in the app's IndexedDB, the OpenAI key
@@ -245,8 +303,8 @@ a changed session posts nothing, prepares the form again and asks again.
   Wilma's "Selvitä" page.
 - **Drafts** (new messages and replies) stay on this device until sent or
   discarded ("Discard draft", with Undo). If Wilma ends the session while
-  writing, the app says so and offers "Sign in again" (the saved login,
-  one click), then comes back to the same message. A message to a teacher
+  writing, the app says so and offers "Sign in again" (a remembered
+  password is one click), then comes back to the same message. A message to a teacher
   about a note gets a Finnish subject whatever the app's language.
 - **Replying**: Wilma's own answer form. Open discussions answer everyone on
   the thread; other messages get a private answer with Wilma's "VS:" subject.
@@ -322,8 +380,9 @@ allows it.
   Jev key an earlier build kept in the keychain, once, to move it;
   `shared_session_get/set` read and write the
   shared session file; `cli_logins` lists the CLI's saved logins without
-  secrets and `cli_login_secret` reads one login's password when the parent
-  clicks Continue as; `update_manifest` checks wilm.ai for a newer version.
+  secrets and `cli_login_secret` reads one login's password, only for a
+  login made with the CLI's saved login before; `update_manifest` checks
+  wilm.ai for a newer version.
   The window may only call those, move itself and open https links in the
   browser (`src-tauri/capabilities`).
 - Wilma itself is **wilma-client**: its runtime-neutral `core` entry for
@@ -390,8 +449,10 @@ For OpenAI:
 - Without a key: what it does (with OpenAI GPT-6 Luna), the key field
   ("Turn on"), and the usual cost, tens of cents a month for a family. Costs can rise
   with history size and re-reading. A key OpenAI refuses isn't kept.
-- With a key: *this month (USD)* so far, *usually tens of cents a month*,
-  and a saved *monthly limit (USD)* slider from $0.50 to $3 in 50-cent steps, defaulting to
+- With a key, kept short: one line with *this month* against the limit (a thin bar, and
+  what's being read), then *Translating messages* in the same card (it's OpenAI's), and
+  one disclosure, *OpenAI key, limit and usage*, with the key, the usage table and a
+  saved *monthly limit (USD)* slider from $0.50 to $3 in 50-cent steps, defaulting to
   $1 for both new and older installations (a higher limit saved before becomes $3). No call starts once
   the recorded month's cost is within a cent of the selected budget (`luna/client.ts`); it
   pauses and says so until the 1st. The cost is counted on this computer from the

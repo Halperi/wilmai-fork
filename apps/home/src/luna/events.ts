@@ -30,6 +30,7 @@ import { runJev } from "../jev/runner";
 import { subjectNamer } from "../data/schedule";
 import { hash } from "../data/hash";
 import { runTranslations } from "../data/translations";
+import { aboutShown } from "../data/logins";
 
 /** The reading's version: a change here reads everything again. */
 export const LUNA_EVENTS = "luna-reading@5";
@@ -76,8 +77,8 @@ export function lunaSources(snap: Snapshot, reader: Viewer = viewerOf(snap.accou
     out.push({ key, kind, children, pupils, title: subject, body: `${subject}\n${text}`, input: `${lines.join("\n")}\nSubject: ${subject}\n\n${text}`, note, sent, reader });
   };
   for (const m of Object.values(snap.messages)) {
-    // The family's own message, not answered yet: their words, nothing to read for them (an answer is).
-    if (!m.thread?.content || !recent(m.sentAt) || awaitingReply(m)) continue;
+    // The family's own message, not answered yet: their words, nothing to read for them (an answer is). An unticked child's isn't read.
+    if (!m.thread?.content || !recent(m.sentAt) || awaitingReply(m) || !aboutShown(snap, m.children)) continue;
     add(
       `m:${m.id}`,
       "message",
@@ -89,7 +90,7 @@ export function lunaSources(snap: Snapshot, reader: Viewer = viewerOf(snap.accou
     );
   }
   for (const n of Object.values(snap.news)) {
-    if (!n.detail?.content || !(n.pinned || recent(n.published))) continue;
+    if (!n.detail?.content || !(n.pinned || recent(n.published)) || !aboutShown(snap, n.children)) continue;
     add(
       `n:${n.id}`,
       "news",

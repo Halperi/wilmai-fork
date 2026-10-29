@@ -96,9 +96,30 @@ export interface Contacts {
   fetchedAt: Date;
 }
 
+/** One of the family's Wilma logins (data/logins.ts): a parent can have one on each school's Wilma. */
+export interface Login {
+  /** 0: the first login (Wilma's own numbers); 1, 2, …: added later, its children's numbers and its items' ids carry it. Never reused. */
+  slot: number;
+  account: AccountInfo;
+  /** The children Wilma lists for this login (family numbers), as last read. */
+  students?: { number: string; name: string }[];
+  /** The children not shown (unticked): not read from Wilma, and what was read about them stays. */
+  hidden?: string[];
+  /** When the app first read this Wilma: its older items don't count as new (as Snapshot.firstSyncAt). */
+  firstSyncAt?: number;
+  /** The parent signed out of it: nothing signs it in again by itself until they sign in. */
+  signedOut?: boolean;
+}
+
 export interface Snapshot {
   version: 1;
+  /** The login this family was first signed in with: the key of its data on this computer (store's accountKey). */
   account: AccountInfo;
+  /** The family's Wilma logins; missing in installations from before, where the first login is the only one. */
+  logins?: Login[];
+  /** The highest slot a login has had (a removed login's isn't given to another). */
+  lastSlot?: number;
+  /** The children shown: every login's, less the unticked ones (Login.hidden). */
   children: Child[];
   perChild: Record<string, ChildData>;
   messages: Record<number, MessageRec>;
@@ -319,13 +340,17 @@ export interface Settings {
    * unless turned off when signing in (a shared computer). Staying signed in keeps it either way.
    */
   rememberPassword?: boolean;
-  /** The Wilma password, when the parent signed in with one and it's remembered (kept scrambled, not encrypted). */
+  /** Before there were several Wilmas: the one login's remembered password (kept scrambled, not encrypted); moves into `passwords`. */
   wilmaPassword: string;
+  /** Each Wilma login's remembered password (data/logins.ts), by login (store's accountKey), kept scrambled like wilmaPassword. */
+  passwords: Record<string, string>;
   jevModel: string;
   /** Read new messages in the background so Jev can sort them (Wilma then shows them as read). */
   backgroundRead: boolean;
   /** The app's language: "auto" follows the computer (Finnish if it's set to Finnish, otherwise English). */
   language: "auto" | "en" | "fi" | "sv";
+  /** Light or dark: unset or "auto" follows the computer. */
+  theme?: "auto" | "light" | "dark";
   /** What messages are translated into, with OpenAI (data/translations.ts); unset: no translations. */
   translateTo?: TranslationLanguage | "off";
   /** Who translates with OpenAI (ai/translate.ts TRANSLATORS); unset: the default there. */
@@ -350,6 +375,7 @@ export const DEFAULT_SETTINGS: Settings = {
   openaiKey: "",
   aiMonthlyBudgetUsd: DEFAULT_AI_BUDGET,
   wilmaPassword: "",
+  passwords: {},
   readingModel: "gpt-6-luna",
   // All three read best on the eval suite (99 % on 70 cases, 8 Oct 2026) for about a cent a month more.
   lunaChecks: { choices: true, fields: true, crossItem: true },

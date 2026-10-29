@@ -40,9 +40,9 @@ export const SV_COMMON: Record<string, string> = {
   "Add your OpenAI API key": "Lägg till din OpenAI API-nyckel",
   "For a family, OpenAI usually costs tens of cents a month. OpenAI bills your key directly, and the app pauses AI if a month reaches your limit ({limit}).":
     "För en familj kostar OpenAI vanligen några tiotal cent i månaden. OpenAI fakturerar direkt via din nyckel, och appen pausar AI om månadsgränsen ({limit}) nås.",
-  "Tens of cents": "Några tiotal cent",
   "Monthly limit (USD)": "Månadsgräns (USD)",
-  "AI pauses there": "AI pausas där",
+  "This month {spent} of {limit}": "Den här månaden {spent} av {limit}",
+  "OpenAI key, limit and usage": "OpenAI-nyckel, gräns och användning",
   "$0.50–$3 a month, $1 to start with. Today warns you at 80%, and AI pauses at the limit. Raising the limit picks up what's waiting.":
     "0,50–3 dollar i månaden, 1 dollar till att börja med. Vyn Idag varnar dig vid 80 %, och AI pausas vid gränsen. Om du höjer gränsen läses det som väntar.",
   "The first reading of your older messages costs a little more. Amounts are in US dollars, as OpenAI bills them.":
@@ -77,16 +77,11 @@ export const SV_COMMON: Record<string, string> = {
   "Free up some disk space first.": "Frigör först lite diskutrymme.",
 
   // A student's own login (Settings → Who uses this account)
-  "Who uses this account": "Vem använder det här kontot",
   // The menu corner: the version and whether it is the newest
   "Update available": "Uppdatering tillgänglig",
   "Up to date": "Uppdaterad",
   "A parent": "Vårdnadshavare",
   "A student": "Elev",
-  "Wilma says this is a student's own login.": "Enligt Wilma är detta elevens eget användarkonto.",
-  "Wilma says this is a guardian's login.": "Enligt Wilma är detta en vårdnadshavares användarkonto.",
-  "A student sees their own steps first: what to do, bring and hand in. A guardian's steps, such as sign-ups and absence reports, are left out. Changing this has the AI read the messages again.":
-    "Eleven ser först sina egna uppgifter: vad som ska göras, tas med och lämnas in. Vårdnadshavarens uppgifter, som anmälningar och frånvaroanmälningar, lämnas bort. Om du ändrar detta läser AI:n meddelandena på nytt.",
   "*OpenAI sees one item at a time,* with your first name and class, when you choose OpenAI. Local AI reads everything on this Mac, and No AI reads nothing.":
     "*OpenAI ser en sak i taget,* med ditt förnamn och din klass, när du väljer OpenAI. Lokal AI läser allt på den här Macen, och Ingen AI läser ingenting.",
   "A student sees their own tasks, exams and homework first.": "Eleven ser först sina egna uppgifter, prov och läxor.",
@@ -151,8 +146,6 @@ export const SV_COMMON: Record<string, string> = {
   "All exams": "Alla prov",
   "Go to Exams": "Gå till Prov",
   // The menu's corner
-  "Only on this computer": "Bara på den här datorn",
-  "Only in this browser": "Bara i den här webbläsaren",
   // Notes (tuntimerkinnät)
   Notes: "Anteckningar",
   "Reading this school year from Wilma…": "Hämtar läsårets anteckningar från Wilma…",
