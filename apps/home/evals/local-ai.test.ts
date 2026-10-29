@@ -1,6 +1,7 @@
 import "./shim.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
+import { fileURLToPath } from "node:url";
 import { createServer } from "node:http";
 import { forwardToOllama } from "../bridge/core.ts";
 import { intelligenceOn, intelligenceProvider, DEFAULT_SETTINGS } from "../src/data/model.ts";
@@ -145,7 +146,7 @@ test("Medium readiness requires Clef Q8 and a Q4 reader without weakening Small 
 });
 
 test("the app pipeline uses extraction and verification phases with no cloud calls", async () => {
-  const c = loadCases(new URL("./cases", import.meta.url).pathname).find((c) => c.id === "relative-tomorrow")!;
+  const c = loadCases(fileURLToPath(new URL("./cases", import.meta.url))).find((c) => c.id === "relative-tomorrow")!;
   c.items.push({ ...c.items[0], id: 802 });
   setState({ snapshot: snapshotOf(c), settings: { ...DEFAULT_SETTINGS, aiProvider: "local", decider: "jev", jevKey: "old-jev-key-never-sent", localAI: { think: false } }, jev: {}, luna: {}, jevBaseline: {}, usage: {} });
   const requests: string[] = [];

@@ -1,5 +1,11 @@
 # The eval suite
 
+The offline sign-in regressions run with `pnpm test:auth` (also included in
+`pnpm test:ai`). They use synthetic sessions and controlled bridge replies,
+including the desktop saved-login path, password login and MFA. No native
+files, real credentials, Wilma servers or AI services are used. Delayed replies
+are released explicitly to check logout, reset and replacement sign-ins.
+
 How well does the app read Wilma? Each case is a small made-up family on a
 fixed day (messages, bulletins, teachers' lesson notes, exam marks) with the
 answers a parent would call right.

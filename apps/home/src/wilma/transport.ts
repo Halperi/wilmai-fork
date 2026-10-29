@@ -249,7 +249,7 @@ export const wilmaTransport: WilmaTransport = async (req) => {
   const headers = new Headers();
   if (answer.contentType) headers.set("content-type", answer.contentType);
   if (answer.location) headers.set("location", answer.location);
-  if (import.meta.env.DEV) logExchange(wire, answer);
+  if (import.meta.env?.DEV) logExchange(wire, answer);
   return { status: answer.status, headers, setCookies: answer.setCookie, body: answer.body };
 };
 
