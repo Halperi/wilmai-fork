@@ -7,6 +7,7 @@
 
 mod shell;
 mod local_ai;
+mod session_lock;
 #[cfg(all(feature = "local-ai", not(all(target_os = "macos", target_arch = "aarch64"))))]
 compile_error!("Local AI needs Apple Silicon macOS; build without the local-ai feature on this target.");
 
@@ -430,6 +431,13 @@ const SESSION_TTL_MS: u64 = 6 * 60 * 60 * 1000;
 const MAX_STATE_BYTES: usize = 64 * 1024;
 
 /// The CLI's config file: WILMAI_CONFIG_PATH, else $XDG_CONFIG_HOME/wilmai or ~/.config/wilmai (config.json).
+fn home_folder(home: Option<String>, profile: Option<String>, drive: Option<String>, path: Option<String>, windows: bool) -> Option<std::path::PathBuf> {
+    let nonempty = |value: Option<String>| value.filter(|s| !s.is_empty());
+    let profile = nonempty(profile).or_else(|| Some(format!("{}{}", nonempty(drive)?, nonempty(path)?)));
+    let home = nonempty(home);
+    (if windows { profile.or(home) } else { home.or(profile) }).map(std::path::PathBuf::from)
+}
+
 fn config_file() -> Option<std::path::PathBuf> {
     use std::path::PathBuf;
     if let Ok(config) = std::env::var("WILMAI_CONFIG_PATH") {
@@ -439,7 +447,7 @@ fn config_file() -> Option<std::path::PathBuf> {
     }
     let base = match std::env::var("XDG_CONFIG_HOME") {
         Ok(xdg) if !xdg.is_empty() => PathBuf::from(xdg),
-        _ => PathBuf::from(std::env::var("HOME").ok()?).join(".config"),
+        _ => home_folder(std::env::var("HOME").ok(), std::env::var("USERPROFILE").ok(), std::env::var("HOMEDRIVE").ok(), std::env::var("HOMEPATH").ok(), cfg!(windows))?.join(".config"),
     };
     Some(base.join("wilmai").join("config.json"))
 }
@@ -503,6 +511,10 @@ async fn shared_session_get(key: String) -> Result<Option<SharedEntry>, String> 
 
 #[tauri::command]
 async fn shared_session_set(key: String, state: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || write_shared_session(&key, &state)).await.map_err(|e| e.to_string())?
+}
+
+fn write_shared_session(key: &str, state: &str) -> Result<(), String> {
     use std::io::Write;
     if !valid_session_key(&key) || state.len() > MAX_STATE_BYTES || !state.contains("Wilma2SID") {
         return Err("Not a WilmAI session".into());
@@ -518,6 +530,7 @@ async fn shared_session_set(key: String, state: String) -> Result<(), String> {
         folder.mode(0o700);
     }
     folder.create(dir).map_err(|e| e.to_string())?;
+    let _lock = session_lock::SessionLock::acquire(&path)?;
     let content = std::fs::read_to_string(&path).unwrap_or_default();
     let next = write_session(&content, &key, &state, now_ms());
     // Temp file + rename, like the CLI: another program never reads half a file.
@@ -529,10 +542,14 @@ async fn shared_session_set(key: String, state: String) -> Result<(), String> {
         use std::os::unix::fs::OpenOptionsExt;
         options.mode(0o600);
     }
-    let mut file = options.open(&tmp).map_err(|e| e.to_string())?;
-    file.write_all(next.as_bytes()).map_err(|e| e.to_string())?;
-    drop(file);
-    std::fs::rename(&tmp, &path).map_err(|e| e.to_string())
+    let result = (|| {
+        let mut file = options.open(&tmp).map_err(|e| e.to_string())?;
+        file.write_all(next.as_bytes()).map_err(|e| e.to_string())?;
+        drop(file);
+        std::fs::rename(&tmp, &path).map_err(|e| e.to_string())
+    })();
+    let _ = std::fs::remove_file(&tmp);
+    result
 }
 
 /*
@@ -703,6 +720,15 @@ async fn update_manifest() -> Result<Option<Release>, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn resolves_windows_home_without_home_environment() {
+        let profile = Some("C:\\Users\\Example".to_owned());
+        assert_eq!(home_folder(None, profile.clone(), None, None, true), profile.map(std::path::PathBuf::from));
+        assert_eq!(home_folder(None, None, Some("C:".into()), Some("\\Users\\Example".into()), true), Some(std::path::PathBuf::from("C:\\Users\\Example")));
+        assert_eq!(home_folder(None, None, None, None, true), None);
+        assert_eq!(home_folder(Some("/unix".into()), Some("C:\\Users\\Example".into()), None, None, false), Some(std::path::PathBuf::from("/unix")));
+    }
 
     #[test]
     fn knows_the_tenant_list() {

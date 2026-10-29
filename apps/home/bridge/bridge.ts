@@ -67,8 +67,9 @@ export function bridge(): Plugin {
         return send(res, 200, { accounts: await cliAccounts(REPO_ROOT).catch(() => []) });
       }
       if (path === "/bridge/cli/session" && req.method === "POST") {
-        const { index } = await readJson<{ index: number }>(req);
-        return send(res, 200, await cliSession(REPO_ROOT, Number(index) || 0));
+        const { index, baseUrl, username } = await readJson<{ index: number; baseUrl?: string; username?: string }>(req);
+        if (typeof baseUrl !== "string" || typeof username !== "string") throw new HttpError(400, "Missing CLI account identity");
+        return send(res, 200, await cliSession(REPO_ROOT, Number(index) || 0, { baseUrl, username }));
       }
       if (path === "/bridge/session/get" && req.method === "POST") {
         const { key } = await readJson<{ key: unknown }>(req);

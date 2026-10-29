@@ -205,10 +205,11 @@ export async function cliAccounts(repoRoot: string) {
  * password when Wilma has ended it), handed to the page as wilma-client's
  * session state. The password itself never leaves this process.
  */
-export async function cliSession(repoRoot: string, index: number) {
+export async function cliSession(repoRoot: string, index: number, expected?: { baseUrl: string; username: string }) {
   const { config, credentials, sessions, client } = await cliModules(repoRoot);
   const accounts = await credentials.resolveAccounts(await config.loadConfig());
-  const account = accounts[index];
+  const account = expected ? accounts.find((a: { profile: { baseUrl: string; username: string } }) =>
+    a.profile.baseUrl.replace(/\/$/, "").toLowerCase() === expected.baseUrl.replace(/\/$/, "").toLowerCase() && a.profile.username.trim().toLowerCase() === expected.username.trim().toLowerCase()) : accounts[index];
   if (!account) throw new HttpError(404, "No such CLI login");
   const profile = { ...account.profile, studentNumber: null };
   const key = poolKey(profile);

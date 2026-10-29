@@ -75,7 +75,7 @@ test("normal sign-out survives restart and reuses unchanged AI answers with no c
 test("the Wilma password is remembered unless turned off, and a deliberate sign-out forgets it", async () => {
   await resetApp();
   installAccount();
-  const kept = () => localStorage.getItem("wilmai.wilmaPassword");
+  const kept = () => localStorage.getItem(accountStorageKey("wilmaPassword"));
   updateSettings({ ...DEFAULT_SETTINGS, wilmaPassword: "fictional-password" });
   assert.ok(kept(), "remembered by default, without staying signed in");
   assert.ok(!kept()!.includes("fictional-password"), "scrambled, not as typed");

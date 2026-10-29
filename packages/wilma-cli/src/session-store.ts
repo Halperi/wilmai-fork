@@ -2,6 +2,7 @@ import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { randomBytes } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { getConfigPath } from "./config.js";
+import { withSessionLock } from "./session-lock.js";
 
 /*
  * Wilma sessions saved between commands. Wilma allows one live session per
@@ -59,20 +60,24 @@ export const fileSessionStore: SessionStore = {
 
   async save(key, state) {
     if (process.env.WILMAI_NO_SESSION_CACHE === "1") return;
-    const all = await readAll();
-    const now = Date.now();
-    for (const [k, entry] of Object.entries(all)) {
-      if (now - entry.savedAt > SESSION_TTL_MS) delete all[k];
-    }
-    all[key] = { state, savedAt: now, by: savedBy };
-    await writeAll(all);
+    await withSessionLock(sessionsPath(), async () => {
+      const all = await readAll();
+      const now = Date.now();
+      for (const [k, entry] of Object.entries(all)) {
+        if (now - entry.savedAt > SESSION_TTL_MS) delete all[k];
+      }
+      all[key] = { state, savedAt: now, by: savedBy };
+      await writeAll(all);
+    });
   },
 
   async remove(key) {
-    const all = await readAll();
-    if (!(key in all)) return;
-    delete all[key];
-    await writeAll(all);
+    await withSessionLock(sessionsPath(), async () => {
+      const all = await readAll();
+      if (!(key in all)) return;
+      delete all[key];
+      await writeAll(all);
+    });
   },
 };
 
@@ -81,8 +86,10 @@ async function writeAll(all: Saved): Promise<void> {
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
   // Temp file + rename: a parallel command never reads half a file.
   const tmp = `${path}.${process.pid}.${randomBytes(4).toString("hex")}.tmp`;
-  await writeFile(tmp, JSON.stringify(all), { encoding: "utf-8", mode: 0o600 });
-  await rename(tmp, path);
+  try {
+    await writeFile(tmp, JSON.stringify(all), { encoding: "utf-8", mode: 0o600 });
+    await rename(tmp, path);
+  } finally { await rm(tmp, { force: true }); }
 }
 
 /** When one login's session was saved, and by which program (null when there's none to try). */
@@ -95,5 +102,5 @@ export async function sessionInfo(key: string): Promise<{ savedAt: number; by: s
 
 /** Forget every saved session (after clearing the config). */
 export async function clearSessions(): Promise<void> {
-  await rm(sessionsPath(), { force: true });
+  await withSessionLock(sessionsPath(), () => rm(sessionsPath(), { force: true }));
 }

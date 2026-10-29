@@ -4,7 +4,7 @@ import test, { type TestContext } from "node:test";
 import assert from "node:assert/strict";
 import { AuthenticationError, WilmaClient, type ClientOptions, type SessionEvent } from "@wilma-client/src/core";
 import { getBack, PasswordRefusedError, resetApp, resume, signInDemo, signInWithCli, signInWithPassword, signOut } from "../src/data/engine.ts";
-import { activateAccount, flushPersisted, getState, saveSession, savedSession, setState, updateSettings } from "../src/data/store.ts";
+import { accountStorageKey, activateAccount, flushPersisted, getState, saveSession, savedSession, setState, updateSettings } from "../src/data/store.ts";
 import { emptySnapshot, type AccountInfo } from "../src/data/model.ts";
 import { overrideBridge, type WireRequest, type WireResponse } from "../src/wilma/transport.ts";
 import { SignInCancelledError } from "../src/data/sign-in-attempt.ts";
@@ -36,7 +36,7 @@ async function installEndedSession() {
   await saveSession({ account: own, state: "", sharedKey });
 }
 
-function history() { return localStorage.getItem("wilmai.sessionHistory"); }
+function history() { return localStorage.getItem(accountStorageKey("sessionHistory")); }
 
 for (const action of ["reset", "sign-out", "demo"] as const) test(`a late shared-session recovery cannot undo ${action}`, async (t) => {
   await setup(t);
@@ -184,7 +184,7 @@ test("a real login response arriving after reset cannot restore the password or 
   await settled;
   await flushPersisted();
   assert.equal(getState().settings.wilmaPassword, "");
-  assert.equal(localStorage.getItem("wilmai.wilmaPassword"), null);
+  assert.equal(localStorage.getItem(accountStorageKey("wilmaPassword")), null);
   assert.equal(await savedSession(), null);
   assert.equal(history(), null);
   assert.deepEqual(fake.sharedWrites, []);
@@ -196,7 +196,7 @@ test("accepted password login remembers the password and publishes one shared se
   assert.equal(await signInWithPassword(own.baseUrl, own.username, "synthetic-password", undefined, false, "guardian", true), null);
   assert.equal(getState().snapshot?.account.username, own.username);
   assert.equal(getState().settings.wilmaPassword, "synthetic-password");
-  assert.ok(localStorage.getItem("wilmai.wilmaPassword"));
+  assert.ok(localStorage.getItem(accountStorageKey("wilmaPassword")));
   assert.equal((await savedSession())?.account.username, own.username);
   assert.equal(fake.sharedWrites.length, 1, "publish only after accepting the account");
   assert.equal(JSON.parse(history()!)[0].kind, "signed-in");

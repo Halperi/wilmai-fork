@@ -9,6 +9,8 @@
  * Signing out clears it with everything else.
  */
 import { useSyncExternalStore } from "react";
+import { accountStorageKey, selectedAccountId, subscribe } from "./store";
+import type { AccountId } from "./account-id";
 
 /** Which WilmAI program saved a session, as the shared session file says ("home", "cli", "mcp"); null when it doesn't say. */
 export type Program = string | null;
@@ -21,14 +23,14 @@ export type SessionHistoryEntry =
   /** Wilma ended this app's session. `by`/`savedAt`: a newer login another WilmAI program saved, if any. */
   | { at: number; kind: "ended"; by: Program; savedAt: number | null; lastOk: number | null; other: boolean };
 
-const KEY = "wilmai.sessionHistory";
 const MAX = 30;
 const listeners = new Set<() => void>();
-let entries: SessionHistoryEntry[] = load();
+const cache = new Map<string, SessionHistoryEntry[]>();
+const keyFor = (id: AccountId | null) => id ? `wilmai.account.${encodeURIComponent(id)}.sessionHistory` : accountStorageKey("sessionHistory");
 
-function load(): SessionHistoryEntry[] {
+function load(key: string): SessionHistoryEntry[] {
   try {
-    const list = JSON.parse(localStorage.getItem(KEY) ?? "[]");
+    const list = JSON.parse(localStorage.getItem(key) ?? "[]");
     return Array.isArray(list) ? list : [];
   } catch {
     return [];
@@ -38,10 +40,12 @@ function load(): SessionHistoryEntry[] {
 /** Distributive Omit, so each kind keeps its own fields. */
 type WithoutTime<T> = T extends unknown ? Omit<T, "at"> : never;
 
-export function recordSession(entry: WithoutTime<SessionHistoryEntry>): void {
-  entries = [{ ...entry, at: Date.now() } as SessionHistoryEntry, ...load()].slice(0, MAX);
+export function recordSession(entry: WithoutTime<SessionHistoryEntry>, account: AccountId | null = selectedAccountId()): void {
+  const key = keyFor(account);
+  const entries = [{ ...entry, at: Date.now() } as SessionHistoryEntry, ...load(key)].slice(0, MAX);
+  cache.set(key, entries);
   try {
-    localStorage.setItem(KEY, JSON.stringify(entries));
+    localStorage.setItem(key, JSON.stringify(entries));
   } catch {
     // not remembered, still shown until the app closes
   }
@@ -52,9 +56,18 @@ export function useSessionHistory(): SessionHistoryEntry[] {
   return useSyncExternalStore(
     (cb) => {
       listeners.add(cb);
-      return () => listeners.delete(cb);
+      const stop = subscribe(cb);
+      return () => { listeners.delete(cb); stop(); };
     },
-    () => entries
+    () => {
+      const key = keyFor(selectedAccountId());
+      const serialized = localStorage.getItem(key);
+      const old = cache.get(key);
+      if (old && JSON.stringify(old) === (serialized ?? "[]")) return old;
+      const entries = load(key);
+      cache.set(key, entries);
+      return entries;
+    }
   );
 }
 

@@ -10,6 +10,8 @@ export class SignInCancelledError extends Error {
 export class SignInLifecycle {
   private active: SignInAttempt | null = null;
 
+  get pending(): boolean { return !!this.active?.current && !this.active.committed; }
+
   begin(): SignInAttempt {
     this.invalidate();
     return this.active = new SignInAttempt();
