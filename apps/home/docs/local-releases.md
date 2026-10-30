@@ -151,7 +151,7 @@ pnpm home:feed darwin-aarch64=<…>.app.tar.gz.sig windows-x86_64=<…>.exe.sig 
 ```
 
 Then a `home-v<version>` pre-release on GitHub (`--prerelease --latest=false`,
-so the CLI keeps "Latest") with the DMG, the `.app.tar.gz`, the installer and
+so the CLI keeps "Latest": DEVELOPING.md, "GitHub releases") with the DMG, the `.app.tar.gz`, the installer and
 SHA256SUMS; the download URLs in `apps/site/lib/home-release.json`; and a push
 of `main`, which deploys the page and the feed together. Raise the version in
 package.json, Cargo.toml, tauri.conf.json and home-release.json first, and

@@ -2,5 +2,6 @@
 # .github/workflows/release-mcpb.yml updates on every CLI release.
 /get/claude https://github.com/aikarjal/wilmai/releases/download/claude-desktop/wilmai.mcpb 302
 
-# What's new: linked from the update notices in the CLI and the MCP server.
-/changes https://github.com/aikarjal/wilmai/releases 302
+# What's new: linked from the update notices in the CLI and the MCP server. GitHub's Latest is always the CLI's
+# newest release (DEVELOPING.md, "GitHub releases"), so this lands on its notes, not on a WilmAI Home beta's.
+/changes https://github.com/aikarjal/wilmai/releases/latest 302

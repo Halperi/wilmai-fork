@@ -55,7 +55,22 @@ The plugin, the skill and the site pin `@wilm-ai/wilma-cli@2`. A 3.0 needs those
 - Raise the skill's `version:` and `plugin.json`'s `version` when the skill text changes.
 - A fix to an old major (say 1.x after 2.0) is published with `npm publish --tag v1`, so `latest` stays on the current major. Otherwise `wilma update` would move people back.
 - `CHANGELOG.md` gets one section per release: `## 2.1.0 (unreleased)` while preparing, dated once it's out, with a `_Releases: …_` line naming what was published, then an **In short:** line for parents (one plain sentence: the biggest addition or fix), then the details.
-- That section is the release note everywhere: the GitHub release (which https://wilm.ai/changes points to, and which the update notices link to) and, for skills, the ClawHub changelog (the "In short" line).
+- That section is the release note everywhere: the GitHub release (the newest CLI release is what https://wilm.ai/changes opens, and the update notices link there) and, for skills, the ClawHub changelog (the "In short" line).
+
+## GitHub releases
+
+One repository publishes four kinds of release, and GitHub shows one of them as Latest:
+
+| Release | Tag | Latest | Pre-release |
+|---|---|---|---|
+| CLI (with the extension file) | `wilma-cli@x.y.z` | always: `--latest` | no |
+| Client library | `wilma-client@x.y.z` | never: `--latest=false` | no |
+| WilmAI Home | `home-v<version>` | never: `--latest=false` | while it's a beta: `--prerelease`; a normal release from 1.0 |
+| Claude Desktop extension | `claude-desktop` (one release, updated by the `release-mcpb` workflow) | never | no |
+
+- Latest is the CLI's: https://wilm.ai/changes, the update notices' "what's new", opens GitHub's `releases/latest`, so it lands on the newest CLI notes. A release of anything else made without `--latest=false` would take that place.
+- Pre-release only says a product is a beta. `--latest=false` is what keeps a release off Latest, so say it every time.
+- Links people keep go through wilm.ai, never `releases/latest`: `/get/mac` and `/get/windows` (Home's exact files, from `apps/site/lib/home-release.json`), `/get/claude` (the `claude-desktop` release), and `/app/latest.json` (Home's update feed).
 
 ## Releasing
 
@@ -82,6 +97,7 @@ Only `aikarjal` can publish to npm and ClawHub.
    ```bash
    gh release create wilma-cli@x.y.z --title "wilma-cli x.y.z" --notes-file notes.md --latest
    ```
+   A client release of its own (`wilma-client@x.y.z`) gets `--latest=false`, so the CLI keeps Latest (see GitHub releases above).
    The notes start with an "**Update:** `wilma update` …" line, followed by the changelog section (with its "In short" line). The `release-mcpb` workflow then attaches `wilmai.mcpb` and updates the `claude-desktop` release. Check that https://wilm.ai/get/claude serves the new version (`unzip -p wilmai.mcpb manifest.json`).
 4. **ClawHub, last** (ClawHub can't withdraw a skill's latest version):
    ```bash
@@ -98,5 +114,5 @@ Only `aikarjal` can publish to npm and ClawHub.
 **Rolling back**
 
 - npm: `npm dist-tag add @wilm-ai/wilma-cli@<previous> latest`. People who already updated keep the new version.
-- Claude Desktop download: mark the GitHub release as a pre-release and rebuild the previous one: `gh workflow run release-mcpb.yml -f tag=wilma-cli@<previous>`.
+- Claude Desktop download: mark the GitHub release as a pre-release and rebuild the previous one: `gh workflow run release-mcpb.yml -f tag=wilma-cli@<previous>`. Give Latest back to the previous CLI release (`gh release edit wilma-cli@<previous> --latest`), or "what's new" opens whatever GitHub picks.
 - ClawHub: publish a fixed version.
