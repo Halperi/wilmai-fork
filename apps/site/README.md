@@ -12,21 +12,12 @@ static files and served by Cloudflare Workers.
 - `components/HomeCard.tsx` — Home's card on the front page, after the setup guides; with the top bar's
   "WilmAI Home" link and an FAQ answer, that's how people find it. The front page's hero stays about
   assistants.
-- `public/home-today-*.png`, `public/home-student-*.png`, `public/home-parent-*.png` — the app in its light theme
-  with the made-up sample family, never real children's data: Today for the hero (the whole page, no scroll
-  bar), and for the two-column section a student's Today (Kiia only) and a parent's Week (both children). To
-  retake them: run the app in a browser (the `wilma-app-review` launch config, or `pnpm dev` in `apps/home`) and
-  open it in a fresh browser profile with the light colour scheme, the language's locale, Helsinki's time zone
-  and 2× pixels, with the clock frozen on a school-day morning (Playwright's `page.clock.setFixedTime`, e.g.
-  Wednesday 21 Oct 2026 at 09:40): the sample family is built around today, so a weekend shows no school.
-  Choose "Look around with a sample family" (never a saved login), then No AI in Settings (so the menu's
-  "Choose AI" cue is gone), and hide the menu's corner (`.nav-foot`, `.nav-version`: in a browser it says
-  "Only in this browser"). In a window 1305 wide and as tall as the page (`document.documentElement.scrollHeight`):
-  Today whole (1318 now), and the Week's top 816. For the student, set `viewAs: "student"` in the app's saved
-  `local` state (IndexedDB `keyval-store`; Settings hides "Who uses this account" for the sample family),
-  reload, pick Kiia, and take Today's top 816. The page's `<Image>` sizes and the Open Graph size follow the
-  pictures. The banner's `home-thumb-*.png` are Today's top 1305×870 at 480×320, and the main README's
-  `assets/readme-home-top.png` its top 1305×372 at 2×.
+- `public/home-today-*.png`, `public/home-student-*.png`, `public/home-parent-*.png`, `public/home-thumb-*.png` — the
+  app in its light theme with the made-up sample family, never real children's data: Today whole (the Home page's
+  share image and the front page's card), a student's own Today (Kiia's, without the children's picker a student's
+  login doesn't have) and a parent's Week for the two-column section, and Today's top at 480×320 for the banner. The
+  tour's capture makes them too (below), with the main README's `assets/readme-home-top.png` (Today's top
+  1305×372 at 2×). The page's `<Image>` sizes and the Open Graph size follow the pictures.
 - `public/home-tour/<lang>/*.webp`, `lib/home-tour.json` — the hero's tour (components/HomeTour.tsx), made the
   way the product tours in Antti's decks are: screens of the app put in motion with GSAP, in code, so it stays
   up to date with a new capture instead of a new recording. `pnpm --filter @wilm-ai/site capture:home-tour`

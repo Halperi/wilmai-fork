@@ -7,6 +7,10 @@
  * and <screen>-1x.webp (1×, for phones), and lib/home-tour.json: each screen's size and where its parts are, in 2× px.
  * The tour moves and lifts those parts, so a new capture keeps it right without measuring anything.
  *
+ * The site's other pictures of the app come from the same run: public/home-today-<lang>.png (Today whole: the Home
+ * page's share image and the front page's card), home-thumb-<lang>.png (the banner), home-parent-<lang>.png (both
+ * children's week) and home-student-<lang>.png (a student's own Today), and the main README's assets/readme-home-top.png.
+ *
  * Run it after the app's look changes (Google Chrome drives it; nothing is downloaded):
  *   pnpm --filter @wilm-ai/site capture:home-tour
  */
@@ -19,6 +23,7 @@ import sharp from "sharp";
 
 const SITE = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const HOME = resolve(SITE, "../home");
+const README_TOP = resolve(SITE, "../../assets/readme-home-top.png");
 const PORT = 5197;
 const APP = `http://127.0.0.1:${PORT}/`;
 const W = 1305, H = 816, DPR = 2;
@@ -115,9 +120,22 @@ async function capture(lang, locale) {
     await page.waitForTimeout(400);
   };
 
+  /** A still of the window (or the whole page) as a PNG, for the site's pictures and the README. */
+  const png = async (full = false) => {
+    await page.waitForTimeout(500);
+    return page.screenshot({ fullPage: full });
+  };
+  const savePng = (image, file) => sharp(image).png({ compressionLevel: 9 }).toFile(file);
+
   // Today, the whole page (the tour scrolls it): the summary, each child's school day, and what needs you.
   await go("#/today");
   await shot("today", { main: ".main", days: ".sd-row", needs: ".card.needs" }, { full: true });
+  // The same page for the site and the README: whole, its top for the banner (1305×870 at 480×320), and in English
+  // the README's top strip (1305×372 at 2×).
+  const today = await png(true);
+  await savePng(today, resolve(SITE, `public/home-today-${lang}.png`));
+  await sharp(today).extract({ left: 0, top: 0, width: W * DPR, height: 870 * DPR }).resize(480, 320).png({ compressionLevel: 9 }).toFile(resolve(SITE, `public/home-thumb-${lang}.png`));
+  if (lang === "en") await sharp(today).extract({ left: 0, top: 0, width: W * DPR, height: 372 * DPR }).png({ compressionLevel: 9 }).toFile(README_TOP);
 
   // The inbox where messages and bulletins mix, and an answer being written to today's message from a teacher (short,
   // so the whole of it shows with the answer under it).
@@ -150,8 +168,10 @@ async function capture(lang, locale) {
   await shot("search", { main: ".main", menu: "dialog.cmdk", input: ".cmdk-search input", lines: ".cmdk-group, .cmdk-item" });
   await page.keyboard.press("Escape");
 
-  // Both children's week side by side, with today's first lesson clicked: its day's schedule opens beside the week.
+  // Both children's week side by side, as a parent sees it (the site's picture), then with today's first lesson
+  // clicked: its day's schedule opens beside the week.
   await go("#/week");
+  await savePng(await png(), resolve(SITE, `public/home-parent-${lang}.png`));
   await page.locator(".week .col.is-today .les").first().click();
   await page.locator(".details-docked .dp-top").waitFor();
   await shot("week", {
@@ -164,6 +184,14 @@ async function capture(lang, locale) {
   // Grades.
   await go("#/grades");
   await shot("grades", { main: ".main", rows: ".xs-row" });
+
+  // A student's own Today (the site's picture): Kiia picked and the app read as the student. A student's own login
+  // has one child, so no children's picker (the sample family has two).
+  await go("#/today");
+  await page.locator(".kids button", { hasText: "Kiia" }).first().click();
+  await page.evaluate(async () => (await import("/src/data/store.ts")).setViewAs("student"));
+  await page.addStyleTag({ content: ".topbar .kids { visibility: hidden !important; }" });
+  await savePng(await png(), resolve(SITE, `public/home-student-${lang}.png`));
 
   manifest[lang] = plates;
   await browser.close();

@@ -38,7 +38,11 @@ A fast, modern Wilma app for students and parents: lessons, messages, homework, 
 
 > **You:** What do the kids have at school tomorrow?
 >
-> **Your assistant:** Kiia has crafts 8:30–11:00, then geography and math; her English exam is on Thursday (units 7–9). Eino starts at 9:15 with swimming, so pack a swimsuit and towel. There's also a new message from the class teacher about Friday's trip: the permission form is due Wednesday.
+> **Your assistant:** Kiia has crafts, geography and math, 8:30–14:00, and her English exam is on Thursday (units 7–9). Eino starts at 9:15 with swimming, so pack a swimsuit and a towel.
+>
+> **You:** Is there anything I need to do this week?
+>
+> **Your assistant:** Two things. Eino's trip on Friday needs your permission: return the form by Wednesday. And Kiia's art lesson on Monday is marked as an absence, so explain it in Wilma.
 
 WilmAI connects Wilma, the system Finnish schools use for schedules, homework, exams, grades and messages, to the AI assistant or agent you already use. It's an MCP server, a command-line tool and two agent skills, free and open source. There's also [WilmAI Home](#wilmai-home-the-desktop-app), a desktop app of its own for students and parents.
 
@@ -201,7 +205,9 @@ Working on WilmAI or releasing it: [DEVELOPING.md](DEVELOPING.md). Tests: [TESTI
 
 <img src="apps/site/public/home-today-en.png" alt="WilmAI Home's Today with a made-up sample family: each child's school day, what needs you, and this week's exams and events." width="100%">
 
+- **Children at different schools.** When your children's schools are on different Wilmas (another town, an upper secondary school, a private school), sign in to each one, and every view shows all the children together.
 - **Reads and writes.** Reply to teachers, write new messages, sign up for parents' evenings and report absences, without opening Wilma. Pin the messages you keep coming back to.
+- **In your language.** The app is in English, Finnish or Swedish, and with AI on it translates messages, bulletins and teachers' notes as they arrive, into Finnish, Swedish, English, Ukrainian or Arabic.
 - **For a student too.** Sign in with a student's own Wilma account and choose "A student": the app then reads things from the student's side.
 - **AI is optional.** No AI (the default), OpenAI with your own API key (usually tens of cents a month; the app stops at a monthly limit you set), or local AI on an Apple Silicon Mac with 16 GB of memory, where nothing goes to an AI service.
 - **Stays on your computer.** No WilmAI server and no tracking. Your Wilma password goes only to your school's Wilma; the app keeps it (scrambled) only if you turn on staying signed in.
