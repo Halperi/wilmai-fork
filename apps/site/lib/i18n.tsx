@@ -19,9 +19,33 @@ interface FaqItem {
   a: ReactNode;
 }
 
+/** One line of the assistant's answer: a child's name first, if it's about one; ==words== are highlighted. */
 export interface ChatLine {
   name?: string;
   text: string;
+}
+
+/** One question and its answer in the hero's tour (components/AssistantTour.tsx). */
+export interface AssistantScene {
+  id: string;
+  /** The tour's timeline. */
+  tab: string;
+  /** The line under the window. */
+  caption: string;
+  question: string;
+  /** While the assistant reads Wilma, and what it read. */
+  tool: [string, string];
+  answer: ChatLine[];
+}
+
+export interface AssistantTourText {
+  /** What the window shows, for screen readers. */
+  label: string;
+  sections: string;
+  paused: string;
+  play: string;
+  pause: string;
+  scenes: AssistantScene[];
 }
 
 export interface Dictionary {
@@ -46,8 +70,7 @@ export interface Dictionary {
     proof: string;
     handNote: string;
     chatTitle: string;
-    chatQuestion: string;
-    chatAnswer: ChatLine[];
+    tour: AssistantTourText;
   };
   quickstart: {
     eyebrow: string;
@@ -107,12 +130,63 @@ const en: Dictionary = {
     proof: "by parents across Finland",
     handNote: "one question → every kid's day",
     chatTitle: "Your assistant",
-    chatQuestion: "What do the kids have at school tomorrow?",
-    chatAnswer: [
-      { name: "Kiia", text: "8:30–11:00 crafts, then geography and math. English exam on Thursday: units 7–9." },
-      { name: "Eino", text: "Starts at 9:15 with swimming — pack a swimsuit and towel." },
-      { text: "One new message from the class teacher about Friday's trip: the permission form is due Wednesday." }
-    ]
+    tour: {
+      label:
+        "An assistant answering a made-up family's questions from Wilma: tomorrow's school day for each child, what needs doing this week, the next exams, and this week's bulletins in a few lines.",
+      sections: "Parts of the tour",
+      paused: "Paused",
+      play: "Play the tour",
+      pause: "Pause the tour",
+      scenes: [
+        {
+          id: "tomorrow",
+          tab: "Tomorrow",
+          caption: "Every child's day, from one question.",
+          question: "What do the kids have at school tomorrow?",
+          tool: ["Reading Wilma…", "Read Wilma: timetables and messages"],
+          answer: [
+            { name: "Kiia", text: "8:30–14:00: crafts, geography and math. ==English exam on Thursday==, units 7–9." },
+            { name: "Eino", text: "Starts at 9:15 with swimming. ==Pack a swimsuit and a towel.==" }
+          ]
+        },
+        {
+          id: "needs",
+          tab: "Needs you",
+          caption: "What needs you, and by when.",
+          question: "Is there anything I need to do this week?",
+          tool: ["Reading Wilma…", "Read Wilma: messages, bulletins and notes"],
+          answer: [
+            { text: "Two things:" },
+            { name: "Eino", text: "Friday's trip needs your permission: ==return the form by Wednesday==." },
+            { name: "Kiia", text: "Monday's art lesson is marked as an absence. ==Explain it in Wilma.==" }
+          ]
+        },
+        {
+          id: "exams",
+          tab: "Exams",
+          caption: "Exams and trips, from every message and note.",
+          question: "When are the next exams?",
+          tool: ["Reading Wilma…", "Read Wilma: exams, messages and notes"],
+          answer: [
+            { name: "Kiia", text: "English on ==Thursday== (units 7–9), then math ==next Tuesday== (chapters 3–4)." },
+            { name: "Eino", text: "No exams. The class trip to the nature centre is on ==Friday==." }
+          ]
+        },
+        {
+          id: "bulletins",
+          tab: "Bulletins",
+          caption: "Long bulletins in a few lines, in your language.",
+          question: "Sum up this week's bulletins in English.",
+          tool: ["Reading Wilma…", "Read Wilma: 4 bulletins"],
+          answer: [
+            { text: "Three things for your family:" },
+            { text: "Picture day is ==next Wednesday==. Order forms come home in school bags." },
+            { text: "Parents' evening for 8th grade: ==Tuesday at 18:00==, no sign-up needed." },
+            { text: "From Monday, phones stay in bags during lessons." }
+          ]
+        }
+      ]
+    }
   },
   quickstart: {
     eyebrow: "pick the one you use",
@@ -340,12 +414,63 @@ const fi: Dictionary = {
     proof: "perheissä ympäri Suomen",
     handNote: "yksi kysymys → jokaisen lapsen päivä",
     chatTitle: "Avustajasi",
-    chatQuestion: "Mitä lapsilla on huomenna koulussa?",
-    chatAnswer: [
-      { name: "Kiia", text: "8.30–11.00 käsityö, sitten maantieto ja matematiikka. Englannin koe torstaina: kappaleet 7–9." },
-      { name: "Eino", text: "Koulu alkaa 9.15. Uintia uimahallissa — mukaan uimapuku ja pyyhe." },
-      { text: "Luokanopettajalta uusi viesti perjantain retkestä: lupalappu palautetaan keskiviikkona." }
-    ]
+    tour: {
+      label:
+        "Avustaja vastaa kuvitteellisen perheen kysymyksiin Wilmasta: kunkin lapsen huominen koulupäivä, mitä tällä viikolla pitää tehdä, seuraavat kokeet ja viikon tiedotteet muutamalla rivillä.",
+      sections: "Esittelyn osat",
+      paused: "Tauko",
+      play: "Jatka esittelyä",
+      pause: "Keskeytä esittely",
+      scenes: [
+        {
+          id: "tomorrow",
+          tab: "Huomenna",
+          caption: "Jokaisen lapsen päivä yhdellä kysymyksellä.",
+          question: "Mitä lapsilla on huomenna koulussa?",
+          tool: ["Luetaan Wilmaa…", "Luettu Wilmasta: lukujärjestykset ja viestit"],
+          answer: [
+            { name: "Kiia", text: "8.30–14.00: käsityö, maantieto ja matematiikka. ==Englannin koe torstaina==, kappaleet 7–9." },
+            { name: "Eino", text: "Koulu alkaa 9.15 uinnilla. ==Mukaan uimapuku ja pyyhe.==" }
+          ]
+        },
+        {
+          id: "needs",
+          tab: "Odottaa sinua",
+          caption: "Mikä odottaa sinua, ja mihin mennessä.",
+          question: "Onko minulla tällä viikolla jotain tehtävää?",
+          tool: ["Luetaan Wilmaa…", "Luettu Wilmasta: viestit, tiedotteet ja merkinnät"],
+          answer: [
+            { text: "Kaksi asiaa:" },
+            { name: "Eino", text: "Perjantain retkeen tarvitaan lupasi: ==palauta lupalappu keskiviikkoon mennessä==." },
+            { name: "Kiia", text: "Maanantain kuvataiteen tunti on merkitty poissaoloksi. ==Selvitä se Wilmassa.==" }
+          ]
+        },
+        {
+          id: "exams",
+          tab: "Kokeet",
+          caption: "Kokeet ja retket jokaisesta viestistä ja merkinnästä.",
+          question: "Milloin on seuraavat kokeet?",
+          tool: ["Luetaan Wilmaa…", "Luettu Wilmasta: kokeet, viestit ja merkinnät"],
+          answer: [
+            { name: "Kiia", text: "Englanti ==torstaina== (kappaleet 7–9), sitten matematiikka ==ensi tiistaina== (luvut 3–4)." },
+            { name: "Eino", text: "Ei kokeita. Luokan retki luontokeskukseen on ==perjantaina==." }
+          ]
+        },
+        {
+          id: "bulletins",
+          tab: "Tiedotteet",
+          caption: "Pitkät tiedotteet muutamalla rivillä.",
+          question: "Tiivistä tämän viikon tiedotteet.",
+          tool: ["Luetaan Wilmaa…", "Luettu Wilmasta: 4 tiedotetta"],
+          answer: [
+            { text: "Kolme asiaa perheellesi:" },
+            { text: "Kuvauspäivä on ==ensi keskiviikkona==. Tilauslomakkeet tulevat repussa kotiin." },
+            { text: "8. luokkien vanhempainilta on ==tiistaina klo 18==, ei ilmoittautumista." },
+            { text: "Maanantaista alkaen puhelimet pysyvät tunneilla repussa." }
+          ]
+        }
+      ]
+    }
   },
   quickstart: {
     eyebrow: "valitse se, jota käytät",

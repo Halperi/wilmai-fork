@@ -40,6 +40,13 @@ static files and served by Cloudflare Workers.
   tour moves and lifts out as cards. A line under the window says what each part shows (`hero.tour.captions` in
   `lib/home.ts`; on phones every caption must fit two lines, or the window moves). After a capture, check each section's still (`window.__homeTour.showStill(i)`
   in the browser): a part that moved in the app moves in the tour with it, but a new part needs a line in the tour.
+- `components/AssistantTour.tsx` — the front page's tour: an assistant answering the made-up family's questions in
+  the chat window, one question per part (the question, the assistant reading Wilma, the answer line by line with its
+  key words highlighted). It's the page's own text, not screens: the questions, answers, timeline labels and captions
+  are `hero.tour` in `lib/i18n.tsx` (`==words==` are highlighted), so editing them is all an update takes. The window
+  is as tall as the longest answer. Check each part with `window.__assistantTour.showStill(i)`.
+- `components/tour-engine.ts` — what both tours share: the timeline of parts, the caption, play and pause, playing only
+  while on screen, and one still frame per part with less motion asked for.
 - `public/_headers` — security and cache headers
 - `public/_redirects` — `/get/claude` (the Claude Desktop extension) and `/changes` (release notes, linked from the update notices)
 - `public/og-en.png`, `public/og-fi.png` — the share images (what a link shows in WhatsApp, Facebook and the like), made from `og/card.html`: open it with `?lang=en` or `?lang=fi` at 1200×630 and screenshot it. Its copy follows the hero; update both together

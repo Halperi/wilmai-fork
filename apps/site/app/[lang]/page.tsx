@@ -1,5 +1,6 @@
 import Image from "next/image";
 import AgentPicker from "../../components/AgentPicker";
+import { AssistantTour } from "../../components/AssistantTour";
 import DownloadCount from "../../components/DownloadCount";
 import HomeBanner from "../../components/HomeBanner";
 import HomeCard from "../../components/HomeCard";
@@ -97,25 +98,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               height={1024}
               className="terminal-sticker"
             />
-            <div className="chat" role="figure" aria-label={t.hero.chatTitle}>
-              <div className="chat-chrome">
-                <span className="dot red" />
-                <span className="dot yellow" />
-                <span className="dot green" />
-                <span className="chat-title">{t.hero.chatTitle}</span>
-              </div>
-              <div className="chat-body">
-                <p className="chat-bubble chat-user">{t.hero.chatQuestion}</p>
-                <div className="chat-bubble chat-assistant">
-                  {t.hero.chatAnswer.map((line) => (
-                    <p key={line.text}>
-                      {line.name ? <strong>{line.name}: </strong> : null}
-                      {line.text}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <AssistantTour title={t.hero.chatTitle} tour={t.hero.tour} />
           </div>
         </section>
 

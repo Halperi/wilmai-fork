@@ -524,6 +524,115 @@ main {
   margin-top: 8px;
 }
 
+/* The hero's tour (components/AssistantTour.tsx): one question at a time in the chat window, with the timeline and
+   the line under it as on the Home page (.ht-controls, .ht-caption). */
+.at-window {
+  position: relative;
+  cursor: pointer;
+}
+
+.ht-still .at-window {
+  cursor: default;
+}
+
+/* Every question in the same place, so the window is as tall as the longest answer. Before the tour runs (or
+   without it), only the first shows, answered. */
+.at-body {
+  display: grid;
+}
+
+.at-turn {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.at-turn:not(.at-first) {
+  visibility: hidden;
+}
+
+/* The assistant reading Wilma: dots while it reads, a tick and what it read once it has. */
+.at-tool {
+  align-self: flex-start;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  column-gap: 8px;
+  margin: -4px 0 -2px 6px;
+  font-family: var(--font-body), sans-serif;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.at-dots,
+.at-tick {
+  grid-area: 1 / 1;
+  justify-self: center;
+}
+
+.at-tool-text {
+  grid-area: 1 / 2;
+  display: grid;
+}
+
+.at-reading,
+.at-read {
+  grid-area: 1 / 1;
+}
+
+.at-dots,
+.at-reading {
+  visibility: hidden;
+}
+
+.at-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.at-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--teal);
+  animation: at-dot 1s ease-in-out infinite;
+}
+
+.at-dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.at-dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes at-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: none;
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.at-tick {
+  color: var(--teal-deep);
+  font-weight: 700;
+}
+
+/* The words that matter, highlighted as with a marker (the tour draws it in). */
+.at-mark {
+  color: inherit;
+  background: linear-gradient(var(--marker), var(--marker)) no-repeat 0 88% / 100% 45%;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
 /* ---------- Sections ---------- */
 
 .section {
@@ -2713,6 +2822,7 @@ main {
   }
 
   .marker::before,
+  .at-dots i,
   .terminal-sticker,
   .home-banner-badge::after,
   .home-sparkle {
