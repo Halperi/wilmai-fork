@@ -17,12 +17,12 @@ import type { LessonNote } from "@wilma-client/src/core";
 import { markOpened, useApp, useViewer } from "../data/store";
 import { loadYearNotes, isDemo } from "../data/engine";
 import { wilmaPage } from "../data/logins";
-import { noteGroups, type NoteGroup } from "../data/feed";
+import { needsYou, noteGroups, type FeedItem, type NoteGroup } from "../data/feed";
 import { NOTE_KINDS, NOTE_KIND_LABEL, noteKind, useNoteKinds, type NoteKind } from "../data/notes";
 import { subjectNamer, teacherCodeFor } from "../data/schedule";
 import { addDays, dateSpan, dateSpanFi, isoWeek, mondayOf, shortDate, shortDateFi, today, weekday } from "../data/dates";
 import type { Child } from "../data/model";
-import { Icon, Tab } from "./bits";
+import { Icon, Mark, Tab } from "./bits";
 import { go, notesBySubject, tSense, useChildFilter } from "./shared";
 import { plural, t } from "../i18n";
 import { examSuperseded, noteExam } from "../data/note-exams";
@@ -56,8 +56,10 @@ function schoolDayBefore(iso: string): string {
   return d;
 }
 
-export function Notes({ itemKey }: { itemKey: string | null }) {
+export function Notes({ feed, itemKey }: { feed: FeedItem[]; itemKey: string | null }) {
   const snap = useApp((s) => s.snapshot)!;
+  // What the menu's badge counts (an absence to explain): marked as Today's Needs you marks it.
+  const toExplain = useMemo(() => new Set(needsYou(feed.filter((i) => i.kind === "note")).map((i) => i.key)), [feed]);
   const { selected } = useChildFilter();
   const children = snap.children.filter((c) => !selected.length || selected.includes(c.number));
   const childKey = children.map((c) => c.number).join(",");
@@ -242,6 +244,7 @@ export function Notes({ itemKey }: { itemKey: string | null }) {
                   row={r}
                   many={children.length > 1}
                   highlight={r.group.key === itemKey}
+                  needs={toExplain.has(r.group.key)}
                   wilma={wilmaPage(snap, r.child.number, "attendance")}
                   teacherCode={teacherCodeFor(snap.perChild[r.child.number], r.group.teachers[0])}
                 />
@@ -358,7 +361,7 @@ function NoteMatrix({ matrix, kinds, filter, many, onPick }: { matrix: Matrix; k
   );
 }
 
-function NoteRow({ row, many, highlight, wilma, teacherCode }: { row: Row; many: boolean; highlight: boolean; wilma: string; teacherCode: string | null }) {
+function NoteRow({ row, many, highlight, needs, wilma, teacherCode }: { row: Row; many: boolean; highlight: boolean; needs: boolean; wilma: string; teacherCode: string | null }) {
   const w = useWilma();
   const student = useViewer() === "student";
   const { child, group, kind, lessons, from, subjects } = row;
@@ -382,7 +385,7 @@ function NoteRow({ row, many, highlight, wilma, teacherCode }: { row: Row; many:
         <div className="note-line">
           <span className={`nk nk-${kind}`}>{w(group.typeLabel)}</span>
           <span className="note-what">
-            {what}
+            <Mark on={needs}>{what}</Mark>
             {time ? <small> · {time}</small> : null}
           </span>
         </div>

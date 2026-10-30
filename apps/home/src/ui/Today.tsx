@@ -119,7 +119,7 @@ export function Today({ feed }: { feed: FeedItem[] }) {
                     go("inbox");
                   }}
                 >
-                  {t("{n} more in the Inbox", { n: needs.length - 3 })} →
+                  {t("{n} more in Messages", { n: needs.length - 3 })} →
                 </button>
               ) : null}
             </div>
@@ -328,7 +328,8 @@ function ChildDays({ child, snap, items, dates, focus, onOpen }: { child: Child;
             times={times.get(d)}
             odd={odd.filter((u) => u.date === d)}
             exams={(data?.exams ?? []).filter((e) => e.date === d).map((exam) => ({ exam, lesson: day.find((l) => examForLesson(data, l) === exam) ?? null }))}
-            events={events.filter((e) => e.date === d)}
+            // A message about a change the timetable already flags that day is the same news (as in Glance).
+            events={events.filter((e) => e.date === d && !(e.kind === "schedule" && odd.some((u) => u.date === d)))}
             homework={i === 0 ? null : dueHomework(data, lessons, [d])}
             loaded={Boolean(data)}
             shown={shown}
@@ -405,11 +406,18 @@ function DayCell({
             {t("Exam: {subject}", { subject: w(exam.subject || exam.name) })}
           </button>
         ))}
-        {events.map((e, i) => (
-          <a key={`e${i}`} className="chip chip-pen" href={hrefFor("inbox", e.itemKey)} title={w(e.title)}>
-            {w(e.title)}
-          </a>
-        ))}
+        {events.map((e, i) =>
+          // A day that runs differently, from a message: flagged like a change the timetable shows, in the message's words.
+          e.kind === "schedule" ? (
+            <a key={`e${i}`} className="flag" href={hrefFor("inbox", e.itemKey)} title={e.detail ? w(e.detail) : undefined}>
+              {w(e.title)}
+            </a>
+          ) : (
+            <a key={`e${i}`} className="chip chip-pen" href={hrefFor("inbox", e.itemKey)} title={w(e.title)}>
+              {w(e.title)}
+            </a>
+          )
+        )}
         {homework !== null ? (
           homework.length ? (
             <button type="button" className="chip" onClick={() => onOpen(null)}>

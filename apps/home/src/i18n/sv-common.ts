@@ -295,7 +295,7 @@ export const SV_COMMON: Record<string, string> = {
   Message: "Meddelande",
   Bulletin: "Nyhet",
   "It isn't in Wilma any more.": "Det finns inte längre i Wilma.",
-  "Open in the Inbox": "Öppna i inkorgen",
+  "Open in Messages": "Öppna i Meddelanden",
   "The calendar's date is read from this line": "Kalenderns datum har lästs från den här raden",
   "Note (lesson)": "Lektionsanteckning",
   "Timetable not read yet": "Schemat har inte lästs ännu",

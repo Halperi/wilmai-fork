@@ -225,7 +225,8 @@ export function scoreCase(
 
   for (const want of c.expect.action ?? []) {
     const item = feed.find((i) => i.key === keyOf(want.item));
-    const quote = item?.actionLine ?? null;
+    // The reading's step sentence (a list shows a changed day's sentence instead when nothing is asked: feed.ts lineOf).
+    const quote = item?.own ? null : item?.triage?.detail?.actionLine ?? null;
     const required = item?.triage?.detail?.confirm ?? null;
     const shown = `${quote ? `"${quote}"` : "no step"}${required !== null ? ` (required ${required.toFixed(2)})` : ""}${item?.deadline ? ` by ${item.deadline}` : ""}`;
     if (want.none) {

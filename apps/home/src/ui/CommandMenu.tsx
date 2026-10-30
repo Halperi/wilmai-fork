@@ -69,7 +69,7 @@ export function CommandMenu({ open, onClose, feed, family, onShortcuts }: { open
     const act = t("Actions");
     const list: Command[] = [
       { id: "today", group: go_, label: t("Today"), icon: "today", hint: "G T", run: () => go("today") },
-      { id: "inbox", group: go_, label: t("Inbox"), icon: "inbox", hint: "G I", run: () => go("inbox") },
+      { id: "inbox", group: go_, label: t("Messages"), icon: "inbox", hint: "G M", keywords: "viestit saapuneet inbox tiedotteet bulletins meddelanden", run: () => go("inbox") },
       { id: "week", group: go_, label: t("Week"), icon: "week", hint: "G W", run: () => go("week") },
       { id: "calendar", group: go_, label: t("Calendar"), icon: "calendar", hint: "G C", keywords: "kalenteri calendar google tapahtumat events loma holiday", run: () => go("calendar") },
       { id: "homework", group: go_, label: t("Homework"), icon: "book", hint: "G H", keywords: "läksyt kotitehtävät homework", run: () => go("homework") },
@@ -78,13 +78,13 @@ export function CommandMenu({ open, onClose, feed, family, onShortcuts }: { open
       { id: "grades", group: go_, label: t("Grades"), icon: "grades", hint: "G R", keywords: "grades arvosanat arvosana suoritukset keskiarvo average", run: () => go("grades") },
       { id: "settings", group: go_, label: t("Settings"), icon: "settings", hint: "G S", keywords: "jev language kieli", run: () => go("settings") },
     ];
-    // The inbox's lists, Done included.
+    // The lists in Messages, Done included.
     const lists: [Segment, string, string][] = [
-      ["all", "Inbox: all", "kaikki"],
-      ["needs", "Inbox: needs you", "odottaa"],
-      ["message", "Inbox: messages", "viestit"],
-      ["news", "Inbox: bulletins", "tiedotteet"],
-      ["done", "Inbox: done", "hoidetut archive valmis"],
+      ["all", "Messages: all", "kaikki"],
+      ["needs", "Messages: needs you", "odottaa"],
+      ["message", "Messages: conversations", "keskustelut viestit"],
+      ["news", "Messages: bulletins", "tiedotteet"],
+      ["done", "Messages: done", "hoidetut archive valmis"],
     ];
     for (const [segment, label, keywords] of lists) {
       list.push({ id: `list:${segment}`, group: go_, label: t(label), keywords, icon: segment === "done" ? "check" : "inbox", run: () => (setSegment(segment), go("inbox")) });

@@ -1,7 +1,6 @@
 /* Finnish for forms. Keys are the English text exactly as in t(). */
 export const FI_FORMS: Record<string, string> = {
   // NewMessage: choosing the child and the recipient
-  Inbox: "Saapuneet",
   "New message": "Uusi viesti",
   "Who is it about?": "Ketä viesti koskee?",
   About: "Koskee",
@@ -41,7 +40,7 @@ export const FI_FORMS: Record<string, string> = {
   "Sample family: nothing was sent to {to}.": "Esimerkkiperhe: vastaanottajalle {to} ei lähetetty mitään.",
   "Sent to {to}. It's in your sent messages in Wilma.": "Lähetetty vastaanottajalle {to}. Viesti löytyy Wilmasta lähetetyistä viesteistäsi.",
   "Write another": "Kirjoita toinen viesti",
-  "Back to the inbox": "Takaisin saapuneisiin",
+  "Back to Messages": "Takaisin viesteihin",
 
   // SignIn
   "School, *sorted.*": "Kouluasiat *järjestyksessä.*",

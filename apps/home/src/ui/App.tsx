@@ -249,7 +249,7 @@ function Shell() {
           go("inbox");
           return;
         }
-        const view = ({ t: "today", i: "inbox", w: "week", c: "calendar", e: "exams", r: "grades", n: "notes", h: "homework", s: "settings" } as const)[key as "t" | "i" | "w" | "c" | "e" | "r" | "n" | "h" | "s"];
+        const view = ({ t: "today", i: "inbox", m: "inbox", w: "week", c: "calendar", e: "exams", r: "grades", n: "notes", h: "homework", s: "settings" } as const)[key as "t" | "i" | "m" | "w" | "c" | "e" | "r" | "n" | "h" | "s"];
         if (view) {
           e.preventDefault();
           go(view);
@@ -299,7 +299,7 @@ function Shell() {
   type NavItem = { view: Route["view"]; label: string; icon: string; badge?: number; dot?: boolean; group: "daily" | "records" | "settings" };
   const nav: NavItem[] = [
     { view: "today", label: t("Today"), icon: "today", group: "daily" },
-    { view: "inbox", label: t("Inbox"), icon: "inbox", badge: needs || undefined, group: "daily" },
+    { view: "inbox", label: t("Messages"), icon: "inbox", badge: needs || undefined, group: "daily" },
     { view: "week", label: t("Week"), icon: "week", group: "daily" },
     { view: "calendar", label: t("Calendar"), icon: "calendar", group: "daily" },
     // From the most often looked at to the least: homework daily, notes and exams weekly, grades now and then.
@@ -425,7 +425,7 @@ function Shell() {
           {route.view === "calendar" ? <Calendar feed={feed} /> : null}
           {route.view === "exams" ? <Exams itemKey={route.item} feed={feed} /> : null}
           {route.view === "grades" ? <Grades itemKey={route.item} /> : null}
-          {route.view === "notes" ? <Notes itemKey={route.item} /> : null}
+          {route.view === "notes" ? <Notes feed={feed} itemKey={route.item} /> : null}
           {route.view === "homework" ? <Homework /> : null}
           {route.view === "settings" ? <Settings /> : null}
         </div>
@@ -444,7 +444,7 @@ function Shell() {
 function GoHint() {
   const keys: [string, string][] = [
     ["T", t("Today")],
-    ["I", t("Inbox")],
+    ["M", t("Messages")],
     ["W", t("Week")],
     ["C", t("Calendar")],
     ["H", tSense("Homework", "nav")],

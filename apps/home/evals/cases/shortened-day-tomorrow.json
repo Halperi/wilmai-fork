@@ -1,0 +1,53 @@
+{
+  "id": "shortened-day-tomorrow",
+  "added": "2026-10-30",
+  "why": "Tomorrow's school day is half an hour shorter, said in passing in a message mostly about last week's visit and today's event at school: 'huominen' is the day after it was sent (Friday). Nothing to do, but the parent has to know (a first-grader is picked up earlier), so it's under Needs you, and Friday shows the change. A real one was read right but not flagged.",
+  "tags": [
+    "relative-date",
+    "long",
+    "real-pattern"
+  ],
+  "today": "2026-10-29",
+  "pupils": [
+    {
+      "name": "Aino Esimerkki",
+      "class": "9C"
+    }
+  ],
+  "items": [
+    {
+      "type": "message",
+      "id": 8301,
+      "sent": "2026-10-29T16:15",
+      "from": "Opettaja Esimerkki (ESI)",
+      "subject": "Perjantain historian tunti",
+      "pupils": [
+        0
+      ],
+      "text": "Hei!\n\nViime viikon teatterivierailumme venyi puoli tuntia koulupäivän yli. Siksi huominen koulupäivä on vastaavasti 30 minuuttia lyhyempi.\n\nEsitys oli upea, ja oppilaat keskustelivat siitä innokkaasti koko paluumatkan. Teatterin väki kiitti ryhmää erityisesti hyvistä kysymyksistä näyttelijöille.\n\nTänään koulussa pidettiin myös historiapäivä, jossa 9C esitteli tutkielmiaan nuoremmille oppilaille. Päivä onnistui hienosti!\n\nKysykää kotona, mikä nuorta jäi esityksessä mietityttämään.\n\nTerveisin\n9C:n historian opettaja"
+    }
+  ],
+  "expect": {
+    "triage": [
+      {
+        "item": 8301,
+        "needs_action": true,
+        "kind": [
+          "schedule"
+        ]
+      }
+    ],
+    "calendar": {
+      "events": [
+        {
+          "date": "2026-10-30",
+          "kind": [
+            "schedule"
+          ],
+          "pupil": 0,
+          "sure": true
+        }
+      ]
+    }
+  }
+}

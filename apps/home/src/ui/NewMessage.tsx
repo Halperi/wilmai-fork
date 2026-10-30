@@ -85,7 +85,7 @@ export function NewMessage({ initialChild, initialTeacher, initialSubject }: { i
     return (
       <div className="reader compose-page">
         <a className="btn btn-quiet btn-sm back-link" href={hrefFor("inbox")}>
-          <Icon name="back" /> {t("Inbox")}
+          <Icon name="back" /> {t("Messages")}
         </a>
         <h2>{t("New message")}</h2>
         <p className="lede-small">{t("Who is it about?")}</p>
@@ -251,7 +251,7 @@ function Writer({ child, initialTeacher, initialSubject }: { child: string; init
   const head = (
     <>
       <a className="btn btn-quiet btn-sm back-link" href={hrefFor("inbox")}>
-        <Icon name="back" /> {t("Inbox")}
+        <Icon name="back" /> {t("Messages")}
       </a>
       <h2>{t("New message")}</h2>
       {snap.children.length > 1 && kid ? (
@@ -278,7 +278,7 @@ function Writer({ child, initialTeacher, initialSubject }: { child: string; init
             {t("Write another")}
           </button>
           <a className="btn btn-quiet" href={hrefFor("inbox")} style={{ textDecoration: "none" }}>
-            {t("Back to the inbox")}
+            {t("Back to Messages")}
           </a>
         </div>
       </div>

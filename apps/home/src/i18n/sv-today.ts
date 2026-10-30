@@ -94,7 +94,7 @@ export const SV_TODAY: Record<string, string> = {
   "Ends {by} earlier than usual": "Slutar {by} tidigare än vanligt",
   "Homework: {n}": "Läxor: {n}",
   "No homework": "Inga läxor",
-  "{n} more in the Inbox": "{n} till i inkorgen",
+  "{n} more in Messages": "{n} till i Meddelanden",
   "This week and next": "Den här veckan och nästa",
   // A child's day beside the page
   Given: "Givet på lektionen",

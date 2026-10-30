@@ -182,15 +182,16 @@ export function tSense(en: string, sense: string): string {
   return fi === key ? t(en) : fi;
 }
 
-/** "Tomorrow", "By Friday", "By Mon 19 Oct": from the deadline Jev picked, else the first date ahead. */
+/** "Tomorrow", "By Friday", "By Mon 19 Oct": from the deadline Jev picked, else the changed school day ("Friday"), else the first date ahead. */
 export function urgencyLabel(item: FeedItem): string | null {
   if (!item.triage) return null;
   const now = today();
   const deadline = item.deadline && item.deadline >= now ? item.deadline : null;
-  const when = deadline ?? item.eventDate ?? item.upcoming[0];
+  const change = item.change && item.change.date >= now ? item.change.date : null;
+  const when = deadline ?? change ?? item.eventDate ?? item.upcoming[0];
   if (!when || when < now) return null;
   const days = daysBetween(now, when);
-  if (days <= 1) return relativeDay(when, now);
+  if (days <= 1 || (when === change && days <= 6)) return relativeDay(when, now);
   if (days <= 6 || (deadline && days <= 21)) return byDay(when, now);
   return null;
 }

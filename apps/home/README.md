@@ -283,18 +283,18 @@ a changed session posts nothing, prepares the form again and asks again.
   due (the key is in each card's header), and the next task's text (two
   lines); a mark or the text opens the homework beside the page, a dot that
   lesson's day.
-- **Menu**: Today, Inbox, Week and Calendar; then Homework, Notes, Exams and Grades
+- **Menu**: Today, Messages, Week and Calendar; then Homework, Notes, Exams and Grades
   (from the most often looked at to the least);
   Settings at the foot, above the school's name and where the data is (on
-  hover, the full sentence). Badges only for what needs you (Inbox, notes
+  hover, the full sentence). Badges only for what needs you (Messages, notes
   to explain); a small dot on Exams when there's an exam today or on the
   next school day, on Grades for a new exam result, and on Notes for a note
   dated today not yet seen there.
 - **Children**: one control at the top: Everyone, or one child (a click on
   the child shown goes back to Everyone, so the view is never empty).
   ⌘- or Shift-click adds or removes a child; keys `0` and `1`–`9`.
-- **Inbox**: messages, bulletins and **event invitations** for every child
-  in one list (teacher notes are in Notes), with child filter, search and
+- **Messages**: conversations (sent ones included), bulletins and **event
+  invitations** for every child in one list (teacher notes are in Notes), with child filter, search and
   keys (`j`/`k`, `e` done, `r` reply, `/` search). An invitation waiting for
   an answer shows its times with "Sign up" (and "Won't attend", Wilma's "En
   osallistu", with a way to take it back) right under the ask, at the top
@@ -331,7 +331,7 @@ a changed session posts nothing, prepares the form again and asks again.
   Dismiss) and what's in the calendar for the next four weeks. An event
   opens where it comes from in the same panel: an exam or a note in the
   child's day (the lesson picked, with the note; a day further out reads
-  its timetable then), a message or bulletin as the Inbox shows it with the
+  its timetable then), a message or bulletin as Messages shows it with the
   date's line marked. A day opens its list there. "To the family calendar"
   sets which kinds go (all but deadlines, at first); the grid shows only
   those. The same event twice (Jev and the timetable, two siblings) is one.

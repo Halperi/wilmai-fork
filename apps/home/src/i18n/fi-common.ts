@@ -295,7 +295,7 @@ export const FI_COMMON: Record<string, string> = {
   Message: "Viesti",
   Bulletin: "Tiedote",
   "It isn't in Wilma any more.": "Sitä ei ole enää Wilmassa.",
-  "Open in the Inbox": "Avaa Saapuneissa",
+  "Open in Messages": "Avaa Viesteissä",
   "The calendar's date is read from this line": "Kalenterin päivä on luettu tältä riviltä",
   "Note (lesson)": "Merkintä",
   "Timetable not read yet": "Lukujärjestystä ei ole vielä luettu",

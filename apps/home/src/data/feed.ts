@@ -24,6 +24,8 @@ export interface Detail {
   actionLine: string | null;
   deadline: string | null;
   eventDate: string | null;
+  /** A school day that runs differently (an earlier end, a later start, no lessons), read surely and not over yet. */
+  change: LunaEvent | null;
   /** The second, narrower look at "needs action" (used only when the first was unsure). */
   confirm: number | null;
   /** The dated events Luna read (and its decisions' probabilities). */
@@ -71,11 +73,13 @@ export interface FeedItem {
   /** Whether the text mentions any date at all (past ones included). */
   dated: boolean;
   triage: Triage | null;
-  /** The school's own sentence saying what the parent must do (stage 2). */
+  /** The school's own sentence saying what the parent must do (stage 2), or, for a changed school day with nothing to do, what changes. */
   actionLine: string | null;
   /** The deadline for it, and the day the item is about (stage 2; YYYY-MM-DD). */
   deadline: string | null;
   eventDate: string | null;
+  /** The school day it changes (stage 2): the parent's to know even when there's nothing to do. */
+  change?: LunaEvent | null;
   /** Something the parent has to do that code knows for certain from Wilma's own data (no model needed). */
   task: { label: string; reason: string } | null;
   /** A message this family wrote (model.ts writtenByFamily, or in Wilma's Sent folder): never a step for them, whatever the reading says. */
@@ -178,10 +182,14 @@ function detailOf(rec: LunaRecord | undefined): Detail | null {
   const now = today();
   const T = LUNA_THRESHOLDS;
   const day = rec.events.find((e) => e.kind !== "deadline" && e.pDate >= T.keepDate && e.pCalendar + (e.pOptional ?? 0) >= T.keepCalendar && (e.endDate ?? e.date) >= now) ?? null;
+  // Sure, for everyone it's about (not a choice), and for one of the family's children (no pupils named: all of the item's).
+  const change =
+    rec.events.find((e) => e.kind === "schedule" && e.pDate >= T.sureDate && e.pCalendar >= T.sureCalendar && (e.pOptional ?? 0) < 0.5 && e.pupils?.length !== 0 && (e.endDate ?? e.date) >= now) ?? null;
   return {
     actionLine: rec.action?.quote ?? null,
     deadline: rec.action?.deadline ?? null,
     eventDate: day?.date ?? null,
+    change,
     confirm: rec.action ? rec.action.pRequired : null,
     events: rec.events,
     model: rec.model ?? null,
@@ -231,6 +239,13 @@ function triageOf(rec: JevRecord | undefined, detailRec: LunaRecord | undefined,
     answers: a,
     detail,
   };
+}
+
+/** The sentence a list shows under the title: what to do, or, when nothing is asked of the parent, how a school day changes. */
+function lineOf(triage: Triage | null): string | null {
+  const d = triage?.detail;
+  if (!d) return null;
+  return d.change && triage.needsAction < NEEDS_YOU ? d.change.quote : d.actionLine;
 }
 
 /** The AI's reading of the teacher's words, else the note's own type as Notes counts it (data/notes.ts). */
@@ -315,9 +330,10 @@ export function buildFeed(state: Pick<AppState, "snapshot" | "local" | "jev" | "
       upcoming: [...new Set([...inviteDates, ...upcomingOf(waiting ? undefined : state.luna[key])])].sort(),
       dated: Boolean(!waiting && state.luna[key]?.events.length) || inviteDates.length > 0,
       triage,
-      actionLine: own ? null : triage?.detail?.actionLine ?? null,
+      actionLine: own ? null : lineOf(triage),
       deadline: own ? null : triage?.detail?.deadline ?? null,
       eventDate: triage?.detail?.eventDate ?? null,
+      change: own ? null : triage?.detail?.change ?? null,
       task: invite?.awaiting && !student ? { label: t("Sign up"), reason: signUpReason(openUntil) } : null,
       own,
       awaitingReply: waiting || undefined,
@@ -348,9 +364,10 @@ export function buildFeed(state: Pick<AppState, "snapshot" | "local" | "jev" | "
       upcoming: upcomingOf(state.luna[key]),
       dated: Boolean(state.luna[key]?.events.length),
       triage,
-      actionLine: triage?.detail?.actionLine ?? null,
+      actionLine: lineOf(triage),
       deadline: triage?.detail?.deadline ?? null,
       eventDate: triage?.detail?.eventDate ?? null,
+      change: triage?.detail?.change ?? null,
       task: null,
       tone: null,
       replyCount: 0,
@@ -417,8 +434,10 @@ export function priority(item: FeedItem): number {
 
 /**
  * The app's rule for "needs you", from Jev's answers plus facts code knows:
- * a required step (not an optional invitation), from the child's own school
- * (not the city or an association), and not already over.
+ * a required step (not an optional invitation), or a school day that runs
+ * differently in the week ahead (a parent has to know when a first-grader's
+ * day ends early), from the child's own school (not the city or an
+ * association), and not already over.
  */
 export function isNeedsYou(i: FeedItem): boolean {
   if (i.done || i.own) return false;
@@ -426,8 +445,10 @@ export function isNeedsYou(i: FeedItem): boolean {
   // An invitation's state is known exactly (signed up, closed, open): that wins over the model's reading.
   if (i.invite?.data) return false;
   const t = i.triage;
-  if (!t || t.needsAction < NEEDS_YOU || t.scope === "wider") return false;
+  if (!t || t.scope === "wider") return false;
   const now = today();
+  if (i.change && (i.change.endDate ?? i.change.date) >= now && daysBetween(now, i.change.date) <= 6) return true;
+  if (t.needsAction < NEEDS_YOU) return false;
   const age = daysBetween(dateOf(i.at), now);
   if (t.detail) {
     // Stage 2 named the dates. A passed deadline ends it; so does a passed event day. A past
@@ -520,8 +541,13 @@ export function agenda(snap: Snapshot, items: FeedItem[], selected: string[], ra
       if (needs && item.deadline && item.deadline >= now && item.deadline <= until) {
         entries.push({ date: item.deadline, time: null, child: item.children[0], kind: "deadline", title: item.title, detail: item.actionLine ?? item.from, itemKey: item.key });
       }
+      // A changed school day goes by what changes ("Lyhennetty koulupäivä"), not the message's subject.
+      const change = item.change;
+      if (change && change.date >= now && change.date <= until) {
+        entries.push({ date: change.date, time: null, child: item.children[0], kind: "schedule", title: change.title, detail: item.title, itemKey: item.key });
+      }
       const aboutDay = needs || tri.kind === "event" || tri.kind === "schedule";
-      if (aboutDay && item.eventDate && item.eventDate !== item.deadline && item.eventDate >= now && item.eventDate <= until) {
+      if (aboutDay && item.eventDate && item.eventDate !== item.deadline && item.eventDate !== change?.date && item.eventDate >= now && item.eventDate <= until) {
         entries.push({ date: item.eventDate, time: null, child: item.children[0], kind: tri.kind === "schedule" ? "schedule" : "event", title: item.title, detail: item.from, itemKey: item.key });
       }
       continue;

@@ -127,7 +127,7 @@ export function Reader({
               className={`btn btn-sm${item.pinnedAt ? " pinned" : ""}`}
               aria-pressed={Boolean(item.pinnedAt)}
               onClick={() => togglePinned(item.key)}
-              title={item.pinnedAt ? t("Unpin (P)") : t("Pin to the top of the inbox (P). Only in this app; nothing changes in Wilma.")}
+              title={item.pinnedAt ? t("Unpin (P)") : t("Pin to the top of Messages (P). Only in this app; nothing changes in Wilma.")}
             >
               <Icon name="pin" />
               {item.pinnedAt ? t("Pinned") : t("Pin")}
@@ -242,7 +242,7 @@ export function Reader({
       {inPanel ? (
         <div className="dp-actions">
           <button className="btn btn-sm" onClick={() => go("inbox", item.key)}>
-            <Icon name="inbox" /> {t("Open in the Inbox")}
+            <Icon name="inbox" /> {t("Open in Messages")}
           </button>
         </div>
       ) : null}

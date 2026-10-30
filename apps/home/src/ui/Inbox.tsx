@@ -15,7 +15,7 @@ import { listedTranslation } from "../data/translations";
 const SEGMENTS: { id: Segment; label: string }[] = [
   { id: "all", label: "All" },
   { id: "needs", label: "Needs you" },
-  { id: "message", label: "Messages" },
+  { id: "message", label: "Conversations" },
   { id: "news", label: "Bulletins" },
   { id: "done", label: "Done" },
 ];

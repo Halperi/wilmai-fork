@@ -94,7 +94,7 @@ export const FI_TODAY: Record<string, string> = {
   "Ends {by} earlier than usual": "Päättyy {by} tavallista aiemmin",
   "Homework: {n}": "Kotitehtäviä: {n}",
   "No homework": "Ei kotitehtäviä",
-  "{n} more in the Inbox": "{n} muuta Saapuneissa",
+  "{n} more in Messages": "{n} muuta Viesteissä",
   "This week and next": "Tämä ja ensi viikko",
   // A child's day beside the page
   Given: "Annettu tunnilla",

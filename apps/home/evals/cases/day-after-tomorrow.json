@@ -1,7 +1,7 @@
 {
   "id": "day-after-tomorrow",
   "added": "2026-10-08",
-  "why": "'Ylihuomenna perjantaina' on a Wednesday is Friday the 9th: a shorter school day for everyone.",
+  "why": "'Ylihuomenna perjantaina' on a Wednesday is Friday the 9th: a shorter school day for everyone. Nothing to do, but it's under Needs you: a parent has to know when the day ends early.",
   "tags": [
     "relative-date",
     "whose"
@@ -35,7 +35,7 @@
     "triage": [
       {
         "item": 3301,
-        "needs_action": false,
+        "needs_action": true,
         "kind": [
           "schedule"
         ]

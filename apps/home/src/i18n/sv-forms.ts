@@ -1,7 +1,6 @@
 /* Swedish for forms. Keys are the English text exactly as in t(). */
 export const SV_FORMS: Record<string, string> = {
   // NewMessage: choosing the child and the recipient
-  Inbox: "Inkorg",
   "New message": "Nytt meddelande",
   "Who is it about?": "Vem gäller meddelandet?",
   About: "Gäller",
@@ -41,7 +40,7 @@ export const SV_FORMS: Record<string, string> = {
   "Sample family: nothing was sent to {to}.": "Exempelfamilj: inget skickades till {to}.",
   "Sent to {to}. It's in your sent messages in Wilma.": "Skickat till {to}. Meddelandet finns bland dina skickade meddelanden i Wilma.",
   "Write another": "Skriv ett till",
-  "Back to the inbox": "Tillbaka till inkorgen",
+  "Back to Messages": "Tillbaka till Meddelanden",
 
   // SignIn
   "School, *sorted.*": "Skolan, *under kontroll.*",
