@@ -106,14 +106,14 @@ const en: HomeCopy = {
     more: "What it does",
     requirements: "For Mac (Apple Silicon, macOS 13.3 or later) and Windows 10 or 11. Free and open, now in beta.",
     sample: "The app with a made-up sample family.",
-    clip: "WilmAI Home in use: today's view, a message with times to sign up for, search, two children's week side by side, and grades.",
+    clip: "WilmAI Home in use: today's view, messages and bulletins with a reply being written, search, the week with a day's schedule open, and grades.",
     tour: {
       sections: "Parts of the tour",
       paused: "Paused",
       play: "Play the tour",
       pause: "Pause the tour",
       today: "Today",
-      message: "Inbox",
+      message: "Messages",
       search: "Search",
       week: "Week",
       grades: "Grades",
@@ -137,7 +137,7 @@ const en: HomeCopy = {
         "Messages that read like messages: a thread in order, the newest marked, and a reply in a click.",
         "Exams and grades: what's coming up, every result with its trend, and the report card.",
         "A notification when something needs you, and the evening before a deadline. On Mac and Windows.",
-        "Quick to get around: ⌘K or Ctrl+K finds any message or note, the keyboard moves through your inbox, and dark mode follows your computer."
+        "Quick to get around: ⌘K or Ctrl+K finds any message or note, the keyboard moves through your messages, and dark mode follows your computer."
       ],
       alt: "WilmAI Home for a student: one pupil's day, with lessons, homework, exams and messages."
     },
@@ -163,7 +163,7 @@ const en: HomeCopy = {
     title: "Children at different schools, in one view",
     lead: "Are your children at schools on different Wilmas: another town, an upper secondary school, a private school? Sign in to each school's Wilma, and WilmAI Home shows all your children together.",
     points: [
-      "Today, the inbox, the week, exams and grades show every child, whichever Wilma they're on.",
+      "Today, Messages, the week, exams and grades show every child, whichever Wilma they're on.",
       "Notifications come from every school's Wilma.",
       "Add a school with Add another school's Wilma on the sign-in page. One Sign in signs in to all of them.",
       "A new school can give a child a new profile, so Wilma lists them twice: untick the one you don't need.",
@@ -383,7 +383,7 @@ const fi: HomeCopy = {
     more: "Mitä se tekee",
     requirements: "Macille (Apple Silicon, macOS 13.3 tai uudempi) ja Windows 10:lle tai 11:lle. Ilmainen ja avoin, nyt beetana.",
     sample: "Sovellus kuvitteellisen esimerkkiperheen tiedoilla.",
-    clip: "WilmAI Home käytössä: päivän näkymä, viesti, jossa on aikoja ilmoittautua, haku, kahden lapsen viikko rinnakkain ja arvosanat.",
+    clip: "WilmAI Home käytössä: päivän näkymä, viestit ja tiedotteet sekä vastaus kirjoitettavana, haku, viikko päivän lukujärjestys auki, ja arvosanat.",
     tour: {
       sections: "Esittelyn osat",
       paused: "Tauko",
