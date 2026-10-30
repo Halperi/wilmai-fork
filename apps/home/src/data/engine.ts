@@ -56,6 +56,7 @@ import { runLuna } from "../luna/events";
 import { t } from "../i18n";
 import { retainedScheduleWeeks } from "./schedule";
 import { TENANTS } from "./tenants";
+import { SignInAttempt, SignInCancelledError } from "./sign-in-attempt";
 
 type Session = { client: WilmaClient; account: AccountInfo; sharedKey?: string };
 type Student = { studentNumber: string; name: string; role?: Viewer };
@@ -69,6 +70,48 @@ let syncAgain = false;
 let endingSession: Promise<unknown> = Promise.resolve();
 
 const sessionOf = (slot: number): Session | null => sessions.get(slot) ?? null;
+
+/**
+ * The sign-in under way for each Wilma, by slot (the start page's first sign-in, before the family has slots, as
+ * START): signing that Wilma out, the parent signing it in again, a reset or another family cancels it, so a late
+ * answer from Wilma can't bring back what the parent has left (sign-in-attempt.ts).
+ */
+const signIns = new Map<number, SignInAttempt>();
+const START = -1;
+/** The app doesn't sign a Wilma in by itself over the parent's own sign-in for this long (a code being typed, say). */
+const PARENT_SIGN_IN_MS = 10 * 60_000;
+
+function beginSignIn(slot: number, by: SignInAttempt["by"]): SignInAttempt {
+  signIns.get(slot)?.cancel();
+  const attempt = new SignInAttempt(by);
+  signIns.set(slot, attempt);
+  return attempt;
+}
+
+function cancelSignIn(slot: number) {
+  signIns.get(slot)?.cancel();
+  signIns.delete(slot);
+}
+
+function cancelSignIns() {
+  for (const attempt of signIns.values()) attempt.cancel();
+  signIns.clear();
+}
+
+/** The parent signing this Wilma in themself right now: the app leaves it to them. */
+function parentSigningIn(slot: number): boolean {
+  const attempt = signIns.get(slot);
+  return Boolean(attempt && attempt.by === "parent" && attempt.current && !attempt.committed && Date.now() - attempt.started < PARENT_SIGN_IN_MS);
+}
+
+/** A sign-in cancelled after Wilma took its login: Wilma's session ends too. One continued from another program stays theirs. */
+function dropLate(attempt: SignInAttempt, client: WilmaClient): never {
+  if (attempt.loggedIn) {
+    attempt.ending = true;
+    void client.logout().catch(() => {});
+  }
+  throw new SignInCancelledError();
+}
 
 /** The client for one child, on the child's own Wilma. */
 function kid(number: string): WilmaClient {
@@ -112,9 +155,31 @@ function settle() {
   if ((getState().phase === "ready") !== ready) setState({ phase: ready ? "ready" : "signed-out" });
 }
 
-/** Client options: this app's transport, never logging in by itself, and WilmAI's shared session when the login's key is known. */
-function clientOptions(sharedKey: string | undefined) {
-  return { transport: wilmaTransport, sharedSession: sharedKey ? sharedSessionFor(sharedKey) : undefined };
+/**
+ * Client options: this app's transport, never logging in by itself, and WilmAI's shared session when the login's key is
+ * known. For a sign-in (`attempt`), until it's accepted: its requests stop when it's cancelled, and its login isn't
+ * saved for the other programs (finishLogin does that once it's accepted).
+ */
+function clientOptions(sharedKey: string | undefined, attempt?: SignInAttempt) {
+  const shared = sharedKey ? sharedSessionFor(sharedKey) : undefined;
+  if (!attempt) return { transport: wilmaTransport, sharedSession: shared };
+  const transport: typeof wilmaTransport = (req) => {
+    if (attempt.committed || attempt.ending) return wilmaTransport(req);
+    attempt.assertCurrent();
+    return attempt.wait(wilmaTransport(req));
+  };
+  const sharedSession: typeof shared = shared && {
+    get last() {
+      return shared.last;
+    },
+    entry: () => (attempt.committed ? shared.entry() : attempt.wait(shared.entry())),
+    load: () => (attempt.committed ? shared.load() : attempt.wait(shared.load())),
+    save: async (state: string) => {
+      if (attempt.committed) await shared.save(state);
+      else attempt.loggedIn = true;
+    },
+  };
+  return { transport, sharedSession };
 }
 
 /** With more than one Wilma, the sign-in history names each entry's. */
@@ -234,14 +299,16 @@ async function restoreSessions(first: SavedSession | null) {
   await Promise.all(
     logins(snap).map(async ({ slot, account }) => {
       if (sessions.has(slot)) return;
+      const attempt = beginSignIn(slot, "app");
       const kept = slot ? others[accountKey(account)!] : first && accountKey(first.account) === accountKey(account) ? first : null;
       let state = kept?.state || null;
-      const shared = !state && kept?.sharedKey ? await sharedSessionFor(kept.sharedKey).entry().catch(() => null) : null;
+      const shared = !state && kept?.sharedKey ? await attempt.wait(sharedSessionFor(kept.sharedKey).entry().catch(() => null)).catch(() => null) : null;
       state ||= shared?.state ?? null;
-      const options = clientOptions(kept?.sharedKey);
+      const options = clientOptions(kept?.sharedKey, attempt);
       const client = state ? WilmaClient.resumeSession(account.baseUrl, state, options) : null;
-      if (scope !== accountScope() || sessions.has(slot)) return;
+      if (!attempt.current || scope !== accountScope() || sessions.has(slot)) return;
       if (!client) return setStatus(slot, { live: false, why: null, rejoinAt: null, failed: null });
+      attempt.committed = true;
       sessions.set(slot, { client, account, sharedKey: kept?.sharedKey });
       if (shared) recordSession({ kind: "continued", by: shared.by, savedAt: shared.savedAt, midway: false, ...labelOf(account) });
       watchSession(client, options.sharedSession, slot, account);
@@ -263,22 +330,24 @@ async function finishLogin(
   client: WilmaClient,
   sharedKey: string | undefined,
   event: HistoryEvent,
-  opts: { scope: number; students?: Student[]; password?: string; automatic?: boolean; wait?: boolean }
+  opts: { attempt: SignInAttempt; scope: number; students?: Student[]; password?: string; automatic?: boolean; wait?: boolean }
 ) {
-  const students = opts.students?.length ? opts.students : await client.students();
-  // Signed out, or another family, meanwhile: this login isn't theirs.
-  if (opts.scope !== accountScope() || !getState().snapshot) {
-    await client.logout().catch(() => {});
-    return;
-  }
+  const { attempt } = opts;
+  const students = opts.students?.length ? opts.students : await attempt.wait(client.students());
+  // Cancelled (signed out, a newer sign-in, a reset), or another family, meanwhile: this login isn't theirs.
+  if (!attempt.current || opts.scope !== accountScope() || !getState().snapshot) dropLate(attempt, client);
   const role = roleOf(students);
   if (role === "student" && logins(getState().snapshot!).some((l) => l.slot !== slot)) {
     await client.logout().catch(() => {});
     throw new Error(t("That's a student's own login. Only a guardian's login can be added."));
   }
+  // Accepted: nothing waits from here to the end, so nothing can cancel it halfway.
+  attempt.committed = true;
   recordSession({ ...event, ...labelOf(account) });
   const shared = sharedKey ? sharedSessionFor(sharedKey) : undefined;
   client.useSharedSession(shared);
+  // The client's own save at its login waited for this: the other WilmAI programs continue the app's new session.
+  if (attempt.loggedIn) void shared?.save(client.exportSession()).catch(() => {});
   const before = sessions.get(slot);
   // Another username on the same Wilma: its session isn't needed any more.
   if (before && before.client !== client && before.account.username.toLowerCase() !== account.username.toLowerCase()) void before.client.logout().catch(() => {});
@@ -341,10 +410,27 @@ export class SignInAgainError extends Error {
  * when Wilma asks for a two-step code, returns `mfa` for the code the parent types, and a refused code can be typed
  * again once (Wilma's own limit for one login).
  */
-async function logIn(credentials: { baseUrl: string; username: string; password: string }, totpSecret: string | null | undefined, sharedKey: string, finish: (client: WilmaClient) => Promise<void>): Promise<Next> {
-  const options = { ...clientOptions(sharedKey), relogin: false };
+async function logIn(
+  credentials: { baseUrl: string; username: string; password: string },
+  totpSecret: string | null | undefined,
+  sharedKey: string,
+  attempt: SignInAttempt,
+  finish: (client: WilmaClient) => Promise<void>
+): Promise<Next> {
+  attempt.assertCurrent();
+  const options = { ...clientOptions(sharedKey, attempt), relogin: false };
+  /** The login, ended in Wilma too when it finishes after its sign-in was cancelled. */
+  const started = (login: Promise<WilmaClient>) => {
+    login.then((client) => {
+      if (!attempt.current && !attempt.committed) {
+        attempt.ending = true;
+        void client.logout().catch(() => {});
+      }
+    }, () => {});
+    return login;
+  };
   if (totpSecret) {
-    const client = await WilmaClient.login(credentials, totpCallback(totpSecret), options).catch((err) => {
+    const client = await attempt.wait(started(WilmaClient.login(credentials, totpCallback(totpSecret), options))).catch((err) => {
       throw signInError(err);
     });
     await finish(client);
@@ -358,8 +444,8 @@ async function logIn(credentials: { baseUrl: string; username: string; password:
       giveCode = resolve;
       codeAsked();
     });
-  const login = WilmaClient.login(credentials, onMfa, options);
-  const first = await Promise.race([login.then((client) => client), asked.then(() => null)]).catch((err) => {
+  const login = started(WilmaClient.login(credentials, onMfa, options));
+  const first = await attempt.wait(Promise.race([login.then((client) => client), asked.then(() => null)])).catch((err) => {
     throw signInError(err);
   });
   if (first) {
@@ -368,10 +454,12 @@ async function logIn(credentials: { baseUrl: string; username: string; password:
   }
   return {
     mfa: async (code: string) => {
+      attempt.assertCurrent();
       asked = new Promise<void>((resolve) => (codeAsked = resolve));
       giveCode?.(code.trim());
       // Either the login finishes, or Wilma refused the code and asks again.
-      const client = await Promise.race([login, asked.then(() => null)]).catch((err) => {
+      const client = await attempt.wait(Promise.race([login, asked.then(() => null)])).catch((err) => {
+        if (err instanceof SignInCancelledError) throw err;
         throw new SignInAgainError(t("{error} Sign in again with your password.", { error: signInError(err).message }));
       });
       if (!client) throw new Error(t("Wilma didn't accept that code. Type the newest code from your authenticator app."));
@@ -411,25 +499,28 @@ type Finish = (account: AccountInfo, client: WilmaClient, sharedKey: string | un
  * (no login, so Wilma on the phone stays signed in too), and only when there is none, a login with the saved password
  * (and code, when the CLI keeps the authenticator key). Returns `mfa` when Wilma asks for a code it can't make.
  */
-async function cliLogIn(account: AccountInfo, cli: CliAccount, automatic: boolean, finish: Finish): Promise<Next> {
+async function cliLogIn(account: AccountInfo, cli: CliAccount, automatic: boolean, attempt: SignInAttempt, finish: Finish): Promise<Next> {
   if (!isDesktopApp) {
     // Browser development: the bridge continues or makes the CLI's session itself and hands it over.
-    const data = await bridgeCall<{ tenantName: string | null; students: Student[]; state: string; key: string; continued: { savedAt: number | null; by: string | null } | null }>("cli/session", { body: { index: cli.index } });
-    const client = WilmaClient.resumeSession(account.baseUrl, data.state, clientOptions(data.key));
+    const data = await attempt.wait(
+      bridgeCall<{ tenantName: string | null; students: Student[]; state: string; key: string; continued: { savedAt: number | null; by: string | null } | null }>("cli/session", { body: { index: cli.index } })
+    );
+    const client = WilmaClient.resumeSession(account.baseUrl, data.state, clientOptions(data.key, attempt));
     if (!client) throw new Error(t("The CLI's login has no Wilma session."));
     const event: HistoryEvent = data.continued ? { kind: "continued", ...data.continued, midway: false } : { kind: "signed-in", how: "saved-login" };
     await finish({ ...account, tenantName: data.tenantName ?? account.tenantName }, client, data.key, event, data.students);
     return null;
   }
-  const secret = await savedLoginSecret(cli.id ?? "").catch((err) => {
+  const secret = await attempt.wait(savedLoginSecret(cli.id ?? "")).catch((err) => {
+    if (err instanceof SignInCancelledError) throw err;
     throw new Error(t(err instanceof Error ? err.message : String(err)));
   });
-  const sharedKey = await sharedKeyFor(account.baseUrl, account.username, secret.password);
-  const entry = await sharedSessionFor(sharedKey).entry().catch(() => null);
-  const client = entry ? WilmaClient.resumeSession(account.baseUrl, entry.state, clientOptions(sharedKey)) : null;
+  const sharedKey = await attempt.wait(sharedKeyFor(account.baseUrl, account.username, secret.password));
+  const entry = await attempt.wait(sharedSessionFor(sharedKey).entry().catch(() => null));
+  const client = entry ? WilmaClient.resumeSession(account.baseUrl, entry.state, clientOptions(sharedKey, attempt)) : null;
   if (entry && client) {
     try {
-      const students = await client.students();
+      const students = await attempt.wait(client.students());
       await finish(account, client, sharedKey, { kind: "continued", by: entry.by, savedAt: entry.savedAt, midway: false }, students);
       return null;
     } catch (err) {
@@ -438,7 +529,7 @@ async function cliLogIn(account: AccountInfo, cli: CliAccount, automatic: boolea
     }
   }
   const event: HistoryEvent = { kind: "signed-in", how: automatic ? "automatic" : "saved-login" };
-  return logIn({ baseUrl: account.baseUrl, username: account.username, password: secret.password }, secret.totpSecret, sharedKey, (c) => finish(account, c, sharedKey, event));
+  return logIn({ baseUrl: account.baseUrl, username: account.username, password: secret.password }, secret.totpSecret, sharedKey, attempt, (c) => finish(account, c, sharedKey, event));
 }
 
 /** The school's name for a Wilma address, from the list of Wilmas. */
@@ -448,9 +539,20 @@ const tenantNameOf = (baseUrl: string): string | null => TENANTS.find((x) => sam
  * The first sign-in on the start page: a new family, or (a login of a family on this computer, its first or one added
  * to it) that family back, with its other Wilmas to sign in too.
  */
-async function startFamily(account: AccountInfo, client: WilmaClient, sharedKey: string | undefined, event: HistoryEvent, students: Student[] | undefined, viewAs: Viewer | undefined, password?: string) {
+async function startFamily(
+  attempt: SignInAttempt,
+  account: AccountInfo,
+  client: WilmaClient,
+  sharedKey: string | undefined,
+  event: HistoryEvent,
+  students: Student[] | undefined,
+  viewAs: Viewer | undefined,
+  password?: string
+) {
   // Read before the family shows, so the screens go straight from the start page to signed in (no wait in between).
-  const listed = students?.length ? students : await client.students();
+  const listed = students?.length ? students : await attempt.wait(client.students());
+  // Cancelled meanwhile (the sample family picked, say): the family doesn't take the page's place.
+  if (!attempt.current) dropLate(attempt, client);
   const family = familyFor(account) ?? account;
   if (accountKey(getState().snapshot?.account) !== accountKey(family)) activateAccount(family);
   if (!getState().snapshot) setState({ snapshot: emptySnapshot(account) });
@@ -458,7 +560,7 @@ async function startFamily(account: AccountInfo, client: WilmaClient, sharedKey:
   const snap = getState().snapshot!;
   const known = logins(snap).find((l) => sameWilma(l.account.baseUrl, account.baseUrl));
   const slot = known?.slot ?? (logins(snap).some((l) => l.slot === 0) ? slotFor(snap, account) : 0);
-  await finishLogin(slot, account, client, sharedKey, event, { scope: accountScope(), students: listed, password });
+  await finishLogin(slot, account, client, sharedKey, event, { attempt, scope: accountScope(), students: listed, password });
 }
 
 /**
@@ -474,14 +576,15 @@ export async function signInWithPassword(
   automatic = false,
   viewAs?: Viewer
 ): Promise<Next> {
-  await endingSession;
+  const attempt = beginSignIn(START, automatic ? "app" : "parent");
+  await attempt.wait(endingSession);
   const base = baseUrl.replace(/\/$/, "");
   const account: AccountInfo = saved?.account ?? { baseUrl: base, username, tenantName: tenantNameOf(base), via: "password" };
   const event: HistoryEvent = { kind: "signed-in", how: automatic ? "automatic" : saved ? "saved-login" : "password" };
   // The CLI's key for this login: the app and the other WilmAI programs then share one session.
-  const sharedKey = await sharedKeyFor(account.baseUrl, username, password);
-  return logIn({ baseUrl: account.baseUrl, username, password }, saved?.totpSecret, sharedKey, (client) =>
-    startFamily(account, client, sharedKey, event, undefined, viewAs, account.via === "password" ? password : undefined)
+  const sharedKey = await attempt.wait(sharedKeyFor(account.baseUrl, username, password));
+  return logIn({ baseUrl: account.baseUrl, username, password }, saved?.totpSecret, sharedKey, attempt, (client) =>
+    startFamily(attempt, account, client, sharedKey, event, undefined, viewAs, account.via === "password" ? password : undefined)
   );
 }
 
@@ -504,9 +607,12 @@ export async function addWilma(baseUrl: string, username: string, password: stri
   const snap = checkAddable(base);
   const slot = slotFor(snap, { baseUrl: base });
   const account: AccountInfo = { baseUrl: base, username, tenantName: tenantNameOf(base), via: "password" };
-  const sharedKey = await sharedKeyFor(base, username, password);
+  const attempt = beginSignIn(slot, "parent");
+  const sharedKey = await attempt.wait(sharedKeyFor(base, username, password));
   const scope = accountScope();
-  return logIn({ baseUrl: base, username, password }, null, sharedKey, (client) => finishLogin(slot, account, client, sharedKey, { kind: "signed-in", how: "password" }, { scope, password }));
+  return logIn({ baseUrl: base, username, password }, null, sharedKey, attempt, (client) =>
+    finishLogin(slot, account, client, sharedKey, { kind: "signed-in", how: "password" }, { attempt, scope, password })
+  );
 }
 
 /** Whether a login signs in without the parent typing: its password is remembered, or it's the CLI's saved login. */
@@ -519,30 +625,36 @@ export function loginKept(account: AccountInfo): boolean {
  * another `username`, that user takes the Wilma's place (signed in, its children are the ones Wilma lists for them).
  * Returns `mfa` when Wilma asks for a two-step code.
  */
-export async function signInLogin(slot: number, password?: string, automatic = false, username?: string): Promise<Next> {
-  await endingSession;
+export async function signInLogin(
+  slot: number,
+  password?: string,
+  automatic = false,
+  username?: string,
+  attempt = beginSignIn(slot, automatic ? "app" : "parent")
+): Promise<Next> {
+  await attempt.wait(endingSession);
   const snap = getState().snapshot;
   const known = snap ? accountOf(snap, slot) : null;
   if (!known) throw new Error(t("That Wilma isn't in the app any more."));
   const account = otherUser(known, username) ? { ...known, username: username!.trim(), via: "password" as const } : known;
   const scope = accountScope();
   if (account.via === "cli" && !password) {
-    const cli = (await cliAccounts()).find((a) => sameWilma(a.baseUrl, account.baseUrl) && a.username.toLowerCase() === account.username.toLowerCase());
+    const cli = (await attempt.wait(cliAccounts())).find((a) => sameWilma(a.baseUrl, account.baseUrl) && a.username.toLowerCase() === account.username.toLowerCase());
     if (!cli) throw new Error(t("The WilmAI CLI's saved login isn't on this computer any more."));
-    return cliLogIn(account, cli, automatic, (named, client, sharedKey, event, students) => finishLogin(slot, named, client, sharedKey, event, { scope, students, automatic }));
+    return cliLogIn(account, cli, automatic, attempt, (named, client, sharedKey, event, students) => finishLogin(slot, named, client, sharedKey, event, { attempt, scope, students, automatic }));
   }
   const typed = password || passwordOf(account);
   if (!typed) throw new Error(t("Type the password for this Wilma."));
-  const sharedKey = await sharedKeyFor(account.baseUrl, account.username, typed);
+  const sharedKey = await attempt.wait(sharedKeyFor(account.baseUrl, account.username, typed));
   const event: HistoryEvent = { kind: "signed-in", how: automatic ? "automatic" : "password" };
   const signedIn = account.via === "cli" ? { ...account, via: "password" as const } : account;
   try {
-    return await logIn({ baseUrl: account.baseUrl, username: account.username, password: typed }, null, sharedKey, (client) =>
-      finishLogin(slot, signedIn, client, sharedKey, event, { scope, password: typed, automatic })
+    return await logIn({ baseUrl: account.baseUrl, username: account.username, password: typed }, null, sharedKey, attempt, (client) =>
+      finishLogin(slot, signedIn, client, sharedKey, event, { attempt, scope, password: typed, automatic })
     );
   } catch (err) {
-    // Changed in Wilma: forgotten, so the parent types the new one.
-    if (err instanceof PasswordRefusedError && !password) rememberPasswordOf(account, null);
+    // Changed in Wilma: forgotten, so the parent types the new one (not by a sign-in that was cancelled meanwhile).
+    if (err instanceof PasswordRefusedError && !password && attempt.current) rememberPasswordOf(account, null);
     throw err;
   }
 }
@@ -551,19 +663,19 @@ export async function signInLogin(slot: number, password?: string, automatic = f
 const otherUser = (account: AccountInfo, username?: string) => Boolean(username?.trim()) && username!.trim().toLowerCase() !== account.username.toLowerCase();
 
 /** A Wilma back in without a login: the live session another WilmAI program saved for it, if there's one. */
-async function continueShared(slot: number): Promise<boolean> {
+async function continueShared(slot: number, attempt: SignInAttempt): Promise<boolean> {
   const snap = getState().snapshot;
   const account = snap ? accountOf(snap, slot) : null;
   if (!account || sessions.has(slot)) return false;
   const scope = accountScope();
-  const kept = slot ? (await savedLinkedSessions())[accountKey(account)!] : await savedSession();
+  const kept = slot ? (await attempt.wait(savedLinkedSessions()))[accountKey(account)!] : await attempt.wait(savedSession());
   if (!kept?.sharedKey || accountKey(kept.account) !== accountKey(account)) return false;
-  const entry = await sharedSessionFor(kept.sharedKey).entry().catch(() => null);
-  const client = entry ? WilmaClient.resumeSession(account.baseUrl, entry.state, clientOptions(kept.sharedKey)) : null;
+  const entry = await attempt.wait(sharedSessionFor(kept.sharedKey).entry().catch(() => null));
+  const client = entry ? WilmaClient.resumeSession(account.baseUrl, entry.state, clientOptions(kept.sharedKey, attempt)) : null;
   if (!entry || !client) return false;
   try {
-    const students = await client.students();
-    await finishLogin(slot, account, client, kept.sharedKey, { kind: "continued", by: entry.by, savedAt: entry.savedAt, midway: false }, { scope, students });
+    const students = await attempt.wait(client.students());
+    await finishLogin(slot, account, client, kept.sharedKey, { kind: "continued", by: entry.by, savedAt: entry.savedAt, midway: false }, { attempt, scope, students });
     return true;
   } catch (err) {
     if (err instanceof SessionEndedError) return false;
@@ -571,8 +683,8 @@ async function continueShared(slot: number): Promise<boolean> {
   }
 }
 
-/** What signing a Wilma in came to: in, a code or the password to ask, or why not. */
-export type Attempt = { ok: true } | { mfa: (code: string) => Promise<void> } | { password: true } | { error: string };
+/** What signing a Wilma in came to: in, a code or the password to ask, why not, or cancelled (nothing to show). */
+export type Attempt = { ok: true } | { mfa: (code: string) => Promise<void> } | { password: true } | { error: string } | { cancelled: true };
 
 /** What came of signing in, in words for the page: in, a code or the password to ask, or why not. */
 async function attempt(sign: () => Promise<Next>): Promise<Attempt> {
@@ -580,6 +692,7 @@ async function attempt(sign: () => Promise<Next>): Promise<Attempt> {
     const next = await sign();
     return next ? { mfa: next.mfa } : { ok: true };
   } catch (err) {
+    if (err instanceof SignInCancelledError) return { cancelled: true };
     if (err instanceof PasswordRefusedError) return { password: true };
     return { error: err instanceof Error ? err.message : String(err) };
   }
@@ -590,9 +703,10 @@ export async function signInOne(slot: number, password?: string): Promise<Attemp
   return attempt(async () => {
     const snap = getState().snapshot;
     const account = snap ? accountOf(snap, slot) : null;
-    if (!password && (await continueShared(slot))) return null;
+    const signing = beginSignIn(slot, "parent");
+    if (!password && (await continueShared(slot, signing))) return null;
     if (!password && account && !loginKept(account)) throw new PasswordRefusedError();
-    return signInLogin(slot, password);
+    return signInLogin(slot, password, false, undefined, signing);
   });
 }
 
@@ -614,6 +728,8 @@ export async function signInAll(typed: Record<number, string> = {}, skip: number
 export async function changeLogin(slot: number, baseUrl: string, username: string, password: string, viewAs?: Viewer): Promise<Attempt> {
   const known = getState().snapshot ? loginOf(getState().snapshot!, slot) : null;
   const base = baseUrl.replace(/\/$/, "");
+  // Whatever was signing this Wilma in (the app by itself, say) gives way to the parent's choice.
+  cancelSignIn(slot);
   if (known && sameWilma(base, known.account.baseUrl) && !otherUser(known.account, username)) return signInOne(slot, password || undefined);
   return attempt(async () => {
     const snap = getState().snapshot;
@@ -648,29 +764,32 @@ export async function getBack(): Promise<boolean> {
 function getBackLogin(slot: number): Promise<boolean> {
   const pending = gettingBack.get(slot);
   if (pending) return pending;
-  const attempt = (async () => {
+  const trying = (async () => {
     const { snapshot, settings, loginStatus } = getState();
     const login = snapshot ? loginOf(snapshot, slot) : null;
-    if (!login || login.signedOut || sessions.has(slot)) return false;
+    if (!login || login.signedOut || sessions.has(slot) || parentSigningIn(slot)) return false;
     const scope = accountScope();
+    const signing = beginSignIn(slot, "app");
     try {
-      if (await continueShared(slot)) return true;
+      if (await continueShared(slot, signing)) return true;
     } catch {
       return false; // Wilma unreachable: the next check tries again
     }
     const status = loginStatus[slot];
     if (!settings.staySignedIn || !loginKept(login.account) || status?.failed || (status?.rejoinAt && Date.now() < status.rejoinAt)) return false;
     try {
-      if (await signInLogin(slot, undefined, true)) throw new Error(t("Wilma asked for a two-step code."));
+      if (await signInLogin(slot, undefined, true, undefined, signing)) throw new Error(t("Wilma asked for a two-step code."));
       return true;
     } catch (err) {
+      // Cancelled (signed out, or the parent signing in themself): nothing to say about it.
+      if (err instanceof SignInCancelledError || !signing.current) return false;
       const why = err instanceof Error ? err.message : String(err);
       if (scope === accountScope()) setStatus(slot, { live: false, why: t("Signing in again didn't work: {why}", { why }), rejoinAt: null, failed: why });
       return false;
     }
   })().finally(() => gettingBack.delete(slot));
-  gettingBack.set(slot, attempt);
-  return attempt;
+  gettingBack.set(slot, trying);
+  return trying;
 }
 
 /**
@@ -709,6 +828,7 @@ export async function signOutWilma(slot: number) {
   const snap = getState().snapshot;
   const login = snap ? loginOf(snap, slot) : null;
   if (!login) return;
+  cancelSignIn(slot);
   const session = sessions.get(slot);
   sessions.delete(slot);
   patchSnapshot((s) => ({ ...s, logins: logins(s).map((l) => (l.slot === slot ? { ...l, signedOut: true } : l)) }));
@@ -724,6 +844,7 @@ export async function removeWilma(slot: number) {
   const login = snap ? loginOf(snap, slot) : null;
   if (!snap || !login) return;
   if (logins(snap).length === 1) return signOut();
+  cancelSignIn(slot);
   const session = sessions.get(slot);
   sessions.delete(slot);
   paces.delete(slot);
@@ -765,12 +886,14 @@ export function setChildShown(child: string, shown: boolean) {
 
 /** A family signed in here before, back on the Wilma page (one click to sign in when its passwords are kept). */
 export function openFamily(account: AccountInfo) {
+  cancelSignIns();
   activateAccount(account);
   setState({ phase: "signed-out" });
 }
 
-/** End every session of the family on this computer (Wilma's own Log out), without waiting. */
+/** End every session of the family on this computer (Wilma's own Log out), without waiting, and every sign-in under way. */
 function endSessions() {
+  cancelSignIns();
   const previous = [...sessions.values()];
   sessions.clear();
   paces.clear();
@@ -791,6 +914,7 @@ export async function signInDemo() {
 
 /** Back from the sample family to the Wilma page: the family signed in here last, or an empty page. */
 export async function leaveDemo() {
+  cancelSignIns();
   activateAccount(null);
   const [family] = knownFamilies();
   if (family) openFamily(family.account);

@@ -13,6 +13,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { accountKey, forgetPasswordsIfAsked, getState, passwordOf, setViewAs, updateSettings, useApp } from "../data/store";
 import { SignInAgainError, addWilma, changeLogin, type Attempt, forgetThisFamily, loginKept, removeWilma, resetApp, setChildShown, signInAll, signInDemo, signInWithPassword, signOutWilma } from "../data/engine";
+import { SignInCancelledError } from "../data/sign-in-attempt";
 import { logins, sameWilma, schoolOf } from "../data/logins";
 import { viewerOf, type Login, type Viewer } from "../data/model";
 import { TENANTS, type Tenant } from "../data/tenants";
@@ -123,7 +124,8 @@ export function Wilmas() {
         if (!next) return done.add(d.id), true;
         asked[`d${d.id}`] = { mfa: async (code) => (await next.mfa(code), dropDraft(d.id)) };
       } catch (err) {
-        asked[`d${d.id}`] = { error: err instanceof Error ? err.message : String(err) };
+        // Cancelled (the sample family picked meanwhile, say): nothing to show.
+        if (!(err instanceof SignInCancelledError)) asked[`d${d.id}`] = { error: err instanceof Error ? err.message : String(err) };
       }
       return false;
     };
@@ -150,10 +152,10 @@ export function Wilmas() {
         results[slot] = r;
         if ("ok" in r) rememberUsername(c.tenant.url, c.username.trim());
         if ("mfa" in r) asked[`s${slot}`] = { mfa: async (code) => (await r.mfa(code), setChange(slot, null)) };
-        else if (!("ok" in r)) asked[`s${slot}`] = r;
+        else if (!("ok" in r) && !("cancelled" in r)) asked[`s${slot}`] = r;
       }
       Object.assign(results, await signInAll(typed, changed.map(([slot]) => slot)));
-      for (const [slot, r] of Object.entries(results)) if (!("ok" in r) && !asked[`s${slot}`]) asked[`s${slot}`] = r;
+      for (const [slot, r] of Object.entries(results)) if (!("ok" in r) && !("cancelled" in r) && !asked[`s${slot}`]) asked[`s${slot}`] = r;
       // What's typed stays on a Wilma that isn't in yet, except a password Wilma refused.
       const keep = <T,>(typedIn: Record<number, T>, drop: (r: Attempt) => boolean) =>
         Object.fromEntries(Object.entries(typedIn).filter(([slot]) => !results[Number(slot)] || !drop(results[Number(slot)])));
@@ -527,7 +529,7 @@ function DraftRow({ draft, kept = false, taken, label, ask, notice, onChange, on
               await mfa(code);
               onAsk(null);
             } catch (err) {
-              onAsk(err instanceof SignInAgainError ? null : { error: err instanceof Error ? err.message : String(err) });
+              onAsk(err instanceof SignInAgainError || err instanceof SignInCancelledError ? null : { error: err instanceof Error ? err.message : String(err) });
             }
           }}
         />

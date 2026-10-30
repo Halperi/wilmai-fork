@@ -416,3 +416,137 @@ test("asking for the password each time: kept passwords aren't used, and go only
     await resetApp();
   }
 });
+
+/*
+ * A sign-in still on its way when the parent does something else (signs a Wilma out, picks the sample family, signs it
+ * in themself) is cancelled: it can't bring the Wilma back, take the page's place, or save its session. Wilma's answer
+ * is what's late here: Wilma has already taken the login when the app hears back, as on a slow connection.
+ */
+function heldAnswer(fakes: ReturnType<typeof family>, when: (url: URL, wire: WireRequest) => boolean) {
+  const bridge = fakeWilmas({ "north.inschool.fi": fakes.north, "south.inschool.fi": fakes.south, "east.inschool.fi": fakes.east });
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  let reached!: () => void;
+  const arrived = new Promise<void>((resolve) => (reached = resolve));
+  let held = false;
+  /** The shared session file's writes (the login's key each). */
+  const shared: string[] = [];
+  overrideBridge(async (path, init) => {
+    if (path === "session/set") shared.push(String((init.body as { key?: string }).key));
+    const result = await bridge(path, init);
+    const wire = init.body as WireRequest;
+    if (path === "wilma" && !held && when(new URL(wire.url), wire)) {
+      held = true;
+      reached();
+      await gate;
+    }
+    return result;
+  });
+  return { arrived, release, shared };
+}
+
+const loginPost = (host: string) => (url: URL, wire: WireRequest) => wire.method === "POST" && url.host === host && url.pathname === "/login";
+
+test("a Wilma signed out while the app signs it in again by itself stays out, its session unsaved", async () => {
+  await resetApp();
+  updateSettings({ ...DEFAULT_SETTINGS, staySignedIn: true });
+  const fakes = family();
+  try {
+    await signInWithPassword(NORTH, "parent", "fictional-north", undefined, false, "guardian");
+    await addWilma(SOUTH, "parent", "fictional-south");
+    await syncNow();
+    const south = logins(getState().snapshot!).find((l) => l.slot === 1)!.account;
+    const hold = heldAnswer(fakes, loginPost("south.inschool.fi"));
+    fakes.south.alive = null;
+    await syncNow(); // Wilma ended it: the app signs in again at once
+    await hold.arrived;
+    const writes = hold.shared.length;
+    await signOutWilma(1);
+    hold.release();
+    await getBack(); // the sign-in that was under way, to its end
+    assert.equal(getState().loginStatus[1]?.live, false, "still out");
+    assert.equal(getState().loginStatus[1]?.why, "You signed out.");
+    assert.equal(logins(getState().snapshot!).find((l) => l.slot === 1)?.signedOut, true);
+    assert.equal(getState().phase, "signed-out");
+    assert.ok(!(await savedLinkedSessions())[accountKey(south)!]?.state, "no session kept for the next start");
+    assert.deepEqual(hold.shared.slice(writes), [], "nothing written to the shared session file");
+  } finally {
+    overrideBridge(null);
+    await resetApp();
+  }
+});
+
+test("the sample family picked while a sign-in is on its way: the sign-in doesn't take its place", async () => {
+  await resetApp();
+  updateSettings({ ...DEFAULT_SETTINGS });
+  const fakes = family();
+  try {
+    const hold = heldAnswer(fakes, loginPost("north.inschool.fi"));
+    // Cancelled the moment the sample family is picked: what it comes to is read at the end.
+    const outcome = signInWithPassword(NORTH, "parent", "fictional-north", undefined, false, "guardian").then(() => "signed in", (err: Error) => err.name);
+    await hold.arrived;
+    await signInDemo();
+    hold.release();
+    assert.equal(await outcome, "SignInCancelledError");
+    assert.equal(getState().snapshot?.account.via, "demo", "still the sample family");
+    assert.equal(getState().phase, "ready");
+    assert.deepEqual(hold.shared, [], "nothing written to the shared session file");
+    assert.ok(!knownFamilies().some((f) => f.account.baseUrl === NORTH), "no family made from the late sign-in");
+  } finally {
+    overrideBridge(null);
+    await resetApp();
+  }
+});
+
+test("the parent signing a Wilma in while the app does it by itself: the parent's sign-in is the one that stays", async () => {
+  await resetApp();
+  updateSettings({ ...DEFAULT_SETTINGS, staySignedIn: true });
+  const fakes = family();
+  try {
+    await signInWithPassword(NORTH, "parent", "fictional-north", undefined, false, "guardian");
+    await addWilma(SOUTH, "parent", "fictional-south");
+    await syncNow();
+    const hold = heldAnswer(fakes, loginPost("south.inschool.fi"));
+    fakes.south.alive = null;
+    await syncNow();
+    await hold.arrived;
+    assert.deepEqual(await signInAll({ 1: "fictional-south" }), { 1: { ok: true } });
+    const parents = fakes.south.alive;
+    hold.release();
+    await getBack();
+    await syncNow();
+    assert.equal(fakes.south.alive, parents, "Wilma's live session is still the parent's");
+    assert.equal(getState().loginStatus[1]?.live, true);
+    assert.equal(getState().phase, "ready");
+  } finally {
+    overrideBridge(null);
+    await resetApp();
+  }
+});
+
+test("the app doesn't sign a Wilma in by itself while the parent is signing it in", async () => {
+  await resetApp();
+  updateSettings({ ...DEFAULT_SETTINGS, staySignedIn: false });
+  const fakes = family();
+  try {
+    await signInWithPassword(NORTH, "parent", "fictional-north", undefined, false, "guardian");
+    await addWilma(SOUTH, "parent", "fictional-south");
+    await syncNow();
+    fakes.south.alive = null;
+    await syncNow(); // Wilma ended it, and nothing signs in by itself yet
+    const hold = heldAnswer(fakes, loginPost("south.inschool.fi"));
+    const parents = signInAll({ 1: "fictional-south" });
+    await hold.arrived;
+    updateSettings({ staySignedIn: true });
+    const logins = () => fakes.south.requests.filter((r) => r === "POST /login").length;
+    const before = logins();
+    await getBack();
+    assert.equal(logins(), before, "no login of its own");
+    hold.release();
+    assert.deepEqual(await parents, { 1: { ok: true } });
+    assert.equal(getState().phase, "ready");
+  } finally {
+    overrideBridge(null);
+    await resetApp();
+  }
+});
