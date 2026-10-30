@@ -183,8 +183,12 @@ function detailOf(rec: LunaRecord | undefined): Detail | null {
   const T = LUNA_THRESHOLDS;
   const day = rec.events.find((e) => e.kind !== "deadline" && e.pDate >= T.keepDate && e.pCalendar + (e.pOptional ?? 0) >= T.keepCalendar && (e.endDate ?? e.date) >= now) ?? null;
   // Sure, for everyone it's about (not a choice), and for one of the family's children (no pupils named: all of the item's).
+  // A trip or event the item puts on that day is the day's news (on the day and in the calendar): its hours are part of it.
+  const tripThatDay = (e: LunaEvent) => rec.events.some((o) => (o.kind === "trip" || o.kind === "event") && o.date === e.date && o.pCalendar >= T.keepCalendar);
   const change =
-    rec.events.find((e) => e.kind === "schedule" && e.pDate >= T.sureDate && e.pCalendar >= T.sureCalendar && (e.pOptional ?? 0) < 0.5 && e.pupils?.length !== 0 && (e.endDate ?? e.date) >= now) ?? null;
+    rec.events.find(
+      (e) => e.kind === "schedule" && e.pDate >= T.sureDate && e.pCalendar >= T.sureCalendar && (e.pOptional ?? 0) < 0.5 && e.pupils?.length !== 0 && (e.endDate ?? e.date) >= now && !tripThatDay(e)
+    ) ?? null;
   return {
     actionLine: rec.action?.quote ?? null,
     deadline: rec.action?.deadline ?? null,

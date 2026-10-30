@@ -417,7 +417,7 @@ async function check(src: LunaSource, read: Read, critic: boolean): Promise<numb
           {
             type: "predicate",
             name: `optional_${i}`,
-            instructions: `Event E${i}: "${e.title}" on ${when(e, false)}. Is it only for those who choose to join it: an optional test or course, a club, an offer from outside the school, a parents' association meeting, or a talk or webinar any parent may join? No for an exam, a trip or an event set for the pupil or their class or grade, or a parents' evening or info evening for the pupil's class or grade.`,
+            instructions: `Event E${i}: "${e.title}" on ${when(e, false)}. Is it only for those who choose to join it: an optional test or course, a club, an offer from outside the school, a parents' association meeting, or a talk or webinar any parent may join? No for an exam, a trip or an event set for the pupil or their class or grade, or a parents' evening or info evening for the pupil's class or grade (also when no sign-up is needed).`,
           },
         ]
       : [];
@@ -465,7 +465,7 @@ async function check(src: LunaSource, read: Read, critic: boolean): Promise<numb
       instructions:
         src.reader === "student"
           ? `Must this pupil do this themself: "${action.quote}"? Yes for a required step for them: do or hand in a task, prepare for an exam or a lesson, bring or return something, reply, sign up or register, or take part in something on a set day. No for a step only a guardian takes (a guardian's permission or form, a payment, booking a meeting, explaining an absence), a step for other classes or grades, an optional invitation, event, offer or survey, or information only.`
-          : `Must the guardian do this: "${action.quote}"? Yes for a required step: reply, give or refuse permission, sign, fill in a form, register, choose, pay, book a time, or check or bring something for the pupil. No for an optional invitation, event, offer or survey, information only, or a step for the pupil alone.`,
+          : `Is this a required step a guardian must do or take part in: "${action.quote}"? Yes: reply, give or refuse permission, sign or fill in a form, a permission slip or a contract (a work-experience or TET contract) even when the pupil hands it in at school or the sentence is passive ("palautetaan"), register or sign up when the school asks it of every family, choose, pay, book a time, or check or bring something for the pupil. No: an optional invitation, event, offer or survey; joining or applying to a club, group or course the pupil may choose (even by a deadline), and what to bring to one; a standing rule for every lesson (always bringing PE kit); a general request to follow Wilma or keep informed; information only; or the pupil's own schoolwork.`,
     });
     // The step's deadline: a choice among nearby days, or (fields) asked on its own.
     if (action.deadline && choices)

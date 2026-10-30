@@ -101,8 +101,8 @@ export const toneQuestions: Record<string, Question> = {
     instructions: "How does this teacher's note about the pupil read to a parent?",
     criteria: {
       praise: { what: "Praise or positive feedback" },
-      neutral: { what: "A neutral record" },
-      concern: { what: "A concern, a missed task or a problem" },
+      neutral: { what: "A neutral record or instruction: an absence and its reason (ill, a health visit), what is coming (an exam and its topics), or work or an exam to do later" },
+      concern: { what: "A concern: a task the pupil left undone, something forgotten, behaviour or another problem" },
     },
   },
 };
