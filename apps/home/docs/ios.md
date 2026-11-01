@@ -5,6 +5,20 @@ AI prompts and `packages/wilma-client` stay shared with upstream. There is no
 second mobile UI to keep in sync. Android has platform detection and command
 gating, but has not been generated or built in this change.
 
+## Primary phone target
+
+The owner's phone is **iPhone 15 with iOS 27.2**. Use that simulator as the
+primary UI check (393 × 852 points in portrait, including Dynamic Island and
+home-indicator insets). Keep layouts responsive so the same shared UI works
+on other phones too. Simulator layout checks do not establish performance,
+battery usage or keyboard behavior on the physical A16 device.
+
+Create an iPhone 15 simulator with iOS 27.2 in Xcode's Device Hub if it is missing,
+then run `pnpm ios:dev:iphone15`. `pnpm ios:dev` keeps the generic device picker.
+Check portrait and landscape, readable tab labels, horizontal tab scrolling,
+message reading and the home-indicator/keyboard area. The phone navigation keeps
+its tap targets at least 48 points high; overflowing tabs scroll horizontally.
+
 ## Build on a Mac
 
 Install full Xcode, launch it once, accept its license and install an iOS

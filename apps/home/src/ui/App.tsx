@@ -39,6 +39,9 @@ export function App() {
   useLayoutEffect(() => {
     if (isMobileApp) window.scrollTo(0, 0);
   }, [screen, route.view]);
+  useEffect(() => {
+    if (isMobileApp) document.querySelector('.nav a[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [screen, route.view]);
   // Before anything renders: the app's words and dates in the chosen language (the menu bar's menu too).
   const language = resolveLanguage(useApp((s) => s.settings.language) ?? "auto");
   setLanguage(language);

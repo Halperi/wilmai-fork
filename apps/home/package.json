@@ -27,7 +27,8 @@
     "test:mobile": "tsx --test evals/platform.test.ts evals/mobile-bridge.test.ts",
     "ios:init": "tauri ios init",
     "ios:dev": "tauri ios dev",
-    "ios:build": "tsc --noEmit && tauri ios build --target aarch64-sim --debug --no-sign"
+    "ios:build": "tsc --noEmit && tauri ios build --target aarch64-sim --debug --no-sign",
+    "ios:dev:iphone15": "tauri ios dev \"iPhone 15\""
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
