@@ -15,6 +15,7 @@ import { startUpdateChecks } from "./data/updates";
 import { isDesktopApp, isNativeApp, isMobileApp } from "./wilma/transport";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { isExternalHttpsLink } from "./platform";
 
 if (isDesktopApp) setUpDesktopWindow();
 if (isMobileApp) {
@@ -25,7 +26,14 @@ if (isMobileApp) {
 }
 if (isNativeApp) document.addEventListener("click", (e) => {
   const link = (e.target as HTMLElement).closest("a[href]") as HTMLAnchorElement | null;
-  if (!link || !/^https:\/\//i.test(link.href)) return;
+  if (!link) return;
+  const href = link.getAttribute("href") ?? "";
+  if (isMobileApp && href.startsWith("#")) {
+    e.preventDefault();
+    window.location.hash = href;
+    return;
+  }
+  if (!isExternalHttpsLink(link.href, window.location.href)) return;
   e.preventDefault();
   void openUrl(link.href);
 });

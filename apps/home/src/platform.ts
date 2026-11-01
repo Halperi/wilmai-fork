@@ -15,3 +15,9 @@ export const appPlatform = detectPlatform(
 export const isNativeApp = appPlatform !== "web";
 export const isMobileApp = appPlatform === "ios" || appPlatform === "android";
 export const isDesktopApp = appPlatform === "desktop";
+
+/** Keep app-origin navigation inside WKWebView; only other HTTPS origins open in the browser. */
+export function isExternalHttpsLink(href: string, currentUrl: string): boolean {
+  const target = new URL(href, currentUrl);
+  return target.protocol === "https:" && target.origin !== new URL(currentUrl).origin;
+}

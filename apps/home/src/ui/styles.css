@@ -1576,3 +1576,6 @@ html.mobile, .mobile body, .mobile #root { min-height: 100dvh; }
 
 /* Scrolling content must not show through the native status bar. */
 .mobile body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top); background: var(--paper); z-index: 100; pointer-events: none; }
+
+/* iOS must not consume the first tap to reveal a hover-only action. */
+.mobile .row .check { opacity: 1; }

@@ -90,9 +90,8 @@ when possible. Keep generated Xcode files and signing material out of Git.
 ## Verified locally (2026-11-01)
 
 Built the unsigned arm64 simulator `.app` with Xcode 27.2 / iOS 27.2 and
-installed/launched it on an iPhone 18 Pro simulator. The sample family and
-message list render in the native app; sample data survives a process restart.
-TypeScript passes; the Home offline suite has 102 passes and one skipped test;
+installed/launched it on an iPhone 18 Pro simulator. The sample family, message list and message reader render in the native app; sample data survives a process restart.
+TypeScript passes; the Home offline suite has 103 passes and one skipped test;
 the desktop Rust library suite has 14 passes and one ignored test. The new mobile
-transport/platform subset has four passing tests. No physical iPhone, live Wilma
+transport/platform subset has five passing tests. No physical iPhone, live Wilma
 account, real message send or background notification has been tested.
