@@ -15,11 +15,11 @@ import { startUpdateChecks } from "./data/updates";
 import { isDesktopApp, isNativeApp, isMobileApp } from "./wilma/transport";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { isExternalHttpsLink } from "./platform";
+import { appPlatform, isExternalHttpsLink } from "./platform";
 
 if (isDesktopApp) setUpDesktopWindow();
 if (isMobileApp) {
-  document.documentElement.classList.add("mobile");
+  document.documentElement.classList.add("mobile", appPlatform);
   const save = () => { void flushPersisted(); };
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
   window.addEventListener("pagehide", save);

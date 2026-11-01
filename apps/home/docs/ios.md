@@ -18,6 +18,8 @@ then run `pnpm ios:dev:iphone15`. `pnpm ios:dev` keeps the generic device picker
 Check portrait and landscape, readable tab labels, horizontal tab scrolling,
 message reading and the home-indicator/keyboard area. The phone navigation keeps
 its tap targets at least 48 points high; overflowing tabs scroll horizontally.
+In landscape, iOS also keeps a 59-point minimum side gutter clear of the camera
+island while WebView safe-area values settle after rotation.
 
 ## Build on a Mac
 
