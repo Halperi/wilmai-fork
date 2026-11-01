@@ -2,3 +2,6 @@
 declare const __APP_BUILD__: string;
 /** Development server only: the test Wilmas (demo/test-wilma.ts). Missing outside Vite (the tests). */
 declare const __TEST_WILMAS__: boolean;
+
+/** Target supplied by the Tauri CLI; absent in browser-only development. */
+declare const __APP_PLATFORM__: string;

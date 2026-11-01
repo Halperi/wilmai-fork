@@ -358,4 +358,9 @@ export const FI_FORMS: Record<string, string> = {
   "Delete this family's data": "Poista perheen tiedot",
   "Delete this family's data from this computer?": "Poistetaanko perheen tiedot tältä koneelta?",
   "Change this": "Muuta",
+  // Native phone preview
+  "on this device": "tällä laitteella",
+  "It reads the same Wilma you already use, and it runs on this device.": "Se lukee samaa Wilmaa, jota jo käytät, ja toimii tällä laitteella.",
+  "*Your password goes only to your school's Wilma.* Kept on this device, scrambled but not encrypted.": "*Salasanasi menee vain koulusi Wilmaan.* Säilytetään tällä laitteella peitettynä, ei salattuna.",
+  "Kept in this app's data, scrambled but not encrypted.": "Säilytetään tämän sovelluksen tiedoissa peitettynä, ei salattuna.",
 };

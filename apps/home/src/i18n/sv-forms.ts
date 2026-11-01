@@ -358,4 +358,9 @@ export const SV_FORMS: Record<string, string> = {
   "Delete this family's data": "Radera familjens uppgifter",
   "Delete this family's data from this computer?": "Radera familjens uppgifter från den här datorn?",
   "Change this": "Ändra",
+  // Native phone preview
+  "on this device": "på den här enheten",
+  "It reads the same Wilma you already use, and it runs on this device.": "Den läser samma Wilma som du redan använder och körs på den här enheten.",
+  "*Your password goes only to your school's Wilma.* Kept on this device, scrambled but not encrypted.": "*Ditt lösenord går bara till din skolas Wilma.* Sparas på den här enheten, maskerat men inte krypterat.",
+  "Kept in this app's data, scrambled but not encrypted.": "Sparas i den här appens data, maskerat men inte krypterat.",
 };

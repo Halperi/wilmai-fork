@@ -1,0 +1,23 @@
+{
+  "productName": "WilmAI Home iOS",
+  "identifier": "fi.halperi.wilmai.home",
+  "build": {
+    "features": [],
+    "beforeDevCommand": "node node_modules/vite/bin/vite.js --mode tauri --port 5197 --strictPort",
+    "beforeBuildCommand": "node node_modules/vite/bin/vite.js build --mode tauri"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "WilmAI Home",
+        "backgroundColor": "#eef1f6"
+      }
+    ]
+  },
+  "bundle": {
+    "iOS": {
+      "minimumSystemVersion": "16.0"
+    }
+  }
+}

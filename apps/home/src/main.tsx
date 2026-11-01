@@ -6,17 +6,29 @@ import "@fontsource/atkinson-hyperlegible-next/600.css";
 import "@fontsource/atkinson-hyperlegible-next/700.css";
 import "./ui/styles.css";
 import { App } from "./ui/App";
-import { getState, loadPersisted, loadSecrets, updateSettings } from "./data/store";
+import { flushPersisted, getState, loadPersisted, loadSecrets, updateSettings } from "./data/store";
 import { appEdition } from "./data/edition";
 import { resume } from "./data/engine";
 import { runJev } from "./jev/runner";
 import { runLuna } from "./luna/events";
 import { startUpdateChecks } from "./data/updates";
-import { isDesktopApp } from "./wilma/transport";
+import { isDesktopApp, isNativeApp, isMobileApp } from "./wilma/transport";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 if (isDesktopApp) setUpDesktopWindow();
+if (isMobileApp) {
+  document.documentElement.classList.add("mobile");
+  const save = () => { void flushPersisted(); };
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
+  window.addEventListener("pagehide", save);
+}
+if (isNativeApp) document.addEventListener("click", (e) => {
+  const link = (e.target as HTMLElement).closest("a[href]") as HTMLAnchorElement | null;
+  if (!link || !/^https:\/\//i.test(link.href)) return;
+  e.preventDefault();
+  void openUrl(link.href);
+});
 
 /**
  * The desktop window has no title bar: the sidebar and top bar are where it's
@@ -32,12 +44,6 @@ function setUpDesktopWindow() {
     if (e.button !== 0 || !target.closest(grab) || target.closest(interactive)) return;
     if (e.detail === 2) void getCurrentWindow().toggleMaximize();
     else void getCurrentWindow().startDragging();
-  });
-  document.addEventListener("click", (e) => {
-    const link = (e.target as HTMLElement).closest("a[href]") as HTMLAnchorElement | null;
-    if (!link || !/^https:\/\//i.test(link.href)) return;
-    e.preventDefault();
-    void openUrl(link.href);
   });
 }
 

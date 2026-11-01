@@ -20,7 +20,7 @@ import { OpenAIBlocked } from "./OpenAIBlocked";
 import { DECISIONS_INPUT_PRICE, LUNA, LunaError, READING_MODELS, costOf, monthCost, nextMonth, openAIBlockedMessage, openAIReach, overLimit, readingModel, readingTotal, thisMonth, totalUsage } from "../luna/client";
 import { checkOpenAIKey, forgetLuna, lunaBacklog, runLuna } from "../luna/events";
 import { runJev } from "../jev/runner";
-import { isDesktopApp } from "../wilma/transport";
+import { isDesktopApp, isMobileApp } from "../wilma/transport";
 import { Icon } from "./bits";
 import { language, plural, t } from "../i18n";
 
@@ -233,7 +233,7 @@ export function AISettings() {
   const price = READING_MODELS[readingModel()] ?? READING_MODELS["gpt-6-luna"];
   // While OpenAI is unreachable, its notice says so once (and how to check again).
   const errors = on ? [...new Set([sorting.error, reading.error].filter((e): e is string => Boolean(e) && !(blocked && e === openAIBlockedMessage())))] : [];
-  const kept = isDesktopApp ? t("Kept on this computer in the app's own data, scrambled but not encrypted.") : t("Kept in this browser only, scrambled but not encrypted.");
+  const kept = isMobileApp ? t("Kept in this app's data, scrambled but not encrypted.") : isDesktopApp ? t("Kept on this computer in the app's own data, scrambled but not encrypted.") : t("Kept in this browser only, scrambled but not encrypted.");
 
   const keyInput = (
     <div className="ai-key">

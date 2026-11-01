@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useLocalEdition } from "../data/edition";
 import { Brand, Icon } from "./bits";
 import { TENANTS, searchTenants, type Tenant } from "../data/tenants";
-import { isDesktopApp } from "../wilma/transport";
+import { isDesktopApp, isMobileApp } from "../wilma/transport";
 import { t } from "../i18n";
 
 /** A sentence translated whole, with the part between asterisks wrapped in markup: "School, *sorted.*" */
@@ -104,7 +104,7 @@ export function Intro() {
       <h1>{marked(t("School, *sorted.*"), (part) => <span className="mark on">{part}</span>)}</h1>
       <p className="lede">
         {t("Today's lessons, the messages that need you, and what's coming up, for a student or the whole family.")}{" "}
-        {isDesktopApp ? t("It reads the same Wilma you already use, and it runs on this computer.") : t("It reads the same Wilma you already use, and it runs in this browser.")}
+        {isMobileApp ? t("It reads the same Wilma you already use, and it runs on this device.") : isDesktopApp ? t("It reads the same Wilma you already use, and it runs on this computer.") : t("It reads the same Wilma you already use, and it runs in this browser.")}
       </p>
       <ul className="facts" style={{ maxWidth: 520 }}>
         <li>
@@ -116,7 +116,7 @@ export function Intro() {
         <li>
           <Icon name="lock" />
           <span>
-            {marked(t("*Your password goes only to your school's Wilma.* The app remembers it here, scrambled, so signing in again is one click."), (part) => <b>{part}</b>)}
+            {marked(isMobileApp ? t("*Your password goes only to your school's Wilma.* Kept on this device, scrambled but not encrypted.") : t("*Your password goes only to your school's Wilma.* The app remembers it here, scrambled, so signing in again is one click."), (part) => <b>{part}</b>)}
           </span>
         </li>
         <li>

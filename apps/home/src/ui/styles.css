@@ -1567,3 +1567,12 @@ button.gt-term[aria-pressed="true"], button.gt-now[aria-pressed="true"] { color:
   .nav-ai-label > span { display: none; }
   .nav-ai-label .icon { width: 11px; height: 11px; }
 }
+
+/* Native phone viewport: keep controls clear of the camera and home indicator. */
+html.mobile, .mobile body, .mobile #root { min-height: 100dvh; }
+.mobile #root { padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+.mobile .nav { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+.mobile input, .mobile textarea, .mobile select { font-size: max(16px, 1em); }
+
+/* Scrolling content must not show through the native status bar. */
+.mobile body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top); background: var(--paper); z-index: 100; pointer-events: none; }
