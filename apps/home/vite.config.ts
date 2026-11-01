@@ -24,7 +24,7 @@ function buildStamp(): string {
 export default defineConfig(({ mode, command }) => ({
   plugins: [react(), bridge()],
   // The test Wilmas (src/demo/test-wilma.ts) only with the development server (the browser setup and `pnpm app`).
-  define: { __APP_BUILD__: JSON.stringify(buildStamp()), __TEST_WILMAS__: JSON.stringify(command === "serve") },
+  define: { __APP_PLATFORM__: JSON.stringify(process.env.TAURI_ENV_PLATFORM ?? ""), __APP_BUILD__: JSON.stringify(buildStamp()), __TEST_WILMAS__: JSON.stringify(command === "serve") },
   // The desktop app loads its files from disk, so paths stay relative.
   base: mode === "tauri" ? "./" : "/",
   resolve: {
@@ -33,7 +33,7 @@ export default defineConfig(({ mode, command }) => ({
     alias: { "@wilma-client": resolve(repoRoot, "packages/wilma-client") },
   },
   // Tauri's own dev server port is set in src-tauri/tauri.conf.json.
-  server: { port: 5199, strictPort: true, fs: { allow: [repoRoot] } },
+  server: { host: process.env.TAURI_DEV_HOST || "127.0.0.1", port: 5199, strictPort: true, fs: { allow: [repoRoot] }, ...(process.env.TAURI_DEV_HOST ? { hmr: { host: process.env.TAURI_DEV_HOST, port: 5196 } } : {}) },
   preview: { port: 5198, strictPort: true },
   clearScreen: false,
   build: { outDir: mode === "tauri" ? "dist-tauri" : "dist", target: mode === "tauri" ? "safari16" : "es2022" },

@@ -5,7 +5,9 @@
 //! window and notifications are in shell.rs.
 
 
+#[cfg(desktop)]
 mod shell;
+#[cfg(desktop)]
 mod local_ai;
 #[cfg(all(feature = "local-ai", not(all(target_os = "macos", target_arch = "aarch64"))))]
 compile_error!("Local AI needs Apple Silicon macOS; build without the local-ai feature on this target.");
@@ -268,6 +270,7 @@ fn local_model_url(wire: &OllamaRequest) -> Result<(reqwest::Url, bool), String>
 }
 
 /// Local inference has no API key and never follows redirects or uses a proxy.
+#[cfg(desktop)]
 #[tauri::command]
 async fn ollama_call(manager: tauri::State<'_, local_ai::LocalAi>, wire: OllamaRequest) -> Result<JevResponse, String> {
     let (url, get) = local_model_url(&wire)?;
@@ -316,6 +319,7 @@ async fn clear_reports(app: tauri::AppHandle) -> Result<(), String> {
 /// storage, like the WilmAI CLI keeps its logins (macOS asked for the password
 /// after every new build of an app without a Developer ID); this only reads
 /// it once, to move it. Only names the app knows are accepted.
+#[cfg(desktop)]
 fn secret(name: &str) -> Result<keyring::Entry, String> {
     match name {
         "jev-key" => keyring::Entry::new("ai.wilm.home", name).map_err(|e| e.to_string()),
@@ -323,6 +327,7 @@ fn secret(name: &str) -> Result<keyring::Entry, String> {
     }
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn secret_get(name: String) -> Result<Option<String>, String> {
     match secret(&name)?.get_password() {
@@ -346,6 +351,7 @@ pub fn run() {
     let builder = builder.plugin(tauri_plugin_opener::init());
     // The updater deserializes a required public key during startup. Development
     // packages use the manual checker until real signing credentials are configured.
+    #[cfg(desktop)]
     let builder = if has_signed_updater(context.config()) {
         builder.plugin(tauri_plugin_updater::Builder::new().build())
     } else {
@@ -353,18 +359,22 @@ pub fn run() {
     };
     builder
         .setup(|app| {
-            use tauri::Manager;
-            let dir = app.path().app_data_dir()?.join("local-ai");
-            let assets = app.path().resolve("local-ai", tauri::path::BaseDirectory::Resource)?;
-            #[cfg(debug_assertions)]
-            let assets = if assets.is_dir() { assets } else { std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources/local-ai") };
-            app.manage(local_ai::LocalAi::new(dir, assets));
-            shell::setup(app)?;
+            #[cfg(desktop)] {
+                use tauri::Manager;
+                let dir = app.path().app_data_dir()?.join("local-ai");
+                let assets = app.path().resolve("local-ai", tauri::path::BaseDirectory::Resource)?;
+                #[cfg(debug_assertions)]
+                let assets = if assets.is_dir() { assets } else { std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources/local-ai") };
+                app.manage(local_ai::LocalAi::new(dir, assets));
+                shell::setup(app)?;
+            }
+            #[cfg(mobile)] let _ = app;
             Ok(())
         })
         // Closing the window hides it; the app goes on in the menu bar (shell.rs).
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                #[cfg(desktop)]
                 if window.label() == "main" {
                     api.prevent_close();
                     shell::hide(window);
@@ -376,33 +386,52 @@ pub fn run() {
             jev_call,
             openai_call,
             openai_reach,
+            #[cfg(desktop)]
             ollama_call,
+            #[cfg(desktop)]
             local_ai::local_ai_status,
+            #[cfg(desktop)]
             local_ai::local_ai_install,
+            #[cfg(desktop)]
             local_ai::local_ai_cancel,
+            #[cfg(desktop)]
             local_ai::local_ai_stop,
+            #[cfg(desktop)]
             local_ai::local_ai_remove,
             save_report,
             clear_reports,
+            #[cfg(desktop)]
             secret_get,
+            #[cfg(desktop)]
             shared_session_get,
+            #[cfg(desktop)]
             shared_session_set,
+            #[cfg(desktop)]
             cli_logins,
+            #[cfg(desktop)]
             cli_login_secret,
             update_manifest,
             app_edition,
+            #[cfg(desktop)]
             restart_after_update,
+            #[cfg(desktop)]
             prepare_app_update,
+            #[cfg(desktop)]
             resume_after_failed_update,
+            #[cfg(desktop)]
             shell::tray_labels,
+            #[cfg(desktop)]
             shell::tray_title,
+            #[cfg(desktop)]
             shell::show_main,
+            #[cfg(desktop)]
             shell::notify
         ])
         .build(context)
         .expect("error while building WilmAI Home")
         .run(|app, event| {
             use tauri::Manager;
+            #[cfg(desktop)]
             if matches!(event, tauri::RunEvent::Exit) { app.state::<local_ai::LocalAi>().shutdown(); }
             // The Dock icon (or opening the app again) brings the window back.
             #[cfg(target_os = "macos")]
@@ -489,6 +518,7 @@ fn write_session(content: &str, key: &str, state: &str, now: u64) -> String {
     serde_json::Value::Object(all).to_string()
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn shared_session_get(key: String) -> Result<Option<SharedEntry>, String> {
     if !valid_session_key(&key) {
@@ -501,6 +531,7 @@ async fn shared_session_get(key: String) -> Result<Option<SharedEntry>, String> 
     }
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn shared_session_set(key: String, state: String) -> Result<(), String> {
     use std::io::Write;
@@ -604,11 +635,13 @@ fn read_cli_config() -> String {
     config_file().and_then(|path| std::fs::read_to_string(path).ok()).unwrap_or_default()
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn cli_logins() -> Vec<SavedLogin> {
     saved_profiles(&read_cli_config()).iter().map(to_saved_login).collect()
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn cli_login_secret(id: String) -> Result<LoginSecret, String> {
     let profiles = saved_profiles(&read_cli_config());
@@ -639,23 +672,26 @@ fn has_signed_updater(config: &tauri::Config) -> bool {
 #[tauri::command]
 fn app_edition(app: tauri::AppHandle) -> Edition {
     Edition {
-        local_ai: cfg!(feature = "local-ai"),
-        signed_updater: has_signed_updater(app.config()),
+        local_ai: cfg!(desktop) && cfg!(feature = "local-ai"),
+        signed_updater: cfg!(desktop) && has_signed_updater(app.config()),
     }
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 fn prepare_app_update(app: tauri::AppHandle) {
     use tauri::Manager;
     app.state::<local_ai::LocalAi>().shutdown();
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 fn resume_after_failed_update(app: tauri::AppHandle) {
     use tauri::Manager;
     app.state::<local_ai::LocalAi>().resume_after_update_failure();
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 fn restart_after_update(app: tauri::AppHandle) {
     use tauri::Manager;

@@ -6,7 +6,7 @@ import { checkOpenAIAgain } from "../luna/events";
 import { buildFeed, forChildren, needsYou } from "../data/feed";
 import { getBack, keepAlive, leaveDemo, syncNow, isDemo } from "../data/engine";
 import { logins, schoolOf } from "../data/logins";
-import { isDesktopApp } from "../wilma/transport";
+import { isDesktopApp, isMobileApp } from "../wilma/transport";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { notificationsAvailable, showWindow, startNotifications, trayLabels } from "../data/notify";
 import { addDays, today, weekday } from "../data/dates";
@@ -35,6 +35,13 @@ export function App() {
   const account = useApp((s) => accountKey(s.snapshot?.account));
   const via = useApp((s) => s.snapshot?.account.via ?? null);
   const route = useRoute();
+  const screen = screenFor(phase, via, route.view);
+  useLayoutEffect(() => {
+    if (isMobileApp) window.scrollTo(0, 0);
+  }, [screen, route.view]);
+  useEffect(() => {
+    if (isMobileApp) document.querySelector('.nav a[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [screen, route.view]);
   // Before anything renders: the app's words and dates in the chosen language (the menu bar's menu too).
   const language = resolveLanguage(useApp((s) => s.settings.language) ?? "auto");
   setLanguage(language);
@@ -52,6 +59,7 @@ export function App() {
   // side's tick wakes it. Signed out, each check looks for a way back in (engine's getBack).
   useEffect(() => {
     const maybe = (now = false) => {
+      if (isMobileApp && document.visibilityState !== "visible") return;
       const { sync, settings, phase } = getState();
       if (phase === "signed-out") return void getBack();
       if (phase !== "ready") return;
@@ -82,7 +90,7 @@ export function App() {
     return () => clearTimeout(t);
   }, [blockedAt]);
   // The app once every Wilma is signed in; otherwise the Wilma page (data/logins.ts screenFor).
-  switch (screenFor(phase, via, route.view)) {
+  switch (screen) {
     case "loading":
       return null;
     case "wilmas":

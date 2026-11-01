@@ -4,6 +4,7 @@ import { updateSettings, useApp } from "../data/store";
 import { checkForUpdate, downloadUpdate, installUpdate } from "../data/updates";
 import { APP_VERSION } from "../data/edition";
 import { t } from "../i18n";
+import { isMobileApp } from "../platform";
 import { go } from "./shared";
 
 export function UpdateDot() {
@@ -91,6 +92,7 @@ export function UpdatesCard({ compact = false }: { compact?: boolean }) {
     await checkForUpdate();
     setChecking(false);
   };
+  if (isMobileApp) return <p className="help-line">WilmAI Home {update.current ?? APP_VERSION} · iOS preview</p>;
   return (
     <section className={compact ? "updates-compact" : "card"} id={compact ? undefined : "updates"}>
       {compact ? <p className="help-line">WilmAI Home {update.current ?? APP_VERSION} Beta</p> : <h2>{t("Updates")}</h2>}
