@@ -4,6 +4,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { get, set } from "idb-keyval";
 
+// A packaged WKWebView may expose getRandomValues without secure-context randomUUID.
+Object.defineProperty(globalThis, "crypto", { value: { getRandomValues: crypto.getRandomValues.bind(crypto) } });
 let raw: string | null = null;
 let failRead = true, failWrite = false;
 const native = { invoke: async (command: string, args: { installation: string; data: string }) => {
@@ -38,6 +40,8 @@ test("iOS migration retains browser copies on read/write failure, then removes t
   failWrite = false;
   await store.loadSecrets();
   assert.equal(store.getState().secureStorage.ready, true);
+  assert.equal(typeof crypto.randomUUID, "undefined");
+  assert.match(localStorage.getItem(IOS_INSTALLATION_KEY)!, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   assert.equal(store.passwordOf(account), "synthetic-password-a");
   assert.equal(store.passwordOf(other), "synthetic-password-b");
   assert.equal(store.getState().settings.jevKey, "synthetic-legacy-jev");
