@@ -1,0 +1,24 @@
+{
+  "productName": "WilmAI Home",
+  "identifier": "fi.halperi.wilmai.home",
+  "build": {
+    "features": [],
+    "beforeDevCommand": "node scripts/android-assets.mjs --dev && node node_modules/vite/bin/vite.js --mode tauri --port 5197 --strictPort",
+    "beforeBuildCommand": "node scripts/android-assets.mjs && node node_modules/vite/bin/vite.js build --mode tauri"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "WilmAI Home",
+        "backgroundColor": "#eef1f6",
+        "devtools": false
+      }
+    ]
+  },
+  "bundle": {
+    "android": {
+      "minSdkVersion": 34
+    }
+  }
+}

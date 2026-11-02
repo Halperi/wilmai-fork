@@ -111,3 +111,36 @@ Viitekehys ja lähteet: [OWASP MASVS-STORAGE-1](https://mas.owasp.org/MASVS/cont
 [Applen Complete-tiedostosuoja](https://developer.apple.com/documentation/foundation/fileprotectiontype/complete),
 [Applen taustatehtävät](https://developer.apple.com/videos/play/wwdc2025/227/),
 [RustSec-advisoryt](https://rustsec.org/advisories/), [OSV](https://osv.dev/).
+
+
+## Android-lisäys 2.11.2026
+
+Androidin ensimmäinen 14+-versio on toteutettu erillisessä kehityshaarassa.
+Aiempi tämän raportin Android-julkaisueste (salasanojen base64-säilytys) on
+korjattu natiivilla AndroidKeyStore/AES-256-GCM-säilöllä. Samaa migraation,
+kirjoitusvirheiden, tilieristyksen ja uloskirjautumisen logiikkaa käytetään
+nyt molemmilla puhelinalustoilla. Kirjoitus fsyncataan ja luetaan takaisin ennen
+kuittausta; virhe estää vanhojen tunnuskopioiden poistamisen.
+
+Androidin pilvi- ja laitesiirtovarmuuskopiot on estetty, ikkuna käyttää
+FLAG_SECURE-suojausta ja julkaisu-APK on allekirjoitettu sekä ilman debug-lippua.
+Ilmoitusten ajastukset tallennetaan peruttaviksi; Android 14:n cancelAll poistaa
+myös mahdolliset kaatumisen jälkeen orvoiksi jääneet hälytykset. Natiiville
+sillalle annetaan vain Androidin paikallisen pääikkunan tarvitsemat oikeudet.
+
+Android 14:n avain ei käytä virhealtista setUnlockedDeviceRequired-asetusta;
+sovellus tarkistaa lukituksen natiivisti. Tämä ei vastaa täysin iOS:n
+WhenUnlockedThisDeviceOnly-suojausta eikä lisää erillistä biometristä sovelluslukkoa.
+Androidin oma salattu sovellushakemisto ja Keystore ovat suojauksen perusta.
+Koulutietoja on käytön aikana selkokielisenä muistissa. Debug-paketti ja avattu
+kehittäjäyhteys mahdollistavat testidatan tarkastelun; käyttäjälle annetaan
+julkaisu-APK, joka pyytää WebView-virheenkorjauksen pois tuotanto-Androidissa.
+Userdebug-emulaattorin WebView pakottaa sen silti päälle. Tätä käyttöjärjestelmän
+testiasetusta ei voi poistaa sovelluksen julkisella API:lla; emulaattorilla ei
+ole vahvistettu tavallisen OnePlussan kehittäjäportin sulkeutumista.
+
+Emulaattorin synteettiset tallennus-, peukalointi-, avaimen katoamis- ja
+ilmoitustestit läpäisivät. OnePlus Nord 2T:n todellinen kirjautuminen,
+käyttökokemus ja OxygenOS:n akunhallinta ovat vielä laitetestattavia.
+Taustasynkronointi ei luo uutta JavaScript-moottoria Androidin lopetettua
+prosessin. Katso [Android-ohje](android.md) testien ja rajoitusten erittelyä varten.

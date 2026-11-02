@@ -406,4 +406,8 @@ export const FI_FORMS: Record<string, string> = {
   "Test notification requested.": "Testi-ilmoitusta pyydetty.",
   "No downloaded school plan for tomorrow yet.": "Huomiselle ei ole vielä ladattua koulusuunnitelmaa.",
   "Updated {time}": "Päivitetty {time}",
+  "Secure storage is unavailable. Unlock your phone and try again.": "Turvallinen tallennus ei ole käytettävissä. Avaa puhelimen lukitus ja yritä uudelleen.",
+  "Protected by this phone’s native secure storage.": "Suojattu puhelimen omalla turvallisella tunnussäilöllä.",
+  "*Your password goes only to your school's Wilma.* Protected by this phone’s native secure storage.": "*Salasanasi lähetetään vain koulusi Wilmaan.* Suojattu puhelimen omalla turvallisella tunnussäilöllä.",
+  "Android may check while the app remains in memory. Closing it or battery restrictions can stop checks. Scheduled summaries use downloaded data; open the app regularly. These are local notifications, not live push alerts.": "Android voi tarkistaa muutoksia, kun sovellus pysyy muistissa. Sulkeminen tai akun rajoitukset voivat estää tarkistukset. Ajastetut koosteet käyttävät ladattuja tietoja: avaa sovellus säännöllisesti. Ilmoitukset ovat paikallisia, eivät reaaliaikaisia push-ilmoituksia.",
 };

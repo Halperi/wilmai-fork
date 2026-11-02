@@ -368,6 +368,8 @@ pub fn run() {
     let builder = builder.plugin(tauri_plugin_notification::init());
     #[cfg(target_os = "ios")]
     let builder = builder.plugin(tauri_plugin_background_refresh::init());
+    #[cfg(target_os = "android")]
+    let builder = builder.plugin(tauri_plugin_android_device::init());
     // The updater deserializes a required public key during startup. Development
     // packages use the manual checker until real signing credentials are configured.
     #[cfg(desktop)]

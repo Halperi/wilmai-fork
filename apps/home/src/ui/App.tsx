@@ -7,7 +7,7 @@ import { buildFeed, forChildren, needsYou } from "../data/feed";
 import { getBack, keepAlive, leaveDemo, syncNow, isDemo } from "../data/engine";
 import { logins, schoolOf } from "../data/logins";
 import { isDesktopApp, isMobileApp } from "../wilma/transport";
-import { usesIosVault } from "../data/ios-vault";
+import { usesSecureVault } from "../data/secure-vault";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { notificationsAvailable, showWindow, startNotifications, trayLabels } from "../data/notify";
 import { addDays, today, weekday } from "../data/dates";
@@ -62,7 +62,7 @@ export function App() {
   useEffect(() => {
     const maybe = (now = false) => {
       if (isMobileApp && document.visibilityState !== "visible") return;
-      if (usesIosVault && !getState().secureStorage.ready) return;
+      if (usesSecureVault && !getState().secureStorage.ready) return;
       const { sync, settings, phase } = getState();
       if (phase === "signed-out") return void getBack();
       if (phase !== "ready") return;
@@ -100,7 +100,7 @@ export function App() {
     }, Math.max(0, blockedAt + OPENAI_PAUSE_MS - Date.now()));
     return () => clearTimeout(t);
   }, [blockedAt]);
-  if (usesIosVault && !secureStorage.ready) return (
+  if (usesSecureVault && !secureStorage.ready) return (
     <main className="page" role={secureStorage.error ? "alert" : "status"}>
       <h1>{t("Secure storage")}</h1>
       <p>{secureStorage.error ?? t("Opening secure storage…")}</p>
