@@ -134,7 +134,10 @@ WhenUnlockedThisDeviceOnly-suojausta eikä lisää erillistä biometristä sovel
 Androidin oma salattu sovellushakemisto ja Keystore ovat suojauksen perusta.
 Koulutietoja on käytön aikana selkokielisenä muistissa. Debug-paketti ja avattu
 kehittäjäyhteys mahdollistavat testidatan tarkastelun; käyttäjälle annetaan
-julkaisu-APK, jossa WebView-virheenkorjaus ei ole käytössä.
+julkaisu-APK, joka pyytää WebView-virheenkorjauksen pois tuotanto-Androidissa.
+Userdebug-emulaattorin WebView pakottaa sen silti päälle. Tätä käyttöjärjestelmän
+testiasetusta ei voi poistaa sovelluksen julkisella API:lla; emulaattorilla ei
+ole vahvistettu tavallisen OnePlussan kehittäjäportin sulkeutumista.
 
 Emulaattorin synteettiset tallennus-, peukalointi-, avaimen katoamis- ja
 ilmoitustestit läpäisivät. OnePlus Nord 2T:n todellinen kirjautuminen,

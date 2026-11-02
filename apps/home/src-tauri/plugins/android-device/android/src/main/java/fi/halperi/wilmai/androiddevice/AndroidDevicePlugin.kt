@@ -34,8 +34,8 @@ class AndroidDevicePlugin(private val activity: Activity): Plugin(activity) {
     private var tap: JSObject? = null
     override fun load(webView: WebView) {
         super.load(webView)
-        // Some userdebug system images expose WebViews by default even for release APKs.
-        // Respect the APK's own flag instead of inheriting that system-wide default.
+        // Explicit policy for production Android. A userdebug OS can force inspection
+        // on regardless of this setting; that test environment is outside this guarantee.
         WebView.setWebContentsDebuggingEnabled((activity.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0)
         activity.window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         (activity as AppCompatActivity).onBackPressedDispatcher.addCallback(activity, object: OnBackPressedCallback(true) {

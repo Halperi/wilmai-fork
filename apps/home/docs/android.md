@@ -146,3 +146,15 @@ Lähteet: [Taurin vaatimukset](https://v2.tauri.app/start/prerequisites/),
 - Julkaisu-APK:n allekirjoitus ja 16 KiB:n kohdistus tarkistettiin. Manifesti:
   minSDK 34, targetSDK 36, ei debug-lippua, varmuuskopioita tai selkokielistä
   liikennettä; ei täsmähälytysoikeuksia.
+
+### Kehittäjäkäyttöjärjestelmän WebView-rajoitus
+
+Testiemulaattorin Android on `userdebug` ja sen WebView 113 pakottaa
+kehittäjäportin käyttöön myös release-APK:ssa. Chromiumin toteutus jättää
+sovelluksen poiskytkentäpyynnön siinä ympäristössä huomiotta. Emulaattorin
+porttitestiä ei siksi voi käyttää näyttönä portin sulkemisesta tavallisessa
+OnePlus-tuotanto-Androidissa. APK:n debug-lippu on pois, Tauri-asetus on false
+ja natiivi WebView-asetus seuraa APK:n debug-lippua. Nämä ovat tuotantoversion
+suojaukset; varsinaisen OnePlussan porttia ei ole tutkittu.
+
+Toteutuksen lähde: [Chromiumin userdebug-käytäntö](https://chromium.googlesource.com/chromium/src/%2B/3546854f59..2e285ebae2).
