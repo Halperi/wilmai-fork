@@ -118,9 +118,10 @@ A stale/other-family notification opens the Wilmas page instead of selecting
 an account or showing another family's item. Sign-out/reset clear pending and
 delivered notifications; switching families replaces pending plans.
 
-With AI enabled, Tomorrow's school day shows downloaded school hours, exams,
-confirmed calendar events and due actions. It reuses cached, validated AI
-readings and makes no separate AI request. The optional evening alert defaults
+Today uses the existing per-child school-day overview, without a duplicate
+tomorrow-summary card above it. The optional AI-enabled evening notification
+uses downloaded school hours, exams, confirmed calendar events and due actions.
+It reuses cached, validated AI readings and makes no separate AI request. It defaults
 to 19:00. Up to two evenings are scheduled as one-shot local requests, based on
 data no older than 36 hours at delivery. Stale plans are not repeated forever.
 Changes made after the last download can be missing while the app is closed.
