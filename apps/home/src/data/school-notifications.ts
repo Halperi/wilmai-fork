@@ -2,7 +2,7 @@
 import type { AppState } from "./store";
 import { buildFeed } from "./feed";
 import { calendarEvents } from "./calendar";
-import { dayTimes, knownLessons } from "./schedule";
+import { dayLessons, dayTimes, knownLessons } from "./schedule";
 import { addDays, dateOf, shortDate } from "./dates";
 import { intelligenceOn } from "./model";
 import { loginOfId } from "./logins";
@@ -85,7 +85,7 @@ export function tomorrowDigest(state: AppState, day: string): TomorrowDigest | n
   const lines: string[] = [];
   for (const child of snap.children) {
     const data = snap.perChild[child.number];
-    const times = dayTimes(knownLessons(data)).get(day);
+    const times = dayTimes(dayLessons(knownLessons(data), state.local.leftOut?.[child.number])).get(day);
     if (times) lines.push(t("{name}: school {start}–{end}", { name: child.first, start: times.start, end: times.end }));
   }
   const hasAI = intelligenceOn(state.settings);

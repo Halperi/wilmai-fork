@@ -40,12 +40,12 @@ sovelluksen ja sen tietojen poistamisen. CI tuottaa vain debug-APK:n ilman tät�
 henkilökohtaista avainta. APK:n asentamiseen omaan puhelimeen ei tarvita
 Play-kehittäjätiliä.
 
-Valmis oma APK on `.release/android/WilmAI-Home-0.2.1-arm64.apk`.
+Valmis oma APK on `.release/android/WilmAI-Home-0.3.0-arm64.apk`.
 USB-virheenkorjaus ja puhelimessa hyväksytty Macin RSA-lupa tarvitaan ADB-asennukseen:
 
 ```sh
 adb devices
-adb -s OMAN_PUHELIMEN_TUNNISTE install -r .release/android/WilmAI-Home-0.2.1-arm64.apk
+adb -s OMAN_PUHELIMEN_TUNNISTE install -r .release/android/WilmAI-Home-0.3.0-arm64.apk
 ```
 
 Kirjaudu Wilmaan itse puhelimessa. Ensimmäinen havainto ei lähetä vanhoja

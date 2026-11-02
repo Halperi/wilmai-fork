@@ -12,8 +12,11 @@ import { KINDS, PUPIL_SCOPES, SCOPES, TRIAGE_PUPIL_QS } from "../jev/questions";
 import type { ReplyForm } from "@wilma-client/src/write";
 import { Icon, Mark, Tabs, TriageChips } from "./bits";
 import { TranslationNote, TranslationSwitch, useTranslation } from "./Translated";
+import { OutgoingPane, OutgoingSwitch, goesIn, useOutgoing } from "./Outgoing";
 import { go, jevReadingOpen } from "./shared";
 import { language, plural, t, tx } from "../i18n";
+import { useWilma } from "../data/phrases";
+import { teacherSubjects } from "../data/schedule";
 
 /** "61%" / "61 %" */
 function percent(share: number): string {
@@ -152,6 +155,7 @@ export function Reader({
       <div className="meta">
         <Tabs snap={snap} numbers={item.children} />
         {item.from ? <span className="from">{item.from}</span> : null}
+        {item.from && item.kind !== "note" ? <Teaches snap={snap} children={item.children} name={item.from} /> : null}
         <span className="sep">·</span>
         <span>{whenLong(item.at)}</span>
         {item.note ? (
@@ -213,6 +217,7 @@ export function Reader({
           // The AI's line is quoted from the original, so it marks only the original.
           highlight={translated ? null : inPanel ? highlight : needs ? item.actionLine : null}
           why={inPanel ? t("The calendar's date is read from this line") : undefined}
+          teaches={(name) => <Teaches snap={snap} children={item.children} name={name} />}
         />
       ) : item.text !== null ? (
         <RichText
@@ -286,6 +291,7 @@ function Thread({
   anchor,
   highlight,
   why,
+  teaches,
 }: {
   opening: ThreadMessage;
   replies: { sentAt: Date; senderName: string | null; content: string }[];
@@ -293,6 +299,8 @@ function Thread({
   anchor: string;
   highlight: string | null;
   why?: string;
+  /** What a writer teaches the children, shown beside their name. */
+  teaches?: (name: string) => ReactNode;
 }) {
   const messages: ThreadMessage[] = [opening, ...replies.map((r) => ({ who: r.senderName ?? t("Someone"), at: r.sentAt, text: r.content }))];
   const last = messages.length - 1;
@@ -323,6 +331,7 @@ function Thread({
           <div className={`msg${i === last ? " msg-last" : ""}`} key={i}>
             <div className="msg-who">
               <b>{m.who}</b>
+              {teaches?.(m.who)}
               {m.at ? <span>{whenLong(m.at)}</span> : null}
               {i === last ? <em className="msg-latest">{t("Latest")}</em> : null}
             </div>
@@ -339,6 +348,21 @@ function Thread({
         )
       )}
     </section>
+  );
+}
+
+/** What a teacher teaches the item's children, from the timetable: "Matematiikka", or "Kiia: Matematiikka · Eetu: Englanti". */
+function Teaches({ snap, children, name }: { snap: Snapshot; children: string[]; name: string }) {
+  const w = useWilma();
+  const found = children
+    .map((n) => ({ child: snap.children.find((c) => c.number === n), subjects: teacherSubjects(snap.perChild[n], name) }))
+    .filter((f) => f.child && f.subjects.length);
+  if (!found.length) return null;
+  const list = (subjects: string[]) => subjects.map(w).join(", ");
+  return (
+    <span className="teaches" title={t("What they teach, from the timetable")}>
+      {found.length === 1 ? list(found[0].subjects) : found.map((f) => `${f.child!.first}: ${list(f.subjects)}`).join(" · ")}
+    </span>
   );
 }
 
@@ -680,6 +704,8 @@ function Composer({ messageId, to, collated, onSent }: { messageId: number; to: 
   const [text, setText] = useState(() => localStorage.getItem(draftKey) ?? "");
   const [stage, setStage] = useState<Stage>({ kind: "closed" });
   const area = useRef<HTMLTextAreaElement>(null);
+  // Written in the parent's language, sent in Finnish or Swedish when they've chosen so (Settings).
+  const outgoing = useOutgoing(null, text);
   const demo = isDemo();
   const snap = useApp((s) => s.snapshot);
   // The sender's name without Wilma's "(role)" suffix; null when Wilma didn't give one.
@@ -739,6 +765,9 @@ function Composer({ messageId, to, collated, onSent }: { messageId: number; to: 
   });
 
   const send = async (form: ReplyForm) => {
+    // What's shown is what's sent: the translation of these words, or the parent's own (Send waits until there's one).
+    const words = outgoing.sent;
+    if (!words) return;
     setStage({ kind: "sending", form });
     if (demo) {
       // Sample family: nothing is sent; the answer is only added here.
@@ -748,7 +777,7 @@ function Composer({ messageId, to, collated, onSent }: { messageId: number; to: 
           id: Date.now(),
           sentAt: new Date(),
           senderName: t("You (sample, not sent)"),
-          content: text,
+          content: words.text,
         };
         setState({
           snapshot: {
@@ -768,13 +797,15 @@ function Composer({ messageId, to, collated, onSent }: { messageId: number; to: 
         });
       }
       setText("");
+      outgoing.reset();
       setStage({ kind: "sent" });
       onSent();
       return;
     }
     try {
-      await replyApi(messageId)!.send(form, text);
+      await replyApi(messageId)!.send(form, words.text);
       setText("");
+      outgoing.reset();
       setStage({ kind: "sent" });
       onSent();
     } catch (err) {
@@ -838,14 +869,17 @@ function Composer({ messageId, to, collated, onSent }: { messageId: number; to: 
         )}
         {stage.kind === "preparing" ? <span className="chip">{t("Opening Wilma's answer form…")}</span> : null}
       </div>
-      <textarea
-        ref={area}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder={t("Write your answer")}
-        aria-label={t("Your answer")}
-        disabled={stage.kind === "sending"}
-      />
+      <div className={outgoing.translating ? "out-pair" : undefined}>
+        <textarea
+          ref={area}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={t("Write your answer")}
+          aria-label={t("Your answer")}
+          disabled={stage.kind === "sending"}
+        />
+        <OutgoingPane o={outgoing} subject={false} />
+      </div>
       {stage.kind === "error" ? (
         <div className="notice err composer-error">
           <span>{stage.message}</span>
@@ -861,18 +895,20 @@ function Composer({ messageId, to, collated, onSent }: { messageId: number; to: 
           <span>
             {stage.kind === "confirm" && stage.note ? <>{stage.note} </> : null}
             {sendQuestion}
+            {goesIn(outgoing) ? ` ${goesIn(outgoing)}` : ""}
             {demo ? ` ${t("(Sample family: nothing is really sent.)")}` : ""}
           </span>
           <span style={{ flex: 1 }} />
           <button className="btn btn-sm" onClick={() => setStage({ kind: "ready", form: stage.form })} disabled={stage.kind === "sending"}>
             {t("Keep editing")}
           </button>
-          <button className="btn btn-primary btn-sm" onClick={() => void send(stage.form)} disabled={stage.kind === "sending"}>
+          <button className="btn btn-primary btn-sm" onClick={() => void send(stage.form)} disabled={stage.kind === "sending" || !outgoing.sent}>
             {stage.kind === "sending" ? t("Sending…") : t("Send now")}
           </button>
         </div>
       ) : (
         <div className="composer-foot">
+          <OutgoingSwitch o={outgoing} />
           <span className="hint">{text ? t("Draft saved on this device") : t("Drafts stay on this device until you send")}</span>
           {text ? (
             <button
@@ -890,7 +926,7 @@ function Composer({ messageId, to, collated, onSent }: { messageId: number; to: 
           <button className="btn btn-quiet btn-sm" onClick={() => setStage({ kind: "closed" })}>
             {t("Close")}
           </button>
-          <button className="btn btn-primary btn-sm" disabled={!text.trim() || !form || stage.kind === "preparing"} onClick={() => form && setStage({ kind: "confirm", form })}>
+          <button className="btn btn-primary btn-sm" disabled={!text.trim() || !form || stage.kind === "preparing" || !outgoing.sent} onClick={() => form && setStage({ kind: "confirm", form })}>
             {t("Send…")}
           </button>
         </div>

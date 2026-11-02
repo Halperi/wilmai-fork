@@ -430,10 +430,11 @@ main {
   }
 }
 
+/* Its arrow points at the answer, low in the window (the turn being asked sits at the bottom). */
 .hand-note {
   position: absolute;
   left: -178px;
-  top: 42px;
+  top: 150px;
   width: 156px;
   font-family: var(--font-hand), cursive;
   font-size: 21px;
@@ -491,10 +492,6 @@ main {
 
 /* The display face here: the body face's slashed zero makes times like 11:00 look like code. */
 .chat-body {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 24px 26px 28px;
   font-family: var(--font-display), sans-serif;
 }
 
@@ -520,12 +517,8 @@ main {
   border-bottom-left-radius: 4px;
 }
 
-.chat-assistant p + p {
-  margin-top: 8px;
-}
-
-/* The hero's tour (components/AssistantTour.tsx): one question at a time in the chat window, with the timeline and
-   the line under it as on the Home page (.ht-controls, .ht-caption). */
+/* The hero's tour (components/AssistantTour.tsx): a conversation in the chat window, a question at a time, with the
+   timeline and the line under it as on the Home page (.ht-controls, .ht-caption). */
 .at-window {
   position: relative;
   cursor: pointer;
@@ -535,21 +528,89 @@ main {
   cursor: default;
 }
 
-/* Every question in the same place, so the window is as tall as the longest answer. Before the tour runs (or
-   without it), only the first shows, answered. */
+/* As tall as the longest turn (.at-sizer, never seen) and a glimpse of the turn before it, in either language and
+   at any width. The conversation (.at-thread) sits on it from the bottom up, earlier turns going up under the title
+   bar. */
 .at-body {
+  position: relative;
+  padding: 12px 26px 18px;
+}
+
+.at-sizer {
   display: grid;
+  visibility: hidden;
+}
+
+.at-sizer .at-turn {
+  grid-area: 1 / 1;
+}
+
+.at-thread {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 26px 18px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(transparent, #000 34px);
+  mask-image: linear-gradient(transparent, #000 34px);
+}
+
+/* data-age: how many parts ago a turn was asked. Before the tour runs (or without it) the first part shows,
+   answered, under the end of the last. */
+.at-thread .at-turn[data-age="0"] {
+  order: 3;
+}
+
+.at-thread .at-turn[data-age="1"] {
+  order: 2;
+}
+
+.at-thread .at-turn[data-age="2"] {
+  order: 1;
+}
+
+.at-thread .at-turn[data-age="3"] {
+  display: none;
 }
 
 .at-turn {
-  grid-area: 1 / 1;
   display: flex;
   flex-direction: column;
-  gap: 14px;
 }
 
-.at-turn:not(.at-first) {
-  visibility: hidden;
+/* Room that opens with what's in it: the tour takes the row from 0fr to 1fr. The spacing above each part is inside
+   it, so the conversation moves up smoothly as it opens. */
+.at-fold {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+.at-fold-in {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.at-ask-fold .chat-user {
+  margin-top: 22px;
+}
+
+/* New bubbles come up from the bottom, as a chat scrolls: a sent question rises out of the message box, and only
+   the conversation's bottom edge (the box's top) cuts them. */
+.at-ask-fold > .at-fold-in,
+.at-answer-fold > .at-fold-in {
+  overflow: visible;
+}
+
+.at-answer-fold .chat-assistant {
+  margin-top: 12px;
+}
+
+.at-line-fold .at-line {
+  margin-top: 8px;
 }
 
 /* The assistant reading Wilma: dots while it reads, a tick and what it read once it has. */
@@ -559,7 +620,7 @@ main {
   grid-template-columns: auto auto;
   align-items: center;
   column-gap: 8px;
-  margin: -4px 0 -2px 6px;
+  margin: 12px 0 0 6px;
   font-family: var(--font-body), sans-serif;
   font-size: 13px;
   color: var(--ink-soft);
@@ -631,6 +692,107 @@ main {
   background: linear-gradient(var(--marker), var(--marker)) no-repeat 0 88% / 100% 45%;
   border-radius: 2px;
   padding: 0 1px;
+}
+
+/* The message box under the conversation: each question is typed here and sent. One line, as a phone's is: a long
+   question slides left as it's typed. */
+.at-composer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 26px 24px;
+  padding: 7px 7px 7px 18px;
+  background: #fff;
+  border: 1.5px solid rgba(27, 43, 52, 0.18);
+  border-radius: 999px;
+  font-family: var(--font-display), sans-serif;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.at-field {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+
+.at-placeholder,
+.at-input {
+  grid-area: 1 / 1;
+}
+
+.at-placeholder {
+  color: var(--ink-soft);
+}
+
+.at-input {
+  display: flex;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.at-input-line {
+  flex: none;
+  display: flex;
+  align-items: center;
+  min-width: 100%;
+  white-space: pre;
+}
+
+.at-caret {
+  width: 2px;
+  height: 1.2em;
+  margin-left: 1px;
+  border-radius: 1px;
+  background: var(--teal-deep);
+  visibility: hidden;
+  animation: at-blink 1.06s steps(1) infinite;
+}
+
+/* A caret holds still while keys go down. */
+.is-typing .at-caret {
+  animation: none;
+}
+
+@keyframes at-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.at-send {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(27, 43, 52, 0.16);
+  transition: background-color 0.2s ease;
+}
+
+.is-ready .at-send {
+  background: var(--teal-deep);
+}
+
+@media (max-width: 520px) {
+  .at-body {
+    padding: 10px 16px 14px;
+  }
+
+  .at-thread {
+    padding: 0 16px 14px;
+  }
+
+  .chat-bubble {
+    max-width: 92%;
+    padding: 10px 14px;
+  }
+
+  .at-composer {
+    margin: 0 16px 16px;
+  }
 }
 
 /* ---------- Sections ---------- */
@@ -1568,10 +1730,61 @@ main {
   border-radius: 22px;
 }
 
+/* The caret in a lifted card's field while its words are typed (plate px) */
+.ht-caret {
+  position: absolute;
+  border-radius: 2px;
+  background: #0f172a;
+  visibility: hidden;
+  animation: at-blink 1.06s steps(1) infinite;
+}
+
+.ht-caret.is-typing {
+  animation: none;
+}
+
 /* ⌘K's menu, as the app draws it (its dialog's corners and shadow) */
 .ht-menu {
   border-radius: 32px;
   box-shadow: 0 60px 160px rgba(15, 23, 42, 0.32);
+}
+
+/* The Home tour's caption, in the window like a video's: what each part shows, beside what it's about (the tour places
+   it, components/HomeTour.tsx; in the corner until it runs). */
+.ht-frame .ht-caption {
+  --ht-caption-gap: 10px;
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 3;
+  display: block;
+  width: max-content;
+  max-width: min(380px, calc(100% - 28px));
+  text-wrap: balance;
+  min-height: 0;
+  margin: 0;
+  padding: 9px 15px 10px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: #fff;
+  font-size: clamp(15px, 1.8vw, 19px);
+  line-height: 1.25;
+  text-align: left;
+  box-shadow: 3px 4px 0 rgba(27, 43, 52, 0.18);
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .ht-frame .ht-caption {
+    --ht-caption-gap: 6px;
+    left: 8px;
+    bottom: 8px;
+    max-width: calc(100% - 16px);
+    padding: 6px 10px 7px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    box-shadow: 2px 3px 0 rgba(27, 43, 52, 0.18);
+  }
 }
 
 .ht-paused {
@@ -1642,10 +1855,12 @@ main {
   display: none;
 }
 
+/* One column per part (the tour sets how many). */
 .ht-timeline {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   align-items: start;
   gap: 10px;
 }
@@ -1708,6 +1923,22 @@ main {
 
   .ht-lbl {
     font-size: 11.5px;
+  }
+
+  /* No bolder label on the part on show: a long one ("Odottaa sinua") would wrap and move the page. */
+  .ht-seg.active .ht-lbl {
+    font-weight: inherit;
+  }
+
+  /* The Home tour's seven parts don't fit their names here, and its caption says each one in the window: the bars
+     only (the names stay for screen readers). */
+  .ht-home .ht-lbl {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 
@@ -2619,7 +2850,7 @@ main {
   font: 700 11px var(--font-body), sans-serif;
 }
 
-/* The banner across the very top of the front page, above everything: WilmAI Home is new. */
+/* The banner across the very top of the front page, above everything: WilmAI Home, what it gives you, and a button. */
 .home-banner {
   display: block;
   background: var(--ink);
@@ -2630,27 +2861,42 @@ main {
 .home-banner-inner {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
   max-width: 1040px;
   margin: 0 auto;
-  padding: 10px 20px;
+  padding: 12px 20px;
   font-size: 15px;
   line-height: 1.35;
 }
 
 .home-banner-shot {
   flex: none;
-  width: 96px;
+  width: 132px;
   height: auto;
-  border: 1.5px solid rgba(255, 255, 255, 0.35);
-  border-radius: 6px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
-  transform: rotate(-3deg);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 7px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
   transition: transform 0.18s ease;
 }
 
 .home-banner:hover .home-banner-shot {
-  transform: rotate(0deg) scale(1.06);
+  transform: translateY(-2px) scale(1.04);
+}
+
+.home-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.home-banner-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0;
+  row-gap: 4px;
+  font-size: 17px;
 }
 
 .home-banner-badge {
@@ -2659,30 +2905,49 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 11px 4px 9px;
+  margin-right: 10px;
+  padding: 3px 10px 3px 8px;
   overflow: hidden;
   border-radius: 999px;
   background: var(--marker);
   color: var(--ink);
-  font: 700 13px var(--font-body), sans-serif;
+  font: 700 12.5px var(--font-body), sans-serif;
 }
 
-.home-banner-text b {
+.home-banner-title b {
   font-family: var(--font-display), sans-serif;
   font-weight: 700;
 }
 
-.home-banner-more {
-  color: rgba(255, 255, 255, 0.82);
+.home-banner-comma {
+  white-space: pre;
 }
 
+.home-banner-detail {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 14.5px;
+}
+
+/* A real button, as the page's own: yellow with a hard shadow. */
 .home-banner-cta {
   flex: none;
   margin-left: auto;
+  padding: 9px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--marker);
+  color: var(--ink);
+  box-shadow: 3px 3px 0 rgba(255, 255, 255, 0.85);
   font-family: var(--font-display), sans-serif;
+  font-size: 15.5px;
   font-weight: 700;
-  color: var(--marker);
   white-space: nowrap;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.home-banner:hover .home-banner-cta {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 rgba(255, 255, 255, 0.85);
 }
 
 .home-banner-arrow {
@@ -2731,16 +2996,17 @@ main {
   }
 }
 
-/* The front page's card about Home, after the setup guides. */
+/* Home on the front page, after the setup guides: the app of your own. */
 .home-card {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  gap: 32px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 36px;
   align-items: center;
-  padding: 28px;
+  padding: 32px;
   background: var(--note-teal);
+  border: 2px solid var(--ink);
   border-radius: 18px;
-  box-shadow: 0 5px 12px rgba(27, 43, 52, 0.1);
+  box-shadow: 6px 7px 0 rgba(27, 43, 52, 0.14);
 }
 
 .home-card-shot img {
@@ -2760,37 +3026,107 @@ main {
 
 .home-card h2 .home-beta {
   margin-left: 8px;
+  vertical-align: middle;
 }
 
-.home-card-copy > p:not(.eyebrow) {
-  margin: 12px 0 20px;
+.home-card-text {
+  margin: 12px 0 14px;
   color: var(--ink-soft);
   line-height: 1.55;
+}
+
+.home-card-points {
+  display: grid;
+  gap: 9px;
+  margin: 0 0 24px;
+  padding: 0;
+  list-style: none;
+  line-height: 1.45;
+}
+
+.home-card-points li {
+  position: relative;
+  padding-left: 30px;
+}
+
+/* A tick, as on the Home page's lists. */
+.home-card-points li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 1px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--teal-deep);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.home-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .home-card .button {
   display: inline-block;
 }
 
+/* Tablets: the line on what it gives you goes, the rest stays on one row. */
+@media (max-width: 860px) {
+  .home-banner-detail {
+    display: none;
+  }
+}
+
+/* Phones: the picture, the name and what it is, and the button on its own row under them. */
 @media (max-width: 640px) {
-  .topbar-home,
-  .home-banner-more,
-  .home-banner-cta-label {
+  .topbar-home {
     display: none;
   }
 
-  .home-banner-cta {
-    margin-left: 0;
-  }
-
   .home-banner-inner {
-    justify-content: center;
-    gap: 12px;
-    padding: 8px 16px;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    padding: 10px 16px 12px;
   }
 
   .home-banner-shot {
-    width: 64px;
+    width: 84px;
+  }
+
+  .home-banner-text {
+    flex: 1;
+  }
+
+  .home-banner-title {
+    font-size: 16px;
+  }
+
+  .home-banner-comma {
+    display: none;
+  }
+
+  .home-banner-more {
+    flex-basis: 100%;
+    white-space: normal;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .home-banner-more::first-letter {
+    text-transform: uppercase;
+  }
+
+  .home-banner-cta {
+    flex: 1 0 100%;
+    margin-left: 0;
+    padding: 8px 14px;
+    text-align: center;
   }
 }
 
@@ -2823,6 +3159,8 @@ main {
 
   .marker::before,
   .at-dots i,
+  .at-caret,
+  .ht-caret,
   .terminal-sticker,
   .home-banner-badge::after,
   .home-sparkle {

@@ -87,3 +87,17 @@ test("default notification text and OS targets contain no child, subject, grade 
   assert.equal(notificationTarget({ scope, view: "https://evil.invalid" }, scope), null);
   assert.equal(notificationTarget({ scope, view: "inbox", item: "javascript:alert(1)" }, scope), "@inbox");
 });
+
+
+test("tomorrow's notification uses the same school hours as the child's card", () => {
+  const state = fixture();
+  const lessons = state.snapshot!.perChild["1"].lessons;
+  const lesson = { date: "2026-11-03", dayOfWeek: 2, start: "08:15", end: "13:00", subject: "Maths", subjectCode: "MA", teacher: "Synthetic Teacher", teacherCode: "T", groupId: 1 };
+  lessons.push(lesson, { ...lesson, start: "13:30", end: "15:00", subject: "Optional club" });
+  assert.ok(tomorrowDigest(state, "2026-11-03")!.lines.some((line) => line.includes("08:15–15:00")));
+  state.local.leftOut = { "1": ["Optional club"] };
+  const digest = tomorrowDigest(state, "2026-11-03")!;
+  assert.ok(digest.lines.some((line) => line.includes("08:15–13:00")));
+  assert.ok(digest.lines.every((line) => !line.includes("15:00")));
+  assert.equal(lessons.length, 2, "the optional lesson stays in the timetable");
+});

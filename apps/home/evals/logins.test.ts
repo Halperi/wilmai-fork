@@ -24,6 +24,8 @@ interface Fake {
   alive: string | null;
   sid: number;
   requests: string[];
+  /** Answers a guardian's bulletins page with 403, as Helsinki's Wilma does. */
+  refusesNews?: boolean;
 }
 
 /** A fake Wilma per host: one live session per account, a front page with Wilma's logout form, the fixtures' pages. */
@@ -65,7 +67,7 @@ function fakeWilmas(fakes: Record<string, Fake>) {
     if (page === "/messages/list/outbox") return answer(wire.url, 200, '{"Messages":[]}', { contentType: "application/json" });
     if (page === "/messages/list/appointments") return json("appointments-list.json");
     if (/^\/messages\/\d+$/.test(page)) return json("message-thread.json");
-    if (page === "/news") return answer(wire.url, 200, fixture("news-list.html"));
+    if (page === "/news") return fake.refusesNews ? answer(wire.url, 403, "Forbidden") : answer(wire.url, 200, fixture("news-list.html"));
     if (/^\/news\/\d+$/.test(page)) return answer(wire.url, 200, fixture("news-detail.html"));
     if (page === "/attendance/view") return answer(wire.url, 200, fixture("attendance.html"));
     if (page.startsWith("/exams/calendar")) return answer(wire.url, 200, fixture("exams-calendar.html"));
@@ -118,7 +120,8 @@ test("two screens: the app once every Wilma is signed in, otherwise the Wilma pa
   assert.equal(screenFor("signed-out", "password", "today"), "wilmas", "a Wilma not signed in");
   assert.equal(screenFor("ready", "password", "wilmas"), "wilmas", "opened from the app");
   assert.equal(screenFor("ready", "password", "today"), "app");
-  assert.equal(screenFor("ready", "demo", "wilmas"), "app", "the sample family has no Wilmas");
+  assert.equal(screenFor("ready", "demo", "today"), "app");
+  assert.equal(screenFor("ready", "demo", "wilmas"), "wilmas", "the sample family's two schools, to look at");
 });
 
 test("two Wilmas with the same numbers read side by side, and the app shows only while both are signed in", async () => {
@@ -548,5 +551,52 @@ test("the app doesn't sign a Wilma in by itself while the parent is signing it i
   } finally {
     overrideBridge(null);
     await resetApp();
+  }
+});
+
+test("a Wilma that doesn't show a guardian its bulletins still has everything else read", async () => {
+  await resetApp();
+  updateSettings({ ...DEFAULT_SETTINGS });
+  const fakes = family();
+  fakes.south.refusesNews = true;
+  try {
+    await signInWithPassword(NORTH, "parent", "fictional-north", undefined, false, "guardian");
+    await addWilma(SOUTH, "parent", "fictional-south");
+    await syncNow();
+    const snap = getState().snapshot!;
+    assert.equal(getState().sync.error, null, "no 'Couldn't read' for the Wilma that refused /news");
+    const fromSouth = <T,>(items: Record<number, T>) => Object.keys(items).filter((id) => loginOfId(Number(id)) === 1).length;
+    assert.ok(fromSouth(snap.messages) > 0, "its messages are read");
+    assert.equal(fromSouth(snap.news), 0, "and it has no bulletins");
+    assert.ok(Object.keys(snap.news).length > 0, "the other Wilma's bulletins are there");
+    assert.ok(snap.perChild[familyChild(1, "1234")]?.overview, "its front page is read");
+  } finally {
+    overrideBridge(null);
+    await resetApp();
+  }
+});
+
+
+test("phone background refresh keeps login isolation and detects an ended session without opening details", async () => {
+  await resetApp();
+  updateSettings({ ...DEFAULT_SETTINGS, staySignedIn: false });
+  const { north, south } = family();
+  try {
+    await signInWithPassword(NORTH, "parent", "fictional-north", undefined, false, "guardian");
+    await addWilma(SOUTH, "parent", "fictional-south");
+    await syncNow();
+    const before = Object.keys(getState().snapshot!.messages).length;
+    north.requests.length = south.requests.length = 0;
+    await syncNow(false, { background: true });
+    assert.ok([...north.requests, ...south.requests].every((r) => !/\/(messages|news)\/\d+/.test(r)), "background listing never opens message or bulletin details");
+    south.alive = null;
+    await syncNow(false, { background: true });
+    assert.equal(getState().loginStatus[0]?.live, true);
+    assert.equal(getState().loginStatus[1]?.live, false);
+    assert.equal(getState().phase, "signed-out");
+    assert.equal(Object.keys(getState().snapshot!.messages).length, before, "one expired login keeps both schools' cached messages");
+  } finally {
+    overrideBridge(null);
+    await signOut();
   }
 });

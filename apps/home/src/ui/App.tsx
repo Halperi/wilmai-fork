@@ -178,7 +178,7 @@ function Syncer() {
       ) : null}
       <span className={`txt${sync.error ? " err" : ""}`}>{text}</span>
       {!demo ? (
-        <button className="btn btn-quiet btn-sm" onClick={() => void syncNow()} disabled={sync.running} title={t("Check Wilma now")}>
+        <button className="btn btn-quiet btn-sm" onClick={() => void syncNow()} disabled={sync.running} title={`${text} · ${t("Check Wilma now")}`}>
           <Icon name="refresh" className={`icon${sync.running ? " spin" : ""}`} />
           <span className="sr-only">{t("Check Wilma now")}</span>
         </button>
@@ -404,7 +404,8 @@ function Shell() {
           </div>
         </nav>
         <div className="main">
-          <header className="topbar">
+          {/* Three or more children: in a narrow window the sync text gives way, so the children and search fit (styles.css). */}
+          <header className={`topbar${snap.children.length > 2 ? " many-kids" : ""}`}>
             {snap.children.length > 1 ? (
               <div className="kids" role="group" aria-label={t("Show children")}>
                 <button className="kid-seg all" aria-pressed={live.length === 0} onClick={() => setSelected([])} title={t("Everyone (0)")}>
@@ -413,16 +414,17 @@ function Shell() {
                 {snap.children.map((c, i) => (
                   <button
                     key={c.number}
-                    className={`kid-seg c${c.color % 5}`}
+                    className={`kid-seg c${c.color % 16}`}
                     aria-pressed={live.includes(c.number)}
                     onClick={(e) => pickKid(c.number, e.metaKey || e.ctrlKey || e.shiftKey)}
                     title={
                       live.length === 1 && live[0] === c.number
                         ? t("Back to everyone ({key})", { key: String(i + 1) })
-                        : t("Show only {name} ({key}). ⌘-click to add or remove.", { name: c.first, key: String(i + 1) })
+                        : t("Show only {name} ({key}). ⌘-click to add or remove.", { name: c.nick ?? c.first, key: String(i + 1) })
                     }
                   >
-                    {c.first}
+                    {c.emoji ? <span className="kid-emoji">{c.emoji}</span> : null}
+                    {c.nick ?? c.first}
                   </button>
                 ))}
               </div>

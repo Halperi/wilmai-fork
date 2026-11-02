@@ -73,8 +73,8 @@ importers:
         specifier: ^1.32.0
         version: 1.32.0(zod@4.6.7)
       '@wilm-ai/wilma-client':
-        specifier: ^1.7.1
-        version: 1.9.0
+        specifier: ^1.8.0
+        version: link:../wilma-client
       zod:
         specifier: ^4.6.6
         version: 4.6.7
@@ -1073,10 +1073,6 @@ packages:
     resolution: {integrity: sha512-lrW200hZdbfRtztbygyaq/6jP6AKE8qQN2KvPcJ+x7wiD038YtnYtZ82IMNJ69GJibV7bwL3y9FgK+5w/pYt6g==}
     cpu: [x64]
     os: [win32]
-
-  '@wilm-ai/wilma-client@1.9.0':
-    resolution: {integrity: sha512-Bj/16PWzw1pN2P4n7j5YQBMK+kpYl/psTWVicyd84at9ykkSVcRnlvyBWS1e6sGRq1/U+wvZ3ZiAj+lTJN+JwA==}
-    engines: {node: '>=20.18.1'}
 
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -3541,12 +3537,6 @@ snapshots:
 
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
-
-  '@wilm-ai/wilma-client@1.9.0':
-    dependencies:
-      cheerio: 1.2.0
-      tough-cookie: 4.1.4
-      undici: 6.29.1
 
   accepts@2.0.0:
     dependencies:
