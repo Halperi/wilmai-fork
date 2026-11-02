@@ -93,7 +93,9 @@ voivat käsitellä selkokielisiä tietoja muistissa.
 
 Pilvi- ja laitesiirtovarmuuskopiot estetään. `FLAG_SECURE` estää sovelluksen
 ruutukaappaukset ja peittää sisällön viimeisimpien sovellusten näkymässä.
-Julkaisu-APK ei ole debugattava. WebView saa ladata vain sovelluksen omia
+Julkaisu-APK ei ole debugattava, ja sen WebView-kehittäjätyökalut estetään
+myös erillisellä asetuksella. Debug-skriptit ottavat ne käyttöön vain
+`tauri.android.debug.conf.json`-tiedostolla. WebView saa ladata vain sovelluksen omia
 dokumentteja; HTTPS-linkit avataan ulkoisesti. Mobiililla ei ole oikeutta
 käyttää työpöydän tunnussäilöä, raporttitiedostoja tai päivitystoimintoja.
 Tekoälyn käyttö lähettää valitut koulutiedot käyttäjän valitsemalle palvelulle

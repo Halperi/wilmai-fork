@@ -1,0 +1,12 @@
+{
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "WilmAI Home",
+        "backgroundColor": "#eef1f6",
+        "devtools": true
+      }
+    ]
+  }
+}

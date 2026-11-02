@@ -11,7 +11,8 @@
       {
         "label": "main",
         "title": "WilmAI Home",
-        "backgroundColor": "#eef1f6"
+        "backgroundColor": "#eef1f6",
+        "devtools": false
       }
     ]
   },
