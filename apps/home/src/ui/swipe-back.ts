@@ -50,10 +50,11 @@ export function bindSwipeBack(root: HTMLElement, back: () => void): () => void {
   };
   const move = (event: TouchEvent) => {
     if (!active) return;
-    if (event.defaultPrevented || event.touches.length !== 1 || !event.cancelable || root.ownerDocument.getSelection()?.isCollapsed === false) return cancel();
+    if (event.defaultPrevented || event.touches.length !== 1 || root.ownerDocument.getSelection()?.isCollapsed === false) return cancel();
     const touch = [...event.touches].find((t) => t.identifier === active!.id);
     if (!touch) return cancel();
-    if (active.swipe.move(touch.clientX, touch.clientY, event.timeStamp)) event.preventDefault();
+    // A touch that stops native momentum can be non-cancelable; its direction still counts.
+    if (active.swipe.move(touch.clientX, touch.clientY, event.timeStamp) && event.cancelable) event.preventDefault();
   };
   const end = (event: TouchEvent) => {
     const gesture = active;
