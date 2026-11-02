@@ -5,6 +5,8 @@
 //! window and notifications are in shell.rs.
 
 
+#[cfg(target_os = "ios")]
+mod ios_vault;
 #[cfg(desktop)]
 mod shell;
 #[cfg(desktop)]
@@ -359,6 +361,8 @@ pub fn run() {
     };
     builder
         .setup(|app| {
+            #[cfg(all(target_os = "ios", debug_assertions))]
+            if std::env::var("WILMAI_KEYCHAIN_SMOKE").as_deref() == Ok("1") { ios_vault::smoke_test(app.handle()); }
             #[cfg(desktop)] {
                 use tauri::Manager;
                 let dir = app.path().app_data_dir()?.join("local-ai");
@@ -382,6 +386,10 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            #[cfg(target_os = "ios")]
+            ios_vault::ios_vault_load,
+            #[cfg(target_os = "ios")]
+            ios_vault::ios_vault_save,
             wilma_send,
             jev_call,
             openai_call,

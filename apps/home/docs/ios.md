@@ -42,9 +42,11 @@ pnpm ios:build --ci
 
 `ios:init` generates the ignored Xcode project in `src-tauri/gen/apple`.
 `ios:build` packages the UI and Rust library into an unsigned debug application
-for an Apple Silicon simulator. No Apple Developer membership or signing team
-is needed for the simulator. Run `pnpm ios:dev` for an interactive simulator
-build, or `pnpm ios:dev --open` to open the generated project in Xcode.
+for an Apple Silicon simulator. This unsigned artifact verifies compilation;
+Keychain needs app signing for interactive use. Set your team in Xcode for signed
+development builds, and verify native secure storage on the physical iPhone.
+Run `pnpm ios:dev` for an interactive simulator build, or `pnpm ios:dev --open`
+to open the generated project in Xcode.
 
 The iOS configuration is `src-tauri/tauri.ios.conf.json`, merged automatically
 by Tauri. Its bundle ID is `fi.halperi.wilmai.home`, separate from the upstream
@@ -76,17 +78,41 @@ cannot be installed on a physical phone: build the device target separately.
 
 ## Limits before daily use
 
-Start with **the sample family**. This change does not implement an iOS Keychain
-store: the upstream app still persists credentials and optional API keys in its
-existing browser storage format. Base64 is not encryption. Move secrets and
-session material to an account-scoped native secure store before treating this
-as a finished phone app. Do not export real school data into CI or screenshots.
+On iOS, passwords, optional API keys and Wilma session cookies are kept in a
+private Keychain record, protected with `WhenUnlockedThisDeviceOnly` and cloud
+synchronization disabled. Passwords and linked sessions use the existing
+normalized school/account identity. School content and drafts continue to use
+the app's private browser storage; the whole school-data cache is not a Keychain
+store.
+
+The first launch migrates legacy browser credentials/cookies, and removes those
+copies only after the Keychain write succeeds. Failed writes block the UI and
+retain pending values for retry; there is no plaintext fallback. Logout clears
+session records, reset clears all vault secrets, and a new installation ID
+prevents Keychain data left after uninstall from automatically signing in a
+fresh install. Desktop and Android storage behavior is unchanged.
+
+Use the sample family for initial UI checks. Keep team IDs, device IDs,
+certificates and provisioning files out of source control. A debug-only native
+smoke test (`WILMAI_KEYCHAIN_SMOKE=1` at process launch) uses synthetic values in
+a separate Keychain service and writes only pass/fail diagnostics to the app's
+data directory (`keychain-smoke.json`). It never reads the user's vault.
 
 There are no background refresh guarantees, APNs push notifications, camera or
 attachment picker integration, mobile update delivery, or local AI in this
 prototype. Do not infer live Wilma login or message-send coverage from the demo
 or the offline tests. Wilma may invalidate another device's session when the
 same account logs in again; there is no cross-device session sharing here.
+
+## App icon
+
+`pnpm ios:icons` generates the iOS sizes from the same committed
+`src-tauri/icons/icon.png` used by the desktop app. iOS init and the iOS build/dev
+hooks run it automatically, including refreshing an existing generated Xcode
+asset catalog and registering `AppIcon` in its app target build settings.
+Local signing settings are preserved. The original icon is preserved, with an opaque white background
+required for iOS. Generated sizes stay ignored; upstream desktop icon changes
+flow into the next mobile build.
 
 ## Keep upstream updates easy
 
@@ -103,11 +129,17 @@ changes, move the generated directory aside and generate it again; first preserv
 any local signing or native project changes. Keep those settings in configuration
 when possible. Keep generated Xcode files and signing material out of Git.
 
-## Verified locally (2026-11-01)
+## Verified locally (2026-11-02)
 
-Built the unsigned arm64 simulator `.app` with Xcode 27.2 / iOS 27.2 and
-installed/launched it on an iPhone 18 Pro simulator. The sample family, message list and message reader render in the native app; sample data survives a process restart.
-TypeScript passes; the Home offline suite has 103 passes and one skipped test;
-the desktop Rust library suite has 14 passes and one ignored test. The new mobile
-transport/platform subset has five passing tests. No physical iPhone, live Wilma
-account, real message send or background notification has been tested.
+Xcode 27.2 / iOS 27.2: both the arm64 simulator archive and the signed device IPA
+build successfully. The signed app is installed on the owner's physical iPhone
+15; its real SecItem smoke test passes create/read/update/delete using synthetic
+data. Mocked storage regressions cover migration failure/retry, concurrent
+logout, reset, corrupt records and two-account isolation. TypeScript passes;
+the Home offline suite has 111 passes and one skipped test, including 13 mobile
+tests; the desktop Rust library suite has 14 passes and one ignored test. An unsigned simulator archive cannot access Keychain (-34018); it is a
+compile artifact, not a passing native secure-storage test.
+
+The earlier sample-family UI checks covered the message list/reader and process
+restart in an iPhone 18 Pro simulator. Live Wilma login, real message sending
+and background notifications still need explicit user verification.

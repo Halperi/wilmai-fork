@@ -17,3 +17,6 @@ evals/keys.env
 # baseline scores (they cover those cases too). evals/cases holds the made-up ones.
 evals/private/
 evals/baselines/
+
+# Generated from the desktop icon by scripts/ios-icons.mjs
+src-tauri/icons/ios/

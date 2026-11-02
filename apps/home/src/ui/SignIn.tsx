@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useLocalEdition } from "../data/edition";
 import { Brand, Icon } from "./bits";
 import { TENANTS, searchTenants, type Tenant } from "../data/tenants";
+import { usesIosVault } from "../data/ios-vault";
 import { isDesktopApp, isMobileApp } from "../wilma/transport";
 import { t } from "../i18n";
 
@@ -116,7 +117,7 @@ export function Intro() {
         <li>
           <Icon name="lock" />
           <span>
-            {marked(isMobileApp ? t("*Your password goes only to your school's Wilma.* Kept on this device, scrambled but not encrypted.") : t("*Your password goes only to your school's Wilma.* The app remembers it here, scrambled, so signing in again is one click."), (part) => <b>{part}</b>)}
+            {marked(usesIosVault ? t("*Your password goes only to your school's Wilma.* Saved in this iPhone's Keychain.") : isMobileApp ? t("*Your password goes only to your school's Wilma.* Kept on this device, scrambled but not encrypted.") : t("*Your password goes only to your school's Wilma.* The app remembers it here, scrambled, so signing in again is one click."), (part) => <b>{part}</b>)}
           </span>
         </li>
         <li>

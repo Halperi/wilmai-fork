@@ -363,4 +363,11 @@ export const SV_FORMS: Record<string, string> = {
   "It reads the same Wilma you already use, and it runs on this device.": "Den läser samma Wilma som du redan använder och körs på den här enheten.",
   "*Your password goes only to your school's Wilma.* Kept on this device, scrambled but not encrypted.": "*Ditt lösenord går bara till din skolas Wilma.* Sparas på den här enheten, maskerat men inte krypterat.",
   "Kept in this app's data, scrambled but not encrypted.": "Sparas i den här appens data, maskerat men inte krypterat.",
+  // iOS secure storage
+  "Secure storage": "Säker lagring",
+  "Opening secure storage…": "Öppnar säker lagring…",
+  "Secure storage is unavailable. Unlock your iPhone and try again.": "Säker lagring är inte tillgänglig. Lås upp din iPhone och försök igen.",
+  "Your latest changes may not have been saved. Retry before closing the app.": "Dina senaste ändringar kanske inte har sparats. Försök igen innan du stänger appen.",
+  "Kept in this iPhone's Keychain.": "Sparas i den här iPhonens nyckelring.",
+  "*Your password goes only to your school's Wilma.* Saved in this iPhone's Keychain.": "*Ditt lösenord går bara till din skolas Wilma.* Sparas i den här iPhonens nyckelring.",
 };

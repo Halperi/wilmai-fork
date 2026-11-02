@@ -363,4 +363,11 @@ export const FI_FORMS: Record<string, string> = {
   "It reads the same Wilma you already use, and it runs on this device.": "Se lukee samaa Wilmaa, jota jo käytät, ja toimii tällä laitteella.",
   "*Your password goes only to your school's Wilma.* Kept on this device, scrambled but not encrypted.": "*Salasanasi menee vain koulusi Wilmaan.* Säilytetään tällä laitteella peitettynä, ei salattuna.",
   "Kept in this app's data, scrambled but not encrypted.": "Säilytetään tämän sovelluksen tiedoissa peitettynä, ei salattuna.",
+  // iOS secure storage
+  "Secure storage": "Turvallinen tallennus",
+  "Opening secure storage…": "Avataan turvallista tallennusta…",
+  "Secure storage is unavailable. Unlock your iPhone and try again.": "Turvallinen tallennus ei ole käytettävissä. Avaa iPhonen lukitus ja yritä uudelleen.",
+  "Your latest changes may not have been saved. Retry before closing the app.": "Viimeisimmät muutokset eivät ehkä ole tallentuneet. Yritä uudelleen ennen sovelluksen sulkemista.",
+  "Kept in this iPhone's Keychain.": "Säilytetään tämän iPhonen Avainnipussa.",
+  "*Your password goes only to your school's Wilma.* Saved in this iPhone's Keychain.": "*Salasanasi menee vain koulusi Wilmaan.* Tallennetaan tämän iPhonen Avainnippuun.",
 };

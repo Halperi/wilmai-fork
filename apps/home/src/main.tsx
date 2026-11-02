@@ -15,12 +15,13 @@ import { startUpdateChecks } from "./data/updates";
 import { isDesktopApp, isNativeApp, isMobileApp } from "./wilma/transport";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { usesIosVault } from "./data/ios-vault";
 import { appPlatform, isExternalHttpsLink } from "./platform";
 
 if (isDesktopApp) setUpDesktopWindow();
 if (isMobileApp) {
   document.documentElement.classList.add("mobile", appPlatform);
-  const save = () => { void flushPersisted(); };
+  const save = () => { void flushPersisted().catch(() => {}); };
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
   window.addEventListener("pagehide", save);
 }
@@ -62,12 +63,22 @@ createRoot(document.getElementById("root")!).render(
 );
 
 async function start() {
+  // Phone credentials and cookies must be restored before any session resumes or AI runs.
+  if (usesIosVault) {
+    try { await loadSecrets(); } catch { return; } // The visible secure-storage gate offers retry.
+  }
   const edition = await appEdition().catch(() => ({ localAi: false, signedUpdater: false }));
   const settings = getState().settings;
   // Replacing Local AI with Standard cannot keep an unavailable provider enabled.
   // Leave the key and downloaded weights intact; choosing OpenAI remains explicit.
   if (!edition.localAi && (settings.aiProvider === "local" || settings.localAI?.setupPending)) {
     updateSettings({ aiProvider: "off", ...(settings.localAI ? { localAI: { ...settings.localAI, setupPending: false } } : {}) });
+  }
+  if (usesIosVault) {
+    const { session } = await loadPersisted();
+    void resume(session);
+    void runJev(); runLuna();
+    return;
   }
   void loadPersisted().then(({ session }) => resume(session));
   // Once, on the first start after the key moved out of the keychain, macOS may ask; nothing waits for it.

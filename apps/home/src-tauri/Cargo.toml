@@ -60,3 +60,6 @@ tauri-plugin-single-instance = "2"
 tauri = { version = "2", features = ["tray-icon"] }
 keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
 tauri-plugin-updater = "2"
+
+[target.'cfg(target_os = "ios")'.dependencies]
+security-framework = "3.7"
