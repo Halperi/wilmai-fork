@@ -20,3 +20,6 @@ evals/baselines/
 
 # Generated from the desktop icon by scripts/ios-icons.mjs
 src-tauri/icons/ios/
+
+# Android sizes are regenerated from the committed desktop icon.
+src-tauri/icons/android/

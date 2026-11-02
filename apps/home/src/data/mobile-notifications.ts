@@ -1,10 +1,14 @@
 import { addPluginListener, invoke, type PluginListener } from "@tauri-apps/api/core";
-import { cancelAll, onAction, pending, removeAllActive, requestPermission, Schedule } from "@tauri-apps/plugin-notification";
+import { cancelAll, onAction, removeAllActive, requestPermission, Schedule } from "@tauri-apps/plugin-notification";
 import { appPlatform, isMobileApp } from "../platform";
 import { accountScope, flushPersisted, getState, setState, subscribe } from "./store";
 import { notificationOptions, privateNotice, scheduledSchoolNotices, schoolNotices, type SchoolNotice } from "./school-notifications";
 import { t } from "../i18n";
 
+async function cancelPending(): Promise<void> {
+  if (appPlatform === "android") await invoke("plugin:android-device|cancel_schedules");
+  else await cancelAll();
+}
 export async function notificationPermission(): Promise<string> {
   const result = await invoke<{ permissionState: string }>("plugin:notification|check_permissions");
   return result.permissionState;
@@ -25,12 +29,17 @@ function scopeToken(): string {
 }
 const extraFor = (n: SchoolNotice, scope: string) => ({ scope, view: n.view, item: n.item ?? "" });
 async function show(n: SchoolNotice, scope: string, id: number, details: boolean) {
-  await invoke("plugin:notification|show", { id, ...privateNotice(n, details), extra: extraFor(n, scope),
-    ...(n.at > Date.now() + 1000 ? { schedule: Schedule.at(new Date(n.at)) } : {}) });
+  const future = n.at > Date.now() + 1000;
+  const options = { id, ...privateNotice(n, details), ...(appPlatform === "android" ? { channelId: "wilmai-school" } : {}), extra: extraFor(n, scope),
+    ...(future ? { schedule: Schedule.at(new Date(n.at)) } : {}) };
+  // Android show() submits an alarm but does not persist it. batch() also records it so
+  // pending reconciliation, cold launches and sign-out can find and cancel the alarm.
+  if (appPlatform === "android" && future) await invoke("plugin:notification|batch", { notifications: [options] });
+  else await invoke("plugin:notification|show", options);
 }
 export async function testSchoolNotification(): Promise<void> {
   if (await notificationPermission() !== "granted" && !await enableSchoolNotifications()) throw new Error("Notification permission denied");
-  await invoke("plugin:notification|show", { id: nextId(), title: "WilmAI Home", body: t("Notifications work. This test contains no school information.") });
+  await invoke("plugin:notification|show", { id: nextId(), ...(appPlatform === "android" ? { channelId: "wilmai-school" } : {}), title: "WilmAI Home", body: t("Notifications work. This test contains no school information.") });
 }
 let running: Promise<void> | null = null, queued = false;
 let nativeScope: string | null = null, lastBackground: boolean | null = null, lastDetails: boolean | null = null;
@@ -38,15 +47,15 @@ function error(message: string | null) {
   if ((getState().schoolNotificationError ?? null) !== message) setState({ schoolNotificationError: message });
 }
 async function configureBackground(enabled: boolean) {
-  if (appPlatform !== "ios" || lastBackground === enabled) return;
-  await invoke("plugin:background-refresh|configure", { enabled });
+  if (!isMobileApp || lastBackground === enabled) return;
+  await invoke(`plugin:${appPlatform === "android" ? "android-device" : "background-refresh"}|configure`, { enabled });
   lastBackground = enabled;
 }
 /** Called by explicit sign-out/reset as well as the observer. Drain outstanding sends before clearing OS data. */
 export async function clearSchoolNotifications(): Promise<void> {
   if (!isMobileApp) return;
   await running?.catch(() => {});
-  await cancelAll(); await removeAllActive(); await configureBackground(false);
+  await cancelPending(); await removeAllActive(); await configureBackground(false);
   nativeScope = null;
 }
 async function reconcile() {
@@ -54,16 +63,16 @@ async function reconcile() {
   if (state.phase === "loading") return;
   const options = notificationOptions(state.settings);
   if (state.phase !== "ready" || !state.snapshot || state.snapshot.account.via === "demo" || state.settings.notify === false) {
-    await cancelAll(); await removeAllActive(); await configureBackground(false); nativeScope = null; return;
+    await cancelPending(); await removeAllActive(); await configureBackground(false); nativeScope = null; return;
   }
-  if (appPlatform === "ios" && !state.secureStorage.ready) return;
+  if (isMobileApp && !state.secureStorage.ready) return;
   const scope = accountScope();
   const current = () => scope === accountScope() && getState().phase === "ready" && getState().settings.notify !== false;
-  if (await notificationPermission() !== "granted") { await cancelAll(); await configureBackground(false); return; }
+  if (await notificationPermission() !== "granted") { await cancelPending(); await configureBackground(false); return; }
   const token = scopeToken();
   if (nativeScope !== token) {
     // Also clears reminders from another family after a cold launch, sign-out or user switch.
-    await cancelAll(); await removeAllActive(); nativeScope = token;
+    await cancelPending(); await removeAllActive(); nativeScope = token;
   }
   if (!current()) return;
   if (lastDetails !== options.details) { await removeAllActive(); lastDetails = options.details; }
@@ -93,9 +102,7 @@ async function reconcile() {
   if (failed) throw new Error("Notification delivery failed");
   const scheduled = scheduledSchoolNotices(getState(), Date.now());
   const old = getState().local.schoolNotificationRequests ?? {};
-  const existing = new Set(appPlatform === "ios"
-    ? await invoke<number[]>("plugin:background-refresh|pending_ids")
-    : (await pending()).map((n) => n.id));
+  const existing = new Set(await invoke<number[]>(`plugin:${appPlatform === "android" ? "android-device" : "background-refresh"}|pending_ids`));
   const requests: Record<string, { id: number; signature: string }> = {};
   for (const notice of scheduled) {
     if (!current()) return;
@@ -155,8 +162,9 @@ export function startSchoolNotifications(open: (key: string) => void): () => voi
     if (target) open(target);
   };
   listeners.push(onAction((e) => {
-    if (e.actionId === "tap") void tap(e.notification?.extra).then(() => appPlatform === "ios" ? invoke("plugin:background-refresh|take_tap") : undefined).catch(() => {});
+    if (e.actionId === "tap") void tap(e.notification?.extra).then(() => invoke(`plugin:${appPlatform === "android" ? "android-device" : "background-refresh"}|take_tap`)).catch(() => {});
   }));
+  const backgroundPlugin = appPlatform === "android" ? "android-device" : "background-refresh";
   let refreshing = false;
   const background = async () => {
     if (refreshing || stopped) return;
@@ -164,7 +172,7 @@ export function startSchoolNotifications(open: (key: string) => void): () => voi
     let token: string | null = null;
     let success = false;
     try {
-      const claimed = await invoke<{ token: string | null }>("plugin:background-refresh|claim"); token = claimed.token;
+      const claimed = await invoke<{ token: string | null }>(`plugin:${backgroundPlugin}|claim`); token = claimed.token;
       if (!token) return;
       await waitUntilStarted();
       const state = getState();
@@ -174,14 +182,14 @@ export function startSchoolNotifications(open: (key: string) => void): () => voi
       await syncNow(false, { background: true }); await refreshSchoolNotifications();
       success = (getState().sync.lastOk ?? 0) >= began && !getState().sync.error;
     } finally {
-      if (token) await invoke("plugin:background-refresh|complete", { token, success }).catch(() => {});
+      if (token) await invoke(`plugin:${backgroundPlugin}|complete`, { token, success }).catch(() => {});
       refreshing = false;
     }
   };
-  if (appPlatform === "ios") {
-    listeners.push(addPluginListener("background-refresh", "refresh", () => { void background().catch(() => {}); }));
+  if (isMobileApp) {
+    listeners.push(addPluginListener(backgroundPlugin, "refresh", () => { void background().catch(() => {}); }));
     void Promise.all(listeners).then(async () => {
-      const result = await invoke<{ extra?: unknown }>("plugin:background-refresh|take_tap");
+      const result = await invoke<{ extra?: unknown }>(`plugin:${backgroundPlugin}|take_tap`);
       if (result.extra) await tap(result.extra);
       await background();
     }).catch(() => error(t("Notifications could not be updated. Open Settings and try again.")));

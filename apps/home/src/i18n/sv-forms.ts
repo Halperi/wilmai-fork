@@ -406,4 +406,8 @@ export const SV_FORMS: Record<string, string> = {
   "Test notification requested.": "Testnotis begärd.",
   "No downloaded school plan for tomorrow yet.": "Ingen hämtad skolplan för i morgon ännu.",
   "Updated {time}": "Uppdaterat {time}",
+  "Secure storage is unavailable. Unlock your phone and try again.": "Säker lagring är inte tillgänglig. Lås upp telefonen och försök igen.",
+  "Protected by this phone’s native secure storage.": "Skyddas av telefonens inbyggda säkra lagring.",
+  "*Your password goes only to your school's Wilma.* Protected by this phone’s native secure storage.": "*Ditt lösenord skickas bara till skolans Wilma.* Skyddas av telefonens inbyggda säkra lagring.",
+  "Android may check while the app remains in memory. Closing it or battery restrictions can stop checks. Scheduled summaries use downloaded data; open the app regularly. These are local notifications, not live push alerts.": "Android kan kontrollera ändringar medan appen finns kvar i minnet. Stängning eller batteribegränsningar kan stoppa kontroller. Schemalagda sammanfattningar använder hämtade data; öppna appen regelbundet. Detta är lokala notiser, inte pushnotiser i realtid.",
 };

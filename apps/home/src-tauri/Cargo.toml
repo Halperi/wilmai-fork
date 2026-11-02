@@ -67,3 +67,6 @@ tauri-plugin-background-refresh = { path = "plugins/background-refresh" }
 
 [target.'cfg(any(target_os = "ios", target_os = "android"))'.dependencies]
 tauri-plugin-notification = "2"
+
+[target.'cfg(target_os = "android")'.dependencies]
+tauri-plugin-android-device = { path = "plugins/android-device" }

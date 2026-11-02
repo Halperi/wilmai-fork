@@ -15,9 +15,19 @@ import { startUpdateChecks } from "./data/updates";
 import { isDesktopApp, isNativeApp, isMobileApp } from "./wilma/transport";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { usesIosVault } from "./data/ios-vault";
+import { usesSecureVault } from "./data/secure-vault";
 import { appPlatform, isExternalHttpsLink } from "./platform";
 
+// Android's default WebView back stack may omit same-document hash routes.
+// Keep routing in the shared frontend; native code only dispatches the system gesture.
+if (appPlatform === "android") {
+  (window as Window & { __wilmaiAndroidBack?: () => boolean }).__wilmaiAndroidBack = () => {
+    if (!location.hash || location.hash === "#/today" || location.hash === "#/") return false;
+    if (history.length > 1) history.back();
+    else location.hash = "#/today";
+    return true;
+  };
+}
 if (isDesktopApp) setUpDesktopWindow();
 if (isMobileApp) {
   document.documentElement.classList.add("mobile", appPlatform);
@@ -70,7 +80,7 @@ createRoot(document.getElementById("root")!).render(
 
 async function start() {
   // Phone credentials and cookies must be restored before any session resumes or AI runs.
-  if (usesIosVault) {
+  if (usesSecureVault) {
     try { await loadSecrets(); } catch { return; } // The visible secure-storage gate offers retry.
   }
   const edition = await appEdition().catch(() => ({ localAi: false, signedUpdater: false }));
@@ -80,7 +90,7 @@ async function start() {
   if (!edition.localAi && (settings.aiProvider === "local" || settings.localAI?.setupPending)) {
     updateSettings({ aiProvider: "off", ...(settings.localAI ? { localAI: { ...settings.localAI, setupPending: false } } : {}) });
   }
-  if (usesIosVault) {
+  if (usesSecureVault) {
     const { session } = await loadPersisted();
     void resume(session);
     void runJev(); runLuna();

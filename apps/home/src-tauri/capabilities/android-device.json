@@ -1,0 +1,23 @@
+{
+  "identifier": "android-device",
+  "description": "Android-only private vault and bounded optional refresh bridge.",
+  "platforms": [
+    "android"
+  ],
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "android-device:allow-vault-load",
+    "android-device:allow-vault-save",
+    "android-device:allow-configure",
+    "android-device:allow-claim",
+    "android-device:allow-complete",
+    "android-device:allow-take-tap",
+    "android-device:allow-register-listener",
+    "android-device:allow-remove-listener",
+    "notification:allow-batch",
+    "android-device:allow-pending-ids",
+    "android-device:allow-cancel-schedules"
+  ]
+}

@@ -4,8 +4,8 @@
  * (localStorage). Nothing is sent anywhere except Wilma and, when turned
  * on, Jev.
  *
- * iOS keeps passwords, API keys and cookies in a private device-only Keychain record.
- * Other platforms keep secrets like the WilmAI CLI keeps its saved logins: on this
+ * Mobile keeps passwords, API keys and cookies in a private native vault (iOS Keychain / Android Keystore).
+ * Desktop and browser keep secrets like the WilmAI CLI keeps its saved logins: on this
  * computer, scrambled (base64 with a prefix, as `obfuscateSecret` in the
  * CLI), not encrypted. The Wilma session is in IndexedDB, the Jev and
  * OpenAI keys in localStorage. Scrambled only so a glance at the files doesn't show them;
@@ -14,7 +14,7 @@
 import { useSyncExternalStore } from "react";
 import { clear, del, get, set } from "idb-keyval";
 import { oldKeychain } from "../wilma/transport";
-import { emptyVault, iosInstallation, iosVault, IOS_INSTALLATION_KEY, usesIosVault } from "./ios-vault";
+import { emptyVault, secureInstallation, secureVault, INSTALLATION_KEY, usesSecureVault } from "./secure-vault";
 import { t } from "../i18n";
 import { DEFAULT_SETTINGS, keepsPassword, viewerOf, type AccountInfo, type ItemTranslation, type JevRecord, type LocalState, type LunaRecord, type Settings, type Snapshot, type UsageBucket, type Viewer } from "./model";
 import { normalizeAIBudget } from "./ai-budget";
@@ -42,7 +42,7 @@ export interface JevStatus {
 
 export interface AppState {
   schoolNotificationError?: string | null;
-  /** iOS blocks use until its Keychain is open and migrations/writes have succeeded. */
+  /** Mobile blocks use until its native vault is open and migrations/writes have succeeded. */
   secureStorage: { ready: boolean; error: string | null };
   /** Signed out: not every Wilma of the family is signed in, and the Wilmas page shows (data/logins.ts). */
   phase: "loading" | "signed-out" | "ready";
@@ -134,7 +134,7 @@ function passwordsOf(json: string | null): Record<string, string> {
   }
 }
 
-function loadSettings(readSecrets = !usesIosVault): Settings {
+function loadSettings(readSecrets = !usesSecureVault): Settings {
   try {
     // An older browser setup kept the key in the settings as it was; it moves out on the next save.
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings>;
@@ -157,7 +157,7 @@ function loadSettings(readSecrets = !usesIosVault): Settings {
 }
 
 let state: AppState = {
-  secureStorage: { ready: !usesIosVault, error: null },
+  secureStorage: { ready: !usesSecureVault, error: null },
   phase: "loading",
   snapshot: null,
   local: { opened: {}, done: {} },
@@ -179,7 +179,7 @@ let state: AppState = {
 
 // A key an older version kept plainly in the settings moves to its scrambled place now.
 try {
-  if (!usesIosVault && "jevKey" in JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}")) saveSettings();
+  if (!usesSecureVault && "jevKey" in JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}")) saveSettings();
 } catch {
   // Unreadable settings were already replaced by the defaults.
 }
@@ -311,11 +311,11 @@ export function forgetFamily(account: AccountInfo) {
   const family = accounts[key]?.snapshot;
   const gone = new Set((family?.logins ?? [{ account }]).map((l) => accountKey(l.account)));
   accounts = Object.fromEntries(Object.entries(accounts).filter(([k]) => k !== key));
-  updateSettings({ passwords: Object.fromEntries(Object.entries(state.settings.passwords).filter(([k]) => !gone.has(k))), ...(usesIosVault && gone.has(accountKey(state.snapshot?.account)) ? { wilmaPassword: "" } : {}) });
-  if (usesIosVault) {
-    iosVault.update((v) => ({ ...v, session: v.session && gone.has(accountKey(v.session.account)) ? null : v.session,
+  updateSettings({ passwords: Object.fromEntries(Object.entries(state.settings.passwords).filter(([k]) => !gone.has(k))), ...(usesSecureVault && gone.has(accountKey(state.snapshot?.account)) ? { wilmaPassword: "" } : {}) });
+  if (usesSecureVault) {
+    secureVault.update((v) => ({ ...v, session: v.session && gone.has(accountKey(v.session.account)) ? null : v.session,
       linkedSessions: Object.fromEntries(Object.entries(v.linkedSessions).filter(([k]) => !gone.has(k))) }));
-    void persistIosVault();
+    void persistSecureVault();
   }
   dirty.add("snapshot");
   void flushPersisted();
@@ -339,11 +339,11 @@ function migrateAccountStorage() {
 function saveSettings() {
   const { jevKey, openaiKey, wilmaPassword, passwords, ...rest } = state.settings;
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(rest));
-  if (usesIosVault) {
-    iosVault.update((v) => ({ ...v, credentials: { jevKey, openaiKey,
+  if (usesSecureVault) {
+    secureVault.update((v) => ({ ...v, credentials: { jevKey, openaiKey,
       wilmaPassword: keepsPassword(rest) ? wilmaPassword : "",
       passwords: keepsPassword(rest) ? passwords : {} } }));
-    void persistIosVault();
+    void persistSecureVault();
     return;
   }
   // The Wilma password while it's remembered (one-click sign-in) or staying signed in needs it.
@@ -359,21 +359,21 @@ function saveSettings() {
 
 /** Keep failure visible; a fire-and-forget caller must not create an unhandled rejection. */
 function storageFailure() {
-  setState({ secureStorage: { ready: false, error: t("Secure storage is unavailable. Unlock your iPhone and try again.") } });
+  setState({ secureStorage: { ready: false, error: t("Secure storage is unavailable. Unlock your phone and try again.") } });
 }
-function persistIosVault(): Promise<void> {
-  const pending = iosVault.flush().catch((error: unknown) => { storageFailure(); throw error; });
+function persistSecureVault(): Promise<void> {
+  const pending = secureVault.flush().catch((error: unknown) => { storageFailure(); throw error; });
   void pending.catch(() => {});
   return pending;
 }
-let openingIosVault: Promise<void> | null = null;
-async function openIosVault(): Promise<void> {
+let openingSecureVault: Promise<void> | null = null;
+async function openSecureVault(): Promise<void> {
   try {
-    await iosVault.load(iosInstallation());
-    if (!iosVault.data) {
+    await secureVault.load(secureInstallation());
+    if (!secureVault.data) {
       const legacy = loadSettings(true);
       const [saved, linked] = await Promise.all([get<SavedSession>("session"), get<Record<string, SavedSession>>("linkedSessions")]);
-      iosVault.update(() => ({ version: 1,
+      secureVault.update(() => ({ version: 1,
         credentials: { jevKey: legacy.jevKey, openaiKey: legacy.openaiKey, wilmaPassword: legacy.wilmaPassword, passwords: legacy.passwords },
         session: upgradeSession(saved),
         linkedSessions: Object.fromEntries(Object.entries(linked ?? {}).flatMap(([key, value]) => {
@@ -381,14 +381,14 @@ async function openIosVault(): Promise<void> {
           return upgraded && accountKey(upgraded.account) === key ? [[key, upgraded]] : [];
         })) }));
     }
-    if (!keepsPassword(state.settings)) iosVault.update((v) => ({ ...v, credentials: { ...v.credentials, wilmaPassword: "", passwords: {} } }));
-    await persistIosVault();
-    // Only remove plaintext/base64 browser copies after a confirmed Keychain write/read.
+    if (!keepsPassword(state.settings)) secureVault.update((v) => ({ ...v, credentials: { ...v.credentials, wilmaPassword: "", passwords: {} } }));
+    await persistSecureVault();
+    // Only remove plaintext/base64 browser copies after a confirmed native vault write/read.
     await Promise.all([del("session"), del("linkedSessions")]);
     for (const key of [JEV_KEY, OPENAI_KEY, WILMA_PASSWORD, PASSWORDS]) localStorage.removeItem(key);
     const { jevKey: _j, openaiKey: _o, wilmaPassword: _w, passwords: _p, ...preferences } = state.settings;
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(preferences));
-    state = { ...state, settings: { ...state.settings, ...iosVault.data!.credentials } };
+    state = { ...state, settings: { ...state.settings, ...secureVault.data!.credentials } };
     setState({ secureStorage: { ready: true, error: null } });
   } catch (error) { storageFailure(); throw error; }
 }
@@ -401,9 +401,9 @@ async function openIosVault(): Promise<void> {
  * app shows at once and Jev starts when the key is in.
  */
 export async function loadSecrets(): Promise<void> {
-  if (usesIosVault) {
-    openingIosVault ??= openIosVault().finally(() => { openingIosVault = null; });
-    return openingIosVault;
+  if (usesSecureVault) {
+    openingSecureVault ??= openSecureVault().finally(() => { openingSecureVault = null; });
+    return openingSecureVault;
   }
   const generation = resetScope();
   if (!oldKeychain || localStorage.getItem(MOVED_KEY)) return;
@@ -443,19 +443,19 @@ export function flushPersisted(): Promise<void> {
     // Usage and translations alone don't rewrite the accounts (a reset clears them): the next other change does.
     await Promise.all([...values.map(([part, value]) => set(part, value)), ...(parts.some((p) => p !== "usage" && p !== "translations" && p !== "phrases") ? [set("accounts", savedAccounts)] : [])]);
   }).catch(() => {}); // No IndexedDB in pure eval runs.
-  if (!usesIosVault) return writes;
-  const pending = writes.then(() => persistIosVault());
+  if (!usesSecureVault) return writes;
+  const pending = writes.then(() => persistSecureVault());
   void pending.catch(() => {});
   return pending;
 }
 
 export async function loadPersisted(): Promise<{ session: SavedSession | null }> {
-  if (usesIosVault && !state.secureStorage.ready) await loadSecrets();
+  if (usesSecureVault && !state.secureStorage.ready) await loadSecrets();
   const [snapshot, local, jev, session, luna, usage, jevBaseline, savedAccounts, translations, phrases] = await Promise.all([
     get<Snapshot>("snapshot"),
     get<LocalState>("local"),
     get<Record<string, JevRecord>>("jev"),
-    usesIosVault ? Promise.resolve(iosVault.data?.session ?? undefined) : get<SavedSession>("session"),
+    usesSecureVault ? Promise.resolve(secureVault.data?.session ?? undefined) : get<SavedSession>("session"),
     get<Record<string, LunaRecord>>("luna"),
     get<Record<string, UsageBucket>>("usage"),
     get<Record<string, JevRecord>>("jevBaseline"),
@@ -484,14 +484,14 @@ export async function loadPersisted(): Promise<{ session: SavedSession | null }>
 
 /** The session kept for the next start (the login it came from, "" state when Wilma ended it). */
 export async function savedSession(): Promise<SavedSession | null> {
-  if (usesIosVault) { await persistIosVault(); return upgradeSession(iosVault.data?.session ?? undefined); }
+  if (usesSecureVault) { await persistSecureVault(); return upgradeSession(secureVault.data?.session ?? undefined); }
   return upgradeSession(await get<SavedSession>("session").catch(() => undefined));
 }
 
 export function saveSession(session: SavedSession | null) {
-  if (usesIosVault) {
-    iosVault.update((v) => ({ ...v, session }));
-    return persistIosVault();
+  if (usesSecureVault) {
+    secureVault.update((v) => ({ ...v, session }));
+    return persistSecureVault();
   }
   writes = writes.then(() => session ? set("session", session) : del("session")).catch(() => {});
   return writes;
@@ -499,9 +499,9 @@ export function saveSession(session: SavedSession | null) {
 
 /** The other Wilma logins' sessions (data/logins.ts; the first login's is "session") kept for the next start, by login (accountKey). */
 export async function savedLinkedSessions(): Promise<Record<string, SavedSession>> {
-  if (usesIosVault) {
-    await persistIosVault();
-    return Object.fromEntries(Object.entries(iosVault.data!.linkedSessions).filter(([key, s]) => key === accountKey(s.account)));
+  if (usesSecureVault) {
+    await persistSecureVault();
+    return Object.fromEntries(Object.entries(secureVault.data!.linkedSessions).filter(([key, s]) => key === accountKey(s.account)));
   }
   await writes; // One just ended or kept is read as written.
   const saved = await get<Record<string, SavedSession>>("linkedSessions").catch(() => undefined);
@@ -510,8 +510,8 @@ export async function savedLinkedSessions(): Promise<Record<string, SavedSession
 
 /** Keep one of those sessions (null: forget it), or forget them all (no account). */
 export function saveLinkedSession(account: AccountInfo | null, session: SavedSession | null) {
-  if (usesIosVault) {
-    iosVault.update((v) => {
+  if (usesSecureVault) {
+    secureVault.update((v) => {
       const linkedSessions = account ? { ...v.linkedSessions } : {};
       if (account) {
         const key = accountKey(account)!;
@@ -521,7 +521,7 @@ export function saveLinkedSession(account: AccountInfo | null, session: SavedSes
       }
       return { ...v, linkedSessions };
     });
-    return persistIosVault();
+    return persistSecureVault();
   }
   writes = writes
     .then(async () => {
@@ -546,15 +546,15 @@ export async function forgetEverything() {
   timer = null;
   dirty.clear();
   await writes;
-  if (usesIosVault) {
-    iosVault.update(() => emptyVault());
-    await persistIosVault();
+  if (usesSecureVault) {
+    secureVault.update(() => emptyVault());
+    await persistSecureVault();
   }
   await clear();
   accounts = {};
   for (let i = localStorage.length - 1; i >= 0; i -= 1) {
     const key = localStorage.key(i);
-    if (key?.startsWith("wilmai.") && !(usesIosVault && key === IOS_INSTALLATION_KEY)) localStorage.removeItem(key);
+    if (key?.startsWith("wilmai.") && !(usesSecureVault && key === INSTALLATION_KEY)) localStorage.removeItem(key);
   }
   // A reset must not import a key from an earlier version on the next launch.
   localStorage.setItem(MOVED_KEY, "1");

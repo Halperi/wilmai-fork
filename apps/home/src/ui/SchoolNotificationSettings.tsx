@@ -1,3 +1,4 @@
+import { appPlatform } from "../platform";
 import { useEffect, useState } from "react";
 import { updateSettings, useApp } from "../data/store";
 import { intelligenceOn } from "../data/model";
@@ -46,7 +47,7 @@ export function SchoolNotificationSettings() {
       <div><b>{t("Show names and school details in notifications")}</b><span>{t("These details may appear on the lock screen. Off: notifications only say that school information is available.")}</span></div>
     </label>
     <label className="switch"><input type="checkbox" checked={options.background} onChange={(e) => change({ background: e.target.checked })} />
-      <div><b>{t("Allow background checks")}</b><span>{t("iOS chooses when checks run. A locked phone or battery settings can delay checks. Force-quitting stops checks until you reopen the app. These are local notifications, not live push alerts.")}</span></div>
+      <div><b>{t("Allow background checks")}</b><span>{t(appPlatform === "android" ? "Android may check while the app remains in memory. Closing it or battery restrictions can stop checks. Scheduled summaries use downloaded data; open the app regularly. These are local notifications, not live push alerts." : "iOS chooses when checks run. A locked phone or battery settings can delay checks. Force-quitting stops checks until you reopen the app. These are local notifications, not live push alerts.")}</span></div>
     </label>
     <p className="help-line">{t("The evening notification uses the latest downloaded plan. Open the app regularly to keep it current; changes made while the app is closed may be missing.")}</p>
     <button className="btn btn-sm" disabled={busy} onClick={() => {
