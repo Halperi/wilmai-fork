@@ -5,7 +5,14 @@
 //! window and notifications are in shell.rs.
 
 
+#[cfg(target_os = "ios")]
+mod ios_vault;
+mod navigation;
+#[cfg(all(target_os = "ios", debug_assertions))]
+mod ios_notification_smoke;
+#[cfg(desktop)]
 mod shell;
+#[cfg(desktop)]
 mod local_ai;
 #[cfg(all(feature = "local-ai", not(all(target_os = "macos", target_arch = "aarch64"))))]
 compile_error!("Local AI needs Apple Silicon macOS; build without the local-ai feature on this target.");
@@ -108,14 +115,21 @@ struct WireResponse {
     body: String,
 }
 
+fn known_wilma_url(url: &reqwest::Url) -> bool {
+    url.scheme() == "https" && url.port_or_known_default() == Some(443)
+        && url.username().is_empty() && url.password().is_none()
+        && url.host_str().is_some_and(|host| wilma_hosts().contains(host))
+}
+
 /// One request to a Wilma from the tenant list, redirects not followed.
 #[tauri::command]
 async fn wilma_send(wire: WireRequest) -> Result<WireResponse, String> {
     let url = reqwest::Url::parse(&wire.url).map_err(|_| "Bad URL".to_string())?;
     let host = url.host_str().unwrap_or_default().to_owned();
-    if url.scheme() != "https" || !wilma_hosts().contains(&host) {
+    if !known_wilma_url(&url) {
         return Err(format!("Not a known Wilma: {host}"));
     }
+    if !matches!(wire.method.as_str(), "GET" | "POST") { return Err("Unsupported Wilma method".into()); }
     let mut request = if wire.method == "POST" {
         http().post(url.clone()).body(wire.body.unwrap_or_default())
     } else {
@@ -131,7 +145,7 @@ async fn wilma_send(wire: WireRequest) -> Result<WireResponse, String> {
     for (name, value) in passed_headers(&wire.headers) {
         request = request.header(name, value);
     }
-    let response = request.send().await.map_err(|e| format!("Couldn't reach Wilma: {}", error_chain(&e)))?;
+    let response = request.send().await.map_err(|e| format!("Couldn't reach Wilma: {}", error_chain(&e.without_url())))?;
     let headers = response.headers();
     let text = |name| headers.get(name).and_then(|v: &reqwest::header::HeaderValue| v.to_str().ok()).map(str::to_owned);
     let location = text(LOCATION);
@@ -142,7 +156,7 @@ async fn wilma_send(wire: WireRequest) -> Result<WireResponse, String> {
         .filter_map(|v| v.to_str().ok().map(str::to_owned))
         .collect();
     let status = response.status().as_u16();
-    let body = response.text().await.map_err(|e| format!("Wilma's answer was cut off: {}", error_chain(&e)))?;
+    let body = response.text().await.map_err(|e| format!("Wilma's answer was cut off: {}", error_chain(&e.without_url())))?;
     Ok(WireResponse { status, url: url.to_string(), location, set_cookie, content_type, body })
 }
 
@@ -231,7 +245,7 @@ async fn openai_call(key: String, path: String, body: serde_json::Value) -> Resu
         .json(&body)
         .send()
         .await
-        .map_err(|e| format!("Couldn't reach OpenAI: {}", error_chain(&e)))?;
+        .map_err(|e| format!("Couldn't reach OpenAI: {}", error_chain(&e.without_url())))?;
     let status = response.status().as_u16();
     let retry_after = response.headers().get(RETRY_AFTER).and_then(|v| v.to_str().ok()).map(str::to_owned);
     let openai = from_openai(response.headers());
@@ -268,6 +282,7 @@ fn local_model_url(wire: &OllamaRequest) -> Result<(reqwest::Url, bool), String>
 }
 
 /// Local inference has no API key and never follows redirects or uses a proxy.
+#[cfg(desktop)]
 #[tauri::command]
 async fn ollama_call(manager: tauri::State<'_, local_ai::LocalAi>, wire: OllamaRequest) -> Result<JevResponse, String> {
     let (url, get) = local_model_url(&wire)?;
@@ -316,6 +331,7 @@ async fn clear_reports(app: tauri::AppHandle) -> Result<(), String> {
 /// storage, like the WilmAI CLI keeps its logins (macOS asked for the password
 /// after every new build of an app without a Developer ID); this only reads
 /// it once, to move it. Only names the app knows are accepted.
+#[cfg(desktop)]
 fn secret(name: &str) -> Result<keyring::Entry, String> {
     match name {
         "jev-key" => keyring::Entry::new("ai.wilm.home", name).map_err(|e| e.to_string()),
@@ -323,6 +339,7 @@ fn secret(name: &str) -> Result<keyring::Entry, String> {
     }
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn secret_get(name: String) -> Result<Option<String>, String> {
     match secret(&name)?.get_password() {
@@ -338,14 +355,22 @@ async fn secret_get(name: String) -> Result<Option<String>, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let context = tauri::generate_context!();
-    let builder = tauri::Builder::default();
+    let dev_origin = if tauri::is_dev() { context.config().build.dev_url.clone() } else { None };
+    let builder = tauri::Builder::default().plugin(tauri::plugin::Builder::<tauri::Wry, ()>::new("app-navigation")
+        .on_navigation(move |_webview, url| navigation::allowed(url, dev_origin.as_ref()))
+        .build());
     // Windows starts a second copy when the app is opened again from the Start menu (its window only hides on close)
     // or a notification is clicked in the notification centre: that copy hands over and quits, and this one shows.
     #[cfg(windows)]
     let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| shell::show(app)));
     let builder = builder.plugin(tauri_plugin_opener::init());
+    #[cfg(mobile)]
+    let builder = builder.plugin(tauri_plugin_notification::init());
+    #[cfg(target_os = "ios")]
+    let builder = builder.plugin(tauri_plugin_background_refresh::init());
     // The updater deserializes a required public key during startup. Development
     // packages use the manual checker until real signing credentials are configured.
+    #[cfg(desktop)]
     let builder = if has_signed_updater(context.config()) {
         builder.plugin(tauri_plugin_updater::Builder::new().build())
     } else {
@@ -353,18 +378,26 @@ pub fn run() {
     };
     builder
         .setup(|app| {
-            use tauri::Manager;
-            let dir = app.path().app_data_dir()?.join("local-ai");
-            let assets = app.path().resolve("local-ai", tauri::path::BaseDirectory::Resource)?;
-            #[cfg(debug_assertions)]
-            let assets = if assets.is_dir() { assets } else { std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources/local-ai") };
-            app.manage(local_ai::LocalAi::new(dir, assets));
-            shell::setup(app)?;
+            #[cfg(all(target_os = "ios", debug_assertions))]
+            if std::env::var("WILMAI_KEYCHAIN_SMOKE").as_deref() == Ok("1") { ios_vault::smoke_test(app.handle()); }
+            #[cfg(all(target_os = "ios", debug_assertions))]
+            if std::env::var("WILMAI_NOTIFICATION_SMOKE").as_deref() == Ok("1") { ios_notification_smoke::run(app.handle().clone()); }
+            #[cfg(desktop)] {
+                use tauri::Manager;
+                let dir = app.path().app_data_dir()?.join("local-ai");
+                let assets = app.path().resolve("local-ai", tauri::path::BaseDirectory::Resource)?;
+                #[cfg(debug_assertions)]
+                let assets = if assets.is_dir() { assets } else { std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources/local-ai") };
+                app.manage(local_ai::LocalAi::new(dir, assets));
+                shell::setup(app)?;
+            }
+            #[cfg(mobile)] let _ = app;
             Ok(())
         })
         // Closing the window hides it; the app goes on in the menu bar (shell.rs).
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                #[cfg(desktop)]
                 if window.label() == "main" {
                     api.prevent_close();
                     shell::hide(window);
@@ -372,37 +405,60 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            #[cfg(target_os = "ios")]
+            ios_vault::ios_vault_load,
+            #[cfg(target_os = "ios")]
+            ios_vault::ios_vault_save,
             wilma_send,
             jev_call,
             openai_call,
             openai_reach,
+            #[cfg(desktop)]
             ollama_call,
+            #[cfg(desktop)]
             local_ai::local_ai_status,
+            #[cfg(desktop)]
             local_ai::local_ai_install,
+            #[cfg(desktop)]
             local_ai::local_ai_cancel,
+            #[cfg(desktop)]
             local_ai::local_ai_stop,
+            #[cfg(desktop)]
             local_ai::local_ai_remove,
             save_report,
             clear_reports,
+            #[cfg(desktop)]
             secret_get,
+            #[cfg(desktop)]
             shared_session_get,
+            #[cfg(desktop)]
             shared_session_set,
+            #[cfg(desktop)]
             cli_logins,
+            #[cfg(desktop)]
             cli_login_secret,
             update_manifest,
             app_edition,
+            #[cfg(desktop)]
             restart_after_update,
+            #[cfg(desktop)]
             prepare_app_update,
+            #[cfg(desktop)]
             resume_after_failed_update,
+            #[cfg(desktop)]
             shell::tray_labels,
+            #[cfg(desktop)]
             shell::tray_title,
+            #[cfg(desktop)]
             shell::show_main,
+            #[cfg(desktop)]
             shell::notify
         ])
         .build(context)
         .expect("error while building WilmAI Home")
         .run(|app, event| {
             use tauri::Manager;
+            #[cfg(desktop)]
             if matches!(event, tauri::RunEvent::Exit) { app.state::<local_ai::LocalAi>().shutdown(); }
             // The Dock icon (or opening the app again) brings the window back.
             #[cfg(target_os = "macos")]
@@ -489,6 +545,7 @@ fn write_session(content: &str, key: &str, state: &str, now: u64) -> String {
     serde_json::Value::Object(all).to_string()
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn shared_session_get(key: String) -> Result<Option<SharedEntry>, String> {
     if !valid_session_key(&key) {
@@ -501,6 +558,7 @@ async fn shared_session_get(key: String) -> Result<Option<SharedEntry>, String> 
     }
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn shared_session_set(key: String, state: String) -> Result<(), String> {
     use std::io::Write;
@@ -604,11 +662,13 @@ fn read_cli_config() -> String {
     config_file().and_then(|path| std::fs::read_to_string(path).ok()).unwrap_or_default()
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn cli_logins() -> Vec<SavedLogin> {
     saved_profiles(&read_cli_config()).iter().map(to_saved_login).collect()
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn cli_login_secret(id: String) -> Result<LoginSecret, String> {
     let profiles = saved_profiles(&read_cli_config());
@@ -639,23 +699,26 @@ fn has_signed_updater(config: &tauri::Config) -> bool {
 #[tauri::command]
 fn app_edition(app: tauri::AppHandle) -> Edition {
     Edition {
-        local_ai: cfg!(feature = "local-ai"),
-        signed_updater: has_signed_updater(app.config()),
+        local_ai: cfg!(desktop) && cfg!(feature = "local-ai"),
+        signed_updater: cfg!(desktop) && has_signed_updater(app.config()),
     }
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 fn prepare_app_update(app: tauri::AppHandle) {
     use tauri::Manager;
     app.state::<local_ai::LocalAi>().shutdown();
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 fn resume_after_failed_update(app: tauri::AppHandle) {
     use tauri::Manager;
     app.state::<local_ai::LocalAi>().resume_after_update_failure();
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 fn restart_after_update(app: tauri::AppHandle) {
     use tauri::Manager;
@@ -702,6 +765,15 @@ async fn update_manifest() -> Result<Option<Release>, String> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn wilma_native_origin_requires_https_default_port_and_no_userinfo() {
+        let host = super::wilma_hosts().iter().next().unwrap();
+        assert!(super::known_wilma_url(&reqwest::Url::parse(&format!("https://{host}/")).unwrap()));
+        for url in [format!("http://{host}/"), format!("https://{host}:8443/"), format!("https://user:secret@{host}/"), "https://evil.invalid/".into()] {
+            assert!(!super::known_wilma_url(&reqwest::Url::parse(&url).unwrap()), "{url}");
+        }
+    }
+
     use super::*;
 
     #[test]

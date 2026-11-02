@@ -4,14 +4,14 @@ import { getVersion } from "@tauri-apps/api/app";
 import { listen } from "@tauri-apps/api/event";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { compare } from "semver";
-import { isDesktopApp } from "../wilma/transport";
+import { isDesktopApp, isMobileApp, isNativeApp } from "../wilma/transport";
 import { flushPersisted, getState, setState } from "./store";
 import { appEdition, APP_VERSION } from "./edition";
 import { failedCheck, type Release } from "./update-state";
 
 const EVERY_MS = 6 * 60 * 60 * 1000;
 export const compareVersions = compare;
-const currentVersion = () => isDesktopApp ? getVersion() : Promise.resolve(APP_VERSION);
+const currentVersion = () => isNativeApp ? getVersion() : Promise.resolve(APP_VERSION);
 let pending: Update | null = null;
 let installed = false;
 let checking: Promise<void> | null = null;
@@ -83,6 +83,11 @@ export async function installUpdate(): Promise<void> {
 let started = false;
 export function startUpdateChecks(): void {
   if (started) return;
+  if (isMobileApp) {
+    started = true;
+    void currentVersion().then((current) => setState((s) => ({ update: { ...s.update, current } }))).catch(() => {});
+    return;
+  }
   started = true;
   void currentVersion().then((current) => setState((s) => ({ update: { ...s.update, current } }))).catch(() => {});
   const maybe = () => { if (getState().settings.updateChecks) void checkForUpdate(); };

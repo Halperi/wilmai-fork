@@ -12,6 +12,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { SharedSession, WilmaTransport } from "@wilma-client/src/core";
 import { t } from "../i18n";
+import { isNativeApp, isMobileApp, isDesktopApp } from "../platform";
+export { isNativeApp, isMobileApp, isDesktopApp } from "../platform";
 
 export interface WireRequest {
   url: string;
@@ -66,7 +68,6 @@ async function native(command: string, args: Record<string, unknown>): Promise<u
   }
 }
 
-export const isDesktopApp = "__TAURI_INTERNALS__" in globalThis;
 /** The desktop app on Windows, where it goes on in the notification area by the clock rather than the menu bar. */
 export const onWindows = isDesktopApp && /Windows/.test(globalThis.navigator?.userAgent ?? "");
 let reportWrites: Promise<unknown> = Promise.resolve();
@@ -95,20 +96,21 @@ export const oldKeychain = isDesktopApp ? { get: (name: "jev-key") => invoke<str
  * Where the app keeps things: "on this computer" (desktop app) or "in this browser".
  * For whole sentences, choose the sentence by isDesktopApp instead: word order differs in Finnish.
  */
-export const here = (): string => (isDesktopApp ? t("on this computer") : t("in this browser"));
+export const here = (): string => (isMobileApp ? t("on this device") : isDesktopApp ? t("on this computer") : t("in this browser"));
 
-const desktop: DesktopBridge | undefined = isDesktopApp
+const desktop: DesktopBridge | undefined = isNativeApp
   ? {
       wilma: (wire) => native("wilma_send", { wire }),
       // { state, savedAt, by } or null; errors as { error }.
-      sessionGet: async (key) => (await native("shared_session_get", { key })) ?? { state: null },
-      sessionSet: async (key, state) => (await native("shared_session_set", { key, state })) ?? { ok: true },
+      sessionGet: async (key) => isMobileApp ? { state: null } : (await native("shared_session_get", { key })) ?? { state: null },
+      sessionSet: async (key, state) => isMobileApp ? { ok: true } : (await native("shared_session_set", { key, state })) ?? { ok: true },
       jev: (key, body) => native("jev_call", { key: key ?? "", body }),
       openai: (key, path, body) => native("openai_call", { key: key ?? "", path: path ?? "", body }),
       openaiReach: () => native("openai_reach", {}),
       ollama: (wire) => native("ollama_call", { wire }),
       // The CLI's saved logins on this computer (no secrets), for "Continue as".
       cliAccounts: async () => {
+        if (isMobileApp) return { accounts: [] };
         const logins = await native("cli_logins", {});
         return { accounts: Array.isArray(logins) ? logins.map((login, index) => ({ index, ...login })) : [] };
       },

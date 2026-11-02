@@ -1,3 +1,34 @@
 fn main() {
-  tauri_build::build()
+    tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
+        tauri_build::AppManifest::new().commands(&[
+            "ios_vault_load",
+            "ios_vault_save",
+            "wilma_send",
+            "jev_call",
+            "openai_call",
+            "openai_reach",
+            "ollama_call",
+            "local_ai_status",
+            "local_ai_install",
+            "local_ai_cancel",
+            "local_ai_stop",
+            "local_ai_remove",
+            "save_report",
+            "clear_reports",
+            "secret_get",
+            "shared_session_get",
+            "shared_session_set",
+            "cli_logins",
+            "cli_login_secret",
+            "update_manifest",
+            "app_edition",
+            "restart_after_update",
+            "prepare_app_update",
+            "resume_after_failed_update",
+            "tray_labels",
+            "tray_title",
+            "show_main",
+            "notify",
+        ])
+    )).expect("Tauri app permissions");
 }

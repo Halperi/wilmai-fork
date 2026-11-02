@@ -1,0 +1,184 @@
+# iOS preview
+
+This fork uses the existing Tauri 2 app on iOS. The React views, data engine,
+AI prompts and `packages/wilma-client` stay shared with upstream. There is no
+second mobile UI to keep in sync. Android has platform detection and command
+gating, but has not been generated or built in this change.
+
+## Primary phone target
+
+The owner's phone is **iPhone 15 with iOS 27.2**. Use that simulator as the
+primary UI check (393 × 852 points in portrait, including Dynamic Island and
+home-indicator insets). Keep layouts responsive so the same shared UI works
+on other phones too. Simulator layout checks do not establish performance,
+battery usage or keyboard behavior on the physical A16 device.
+
+Create an iPhone 15 simulator with iOS 27.2 in Xcode's Device Hub if it is missing,
+then run `pnpm ios:dev:iphone15`. `pnpm ios:dev` keeps the generic device picker.
+Check portrait and landscape, readable tab labels, horizontal tab scrolling,
+message reading and the home-indicator/keyboard area. The phone navigation keeps
+its tap targets at least 48 points high; overflowing tabs scroll horizontally.
+In landscape, iOS also keeps a 59-point minimum side gutter clear of the camera
+island while WebView safe-area values settle after rotation.
+
+## Build on a Mac
+
+Install full Xcode, launch it once, accept its license and install an iOS
+simulator runtime. Rust needs the simulator target; add the device target when
+building for your iPhone. Follow the same pnpm version as the repository.
+
+```sh
+# Repository root
+pnpm install --frozen-lockfile
+cd apps/home
+pnpm install --ignore-workspace --frozen-lockfile
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+export PATH="$DEVELOPER_DIR/usr/bin:$PATH"
+rustup target add aarch64-apple-ios-sim aarch64-apple-ios
+brew install xcodegen libimobiledevice cocoapods
+pnpm ios:init --ci
+pnpm ios:build --ci
+```
+
+`ios:init` generates the ignored Xcode project in `src-tauri/gen/apple`.
+`ios:build` packages the UI and Rust library into an unsigned debug application
+for an Apple Silicon simulator. This unsigned artifact verifies compilation;
+Keychain needs app signing for interactive use. Set your team in Xcode for signed
+development builds, and verify native secure storage on the physical iPhone.
+Run `pnpm ios:dev` for an interactive simulator build, or `pnpm ios:dev --open`
+to open the generated project in Xcode.
+
+The iOS configuration is `src-tauri/tauri.ios.conf.json`, merged automatically
+by Tauri. Its bundle ID is `fi.halperi.wilmai.home`, separate from the upstream
+desktop app. Minimum deployment version: iOS 16.0. The Vite development server
+uses `TAURI_DEV_HOST` when Tauri supplies it for a physical device.
+
+## Test on your own iPhone
+
+In Xcode Settings → Accounts, sign in with your own Apple Account. Connect and
+trust your iPhone, enable Developer Mode on the phone, then select your Personal
+Team under the generated app target's Signing & Capabilities. Choose your phone
+as the run destination and build from Xcode. Tauri also accepts the team ID via
+`APPLE_DEVELOPMENT_TEAM`; do not commit account credentials or provisioning files.
+A free Personal Team build needs periodic reprovisioning. A simulator `.app`
+cannot be installed on a physical phone: build the device target separately.
+
+## What the prototype changes
+
+- Mobile uses the existing Rust HTTP commands. Wilma cookies and redirects stay
+  under the shared client/engine; browser CORS restrictions do not apply.
+- Mobile does not read desktop CLI accounts, the old Mac Keychain entry, or the
+  shared CLI session file. Existing upstream multi-account logic stays shared.
+- Desktop tray, window hiding, local AI runtimes and desktop installers are
+  excluded from mobile. HTTPS links open through the native opener plugin.
+- The viewport uses safe-area insets and the dynamic viewport height. Mobile
+  inputs use at least 16px text to avoid iOS focus zoom.
+- Periodic refresh runs in the foreground. Hiding the app requests a persistence
+  flush; iOS can still suspend or terminate a process without a final callback.
+
+## Limits before daily use
+
+On iOS, passwords, optional API keys and Wilma session cookies are kept in a
+private Keychain record, protected with `WhenUnlockedThisDeviceOnly` and cloud
+synchronization disabled. Passwords and linked sessions use the existing
+normalized school/account identity. School content and drafts continue to use
+the app's private browser storage; the whole school-data cache is not a Keychain
+store.
+
+The first launch migrates legacy browser credentials/cookies, and removes those
+copies only after the Keychain write succeeds. Failed writes block the UI and
+retain pending values for retry; there is no plaintext fallback. Logout clears
+session records, reset clears all vault secrets, and a new installation ID
+prevents Keychain data left after uninstall from automatically signing in a
+fresh install. Desktop and Android storage behavior is unchanged.
+
+Use the sample family for initial UI checks. Keep team IDs, device IDs,
+certificates and provisioning files out of source control. A debug-only native
+smoke test (`WILMAI_KEYCHAIN_SMOKE=1` at process launch) uses synthetic values in
+a separate Keychain service and writes only pass/fail diagnostics to the app's
+data directory (`keychain-smoke.json`). It never reads the user's vault.
+
+There are no background refresh guarantees or APNs push notifications. Camera and
+attachment picker integration, mobile update delivery and local AI are outside this prototype. Do not infer live Wilma login or message-send coverage from the demo
+or the offline tests. Wilma may invalidate another device's session when the
+same account logs in again; there is no cross-device session sharing here.
+
+## School notifications and tomorrow summary
+
+Settings → Notifications enables the iOS permission and individual categories:
+new messages/replies, lesson notes/unexplained absences, exam marks and tomorrow's
+deadlines. Initial observations establish a baseline per login/category; they
+do not replay old school history. Normal retries preserve failed events and
+avoid duplicate delivery. A burst is grouped into one notification.
+
+School names, children and grades are absent from OS notification text by
+default. Showing details is a separate opt-in. OS extras contain an opaque
+random family token, a whitelisted view and an optional numeric message key.
+A stale/other-family notification opens the Wilmas page instead of selecting
+an account or showing another family's item. Sign-out/reset clear pending and
+delivered notifications; switching families replaces pending plans.
+
+Today uses the existing per-child school-day overview, without a duplicate
+tomorrow-summary card above it. The optional AI-enabled evening notification
+uses downloaded school hours, exams, confirmed calendar events and due actions.
+It reuses cached, validated AI readings and makes no separate AI request. It defaults
+to 19:00. Up to two evenings are scheduled as one-shot local requests, based on
+data no older than 36 hours at delivery. Stale plans are not repeated forever.
+Changes made after the last download can be missing while the app is closed.
+
+The iOS-only `background-refresh` plugin registers BGAppRefresh, asks for an
+opportunity after at least 15 minutes, and finishes within 25 seconds or on OS
+expiration. It runs the existing engine's listing-only mode: no unread message
+is opened and no AI analysis is started. Protected data must be available;
+password/cookie protection remains WhenUnlockedThisDeviceOnly. iOS scheduling,
+Low Power Mode, the lock state and force-quit can prevent a refresh. Force-quit
+stops checks until reopening. Local notifications already scheduled are handled
+by iOS. This is not a real-time push service and needs no paid APNs membership.
+
+The app excludes school caches from backup, applies Complete file protection,
+and covers the UI while inactive so app-switcher snapshots do not expose school
+data. See [the security review](security-review-2026-11-02.md) for scope and
+remaining risks.
+
+## App icon
+
+`pnpm ios:icons` generates the iOS sizes from the same committed
+`src-tauri/icons/icon.png` used by the desktop app. iOS init and the iOS build/dev
+hooks run it automatically, including refreshing an existing generated Xcode
+asset catalog and registering `AppIcon` in its app target build settings.
+Local signing settings are preserved. The original icon is preserved, with an opaque white background
+required for iOS. Generated sizes stay ignored; upstream desktop icon changes
+flow into the next mobile build.
+
+## Keep upstream updates easy
+
+Merge upstream into this fork regularly. Keep mobile-specific behavior in
+`src/platform.ts`, native command gates, the iOS config and small style overrides.
+Add new business behavior to the existing shared engine and views. When upstream
+adds a native command or OS integration, explicitly decide which platforms get
+it; do not equate `isNativeApp` with `isDesktopApp`.
+
+Run `pnpm typecheck`, `TZ=UTC pnpm test:mobile` and the Home regression tests.
+The `home-ios` workflow builds the simulator app for relevant pull requests and
+manual runs. Tauri init preserves existing generated files. After native dependency/configuration
+changes, move the generated directory aside and generate it again; first preserve
+any local signing or native project changes. Keep those settings in configuration
+when possible. Keep generated Xcode files and signing material out of Git.
+
+## Verified locally (2026-11-02)
+
+Xcode 27.2 / iOS 27.2: both the arm64 simulator archive and the signed device IPA
+build successfully. The signed app is installed on the owner's physical iPhone
+15; its real SecItem smoke test passes create/read/update/delete using synthetic
+data. Mocked storage regressions cover migration failure/retry, concurrent
+logout, reset, corrupt records and two-account isolation. TypeScript passes;
+the Home offline suite covers storage, notifications and native policy; the
+desktop Rust suite covers origin/navigation guards too. See the security review
+for the final validation counts. An unsigned simulator archive cannot access Keychain (-34018); it is a
+compile artifact, not a passing native secure-storage test.
+
+The earlier sample-family UI checks covered the message list/reader and process
+restart in an iPhone 18 Pro simulator. Live Wilma login/message sending and the natural timing of BGAppRefresh
+still need user verification. The native notification test verifies permission,
+submission, pending-request listing/cancellation, background registration and
+file/backup protection; it contains no school data.

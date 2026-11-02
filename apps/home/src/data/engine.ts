@@ -947,6 +947,7 @@ export async function signOut() {
     for (const l of logins(snap)) setStatus(l.slot, { live: false, why: t("You signed out."), rejoinAt: null, failed: null });
   }
   setState({ phase: "signed-out" });
+  await (await import("./mobile-notifications")).clearSchoolNotifications().catch(() => {});
   await saveSession(null); // Deliberate sign-out must never automatically rejoin.
   await saveLinkedSession(null, null);
   await flushPersisted();
@@ -955,6 +956,7 @@ export async function signOut() {
 
 /** Explicit destructive reset, separate from ending a Wilma session. */
 export async function resetApp() {
+  await (await import("./mobile-notifications")).clearSchoolNotifications().catch(() => {});
   endSessions();
   activateAccount(null);
   setState({ phase: "loading" });
@@ -1155,7 +1157,7 @@ function mergeNews(current: Record<number, NewsRec>, lists: [string, NewsItem[]]
  * Read Wilma now (one sync at a time). `again`: something changed that a running sync may have missed (a Wilma was
  * added), so read once more after it.
  */
-export function syncNow(again = false): Promise<void> {
+export function syncNow(again = false, options: { background?: boolean } = {}): Promise<void> {
   if (!sessions.size) return Promise.resolve();
   if (syncing) {
     syncAgain ||= again;
@@ -1165,7 +1167,7 @@ export function syncNow(again = false): Promise<void> {
     do {
       syncAgain = false;
       const scope = accountScope();
-      await runSync();
+      await runSync(Boolean(options.background));
       // Another account meanwhile: read it too.
       if (scope !== accountScope()) syncAgain = true;
     } while (syncAgain && sessions.size);
@@ -1188,7 +1190,7 @@ function ofLogin<T>(items: Record<number, T>, slot: number): Record<number, T> {
   return Object.fromEntries(Object.entries(items).filter(([id]) => loginOfId(Number(id)) === slot)) as Record<number, T>;
 }
 
-async function runSync() {
+async function runSync(background = false) {
   const scope = accountScope();
   const current = () => scope === accountScope() && sessions.size > 0;
   const patch = (update: (snap: Snapshot) => Snapshot) => patchSnapshot(update, scope);
@@ -1304,6 +1306,8 @@ async function runSync() {
       };
     });
 
+    if (!background) {
+    // A bounded phone refresh lists changes only: no read-status changes or cloud AI in the background.
     // Details: recent bulletins, and messages Wilma already shows as read (or all, if allowed).
     const s = getState().snapshot!;
     // Opening unread messages ahead (Wilma then shows them as read) is for the AI: without one, they wait for the parent.
@@ -1335,6 +1339,7 @@ async function runSync() {
     // A Wilma whose session ended waits for signing in again (the Wilmas page); what the others read stands.
     for (const [slot, err] of failed) if (sessionGone(err) && sessionOf(slot) === reading.get(slot)) handleError(err, slot);
     for (const slot of lists.keys()) if (!failed.has(slot)) keep(slot);
+    }
     if (lists.size) patch((x) => ({ ...x, syncedAt: new Date() }));
     // A Wilma that couldn't be read (a slow network, not an ended session) is said in the sync line, by its school when there are more.
     const [slot, unread] = [...failed].find(([, err]) => !sessionGone(err)) ?? [0, null];
@@ -1347,8 +1352,7 @@ async function runSync() {
     if (current()) handleError(err);
   }
   if (!current()) return;
-  void runJev();
-  void runLuna();
+  if (!background) { void runJev(); void runLuna(); }
 }
 
 async function loadThread(id: number) {

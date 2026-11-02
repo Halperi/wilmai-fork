@@ -136,6 +136,9 @@ export interface LocalState {
   /** Notifications sent (desktop app), by item key ("#due" for a deadline's reminder), and since when items notify. */
   notified?: Record<string, number>;
   notifyFrom?: number;
+  schoolNotificationLedger?: import("./school-notifications").NotificationLedger;
+  schoolNotificationToken?: string;
+  schoolNotificationRequests?: Record<string, { id: number; signature: string }>;
   /** Absences reported from this app: child → date → when and why. */
   reported?: Record<string, Record<string, { at: number; reason: string }>>;
   /** The calendar: suggestions taken or dismissed, the kinds that go to the calendar, and what's been written to it. */
@@ -330,6 +333,7 @@ export interface Settings {
   lunaChecks?: { choices?: boolean; fields?: boolean; crossItem?: boolean };
   /** Notify when something new needs the parent, and the evening before a deadline (desktop app). */
   notify?: boolean;
+  schoolNotifications?: Partial<import("./school-notifications").NotificationOptions>;
   /**
    * Stay signed in: when Wilma ends the app's session, sign in again by itself (with the WilmAI CLI's saved login, or
    * the password kept below), backing off while Wilma is in use elsewhere. Off: the parent signs in (one click).

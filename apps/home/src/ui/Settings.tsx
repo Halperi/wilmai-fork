@@ -6,7 +6,8 @@ import { isDemo, syncNow } from "../data/engine";
 import { AISettings } from "./AISettings";
 import { notificationsAvailable, testNotification } from "../data/notify";
 import { Icon } from "./bits";
-import { onWindows } from "../wilma/transport";
+import { SchoolNotificationSettings } from "./SchoolNotificationSettings";
+import { isMobileApp, onWindows } from "../wilma/transport";
 import { t } from "../i18n";
 import { intelligenceOn, type Settings as SettingsModel } from "../data/model";
 
@@ -75,7 +76,7 @@ export function Settings() {
         <LanguageChoice />
       </section>
 
-      {notificationsAvailable ? (
+      {isMobileApp ? <SchoolNotificationSettings /> : notificationsAvailable ? (
         <section className="card">
           <h2>
             <Icon name="bell" /> {t("Notifications")}

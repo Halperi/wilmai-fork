@@ -1,0 +1,22 @@
+{
+  "identifier": "ios-background",
+  "description": "Bounded, optional local school refresh on iOS.",
+  "platforms": [
+    "iOS"
+  ],
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "background-refresh:allow-configure",
+    "background-refresh:allow-claim",
+    "background-refresh:allow-pending-ids",
+    "background-refresh:allow-privacy-status",
+    "background-refresh:allow-take-tap",
+    "background-refresh:allow-complete",
+    "background-refresh:allow-register-listener",
+    "background-refresh:allow-remove-listener",
+    "allow-ios-vault-load",
+    "allow-ios-vault-save"
+  ]
+}

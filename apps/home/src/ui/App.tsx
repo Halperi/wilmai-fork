@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { accountKey, accountStorageKey, getState, useApp } from "../data/store";
+import { flushPersisted, loadSecrets, accountKey, accountStorageKey, getState, useApp } from "../data/store";
 import { intelligenceProvider } from "../data/model";
 import { OPENAI_PAUSE_MS } from "../luna/client";
 import { checkOpenAIAgain } from "../luna/events";
 import { buildFeed, forChildren, needsYou } from "../data/feed";
 import { getBack, keepAlive, leaveDemo, syncNow, isDemo } from "../data/engine";
 import { logins, schoolOf } from "../data/logins";
-import { isDesktopApp } from "../wilma/transport";
+import { isDesktopApp, isMobileApp } from "../wilma/transport";
+import { usesIosVault } from "../data/ios-vault";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { notificationsAvailable, showWindow, startNotifications, trayLabels } from "../data/notify";
 import { addDays, today, weekday } from "../data/dates";
@@ -32,9 +33,17 @@ import { Shortcuts } from "./Shortcuts";
 
 export function App() {
   const phase = useApp((s) => s.phase);
+  const secureStorage = useApp((s) => s.secureStorage);
   const account = useApp((s) => accountKey(s.snapshot?.account));
   const via = useApp((s) => s.snapshot?.account.via ?? null);
   const route = useRoute();
+  const screen = screenFor(phase, via, route.view);
+  useLayoutEffect(() => {
+    if (isMobileApp) window.scrollTo(0, 0);
+  }, [screen, route.view]);
+  useEffect(() => {
+    if (isMobileApp) document.querySelector('.nav a[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [screen, route.view]);
   // Before anything renders: the app's words and dates in the chosen language (the menu bar's menu too).
   const language = resolveLanguage(useApp((s) => s.settings.language) ?? "auto");
   setLanguage(language);
@@ -52,6 +61,8 @@ export function App() {
   // side's tick wakes it. Signed out, each check looks for a way back in (engine's getBack).
   useEffect(() => {
     const maybe = (now = false) => {
+      if (isMobileApp && document.visibilityState !== "visible") return;
+      if (usesIosVault && !getState().secureStorage.ready) return;
       const { sync, settings, phase } = getState();
       if (phase === "signed-out") return void getBack();
       if (phase !== "ready") return;
@@ -65,7 +76,15 @@ export function App() {
     document.addEventListener("visibilitychange", onTime);
     // "Check Wilma now" in the menu bar: signed out, the window opens on the sign-in page.
     const checkNow = () => (getState().phase === "signed-out" ? showWindow() : maybe(true));
-    const stop = startNotifications(onTime, checkNow, (key) => (key === "signin" ? undefined : go(key.startsWith("note:") ? "notes" : "inbox", key)));
+    const stop = startNotifications(onTime, checkNow, (key) => {
+      if (key === "signin") return;
+      if (key === "@grades") return go("grades");
+      if (key === "@today") return go("today");
+      if (key === "@notes") return go("notes");
+      if (key === "@inbox") return go("inbox");
+      if (key === "@wilmas") return go("wilmas");
+      go(key.startsWith("note:") ? "notes" : "inbox", key);
+    });
     return () => {
       clearInterval(t);
       document.removeEventListener("visibilitychange", onTime);
@@ -81,8 +100,20 @@ export function App() {
     }, Math.max(0, blockedAt + OPENAI_PAUSE_MS - Date.now()));
     return () => clearTimeout(t);
   }, [blockedAt]);
+  if (usesIosVault && !secureStorage.ready) return (
+    <main className="page" role={secureStorage.error ? "alert" : "status"}>
+      <h1>{t("Secure storage")}</h1>
+      <p>{secureStorage.error ?? t("Opening secure storage…")}</p>
+      {secureStorage.error ? <>
+        <p>{t("Your latest changes may not have been saved. Retry before closing the app.")}</p>
+        <button className="btn btn-primary" onClick={() => {
+          void loadSecrets().then(() => flushPersisted()).then(() => window.location.reload()).catch(() => {});
+        }}>{t("Try again")}</button>
+      </> : null}
+    </main>
+  );
   // The app once every Wilma is signed in; otherwise the Wilma page (data/logins.ts screenFor).
-  switch (screenFor(phase, via, route.view)) {
+  switch (screen) {
     case "loading":
       return null;
     case "wilmas":

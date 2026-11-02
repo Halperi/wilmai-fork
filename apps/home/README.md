@@ -18,6 +18,11 @@ and what has been verified. Releasing is in
 [docs/local-releases.md](docs/local-releases.md), the eval suite in
 [evals/README.md](evals/README.md).
 
+## iOS preview in this fork
+
+The iPhone prototype shares this app's React UI, engine and Wilma client.
+See [docs/ios.md](docs/ios.md) for the simulator build, device signing and current limitations.
+
 ## Try it
 
 ```bash
