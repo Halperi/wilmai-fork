@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.pm.ApplicationInfo
 import android.content.Context
 import android.content.Intent
 import android.webkit.WebView
@@ -33,6 +34,9 @@ class AndroidDevicePlugin(private val activity: Activity): Plugin(activity) {
     private var tap: JSObject? = null
     override fun load(webView: WebView) {
         super.load(webView)
+        // Some userdebug system images expose WebViews by default even for release APKs.
+        // Respect the APK's own flag instead of inheriting that system-wide default.
+        WebView.setWebContentsDebuggingEnabled((activity.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0)
         activity.window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         (activity as AppCompatActivity).onBackPressedDispatcher.addCallback(activity, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
