@@ -76,7 +76,15 @@ export function App() {
     document.addEventListener("visibilitychange", onTime);
     // "Check Wilma now" in the menu bar: signed out, the window opens on the sign-in page.
     const checkNow = () => (getState().phase === "signed-out" ? showWindow() : maybe(true));
-    const stop = startNotifications(onTime, checkNow, (key) => (key === "signin" ? undefined : go(key.startsWith("note:") ? "notes" : "inbox", key)));
+    const stop = startNotifications(onTime, checkNow, (key) => {
+      if (key === "signin") return;
+      if (key === "@grades") return go("grades");
+      if (key === "@today") return go("today");
+      if (key === "@notes") return go("notes");
+      if (key === "@inbox") return go("inbox");
+      if (key === "@wilmas") return go("wilmas");
+      go(key.startsWith("note:") ? "notes" : "inbox", key);
+    });
     return () => {
       clearInterval(t);
       document.removeEventListener("visibilitychange", onTime);

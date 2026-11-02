@@ -98,11 +98,46 @@ smoke test (`WILMAI_KEYCHAIN_SMOKE=1` at process launch) uses synthetic values i
 a separate Keychain service and writes only pass/fail diagnostics to the app's
 data directory (`keychain-smoke.json`). It never reads the user's vault.
 
-There are no background refresh guarantees, APNs push notifications, camera or
-attachment picker integration, mobile update delivery, or local AI in this
-prototype. Do not infer live Wilma login or message-send coverage from the demo
+There are no background refresh guarantees or APNs push notifications. Camera and
+attachment picker integration, mobile update delivery and local AI are outside this prototype. Do not infer live Wilma login or message-send coverage from the demo
 or the offline tests. Wilma may invalidate another device's session when the
 same account logs in again; there is no cross-device session sharing here.
+
+## School notifications and tomorrow summary
+
+Settings → Notifications enables the iOS permission and individual categories:
+new messages/replies, lesson notes/unexplained absences, exam marks and tomorrow's
+deadlines. Initial observations establish a baseline per login/category; they
+do not replay old school history. Normal retries preserve failed events and
+avoid duplicate delivery. A burst is grouped into one notification.
+
+School names, children and grades are absent from OS notification text by
+default. Showing details is a separate opt-in. OS extras contain an opaque
+random family token, a whitelisted view and an optional numeric message key.
+A stale/other-family notification opens the Wilmas page instead of selecting
+an account or showing another family's item. Sign-out/reset clear pending and
+delivered notifications; switching families replaces pending plans.
+
+With AI enabled, Tomorrow's school day shows downloaded school hours, exams,
+confirmed calendar events and due actions. It reuses cached, validated AI
+readings and makes no separate AI request. The optional evening alert defaults
+to 19:00. Up to two evenings are scheduled as one-shot local requests, based on
+data no older than 36 hours at delivery. Stale plans are not repeated forever.
+Changes made after the last download can be missing while the app is closed.
+
+The iOS-only `background-refresh` plugin registers BGAppRefresh, asks for an
+opportunity after at least 15 minutes, and finishes within 25 seconds or on OS
+expiration. It runs the existing engine's listing-only mode: no unread message
+is opened and no AI analysis is started. Protected data must be available;
+password/cookie protection remains WhenUnlockedThisDeviceOnly. iOS scheduling,
+Low Power Mode, the lock state and force-quit can prevent a refresh. Force-quit
+stops checks until reopening. Local notifications already scheduled are handled
+by iOS. This is not a real-time push service and needs no paid APNs membership.
+
+The app excludes school caches from backup, applies Complete file protection,
+and covers the UI while inactive so app-switcher snapshots do not expose school
+data. See [the security review](security-review-2026-11-02.md) for scope and
+remaining risks.
 
 ## App icon
 
@@ -136,10 +171,13 @@ build successfully. The signed app is installed on the owner's physical iPhone
 15; its real SecItem smoke test passes create/read/update/delete using synthetic
 data. Mocked storage regressions cover migration failure/retry, concurrent
 logout, reset, corrupt records and two-account isolation. TypeScript passes;
-the Home offline suite has 111 passes and one skipped test, including 13 mobile
-tests; the desktop Rust library suite has 14 passes and one ignored test. An unsigned simulator archive cannot access Keychain (-34018); it is a
+the Home offline suite covers storage, notifications and native policy; the
+desktop Rust suite covers origin/navigation guards too. See the security review
+for the final validation counts. An unsigned simulator archive cannot access Keychain (-34018); it is a
 compile artifact, not a passing native secure-storage test.
 
 The earlier sample-family UI checks covered the message list/reader and process
-restart in an iPhone 18 Pro simulator. Live Wilma login, real message sending
-and background notifications still need explicit user verification.
+restart in an iPhone 18 Pro simulator. Live Wilma login/message sending and the natural timing of BGAppRefresh
+still need user verification. The native notification test verifies permission,
+submission, pending-request listing/cancellation, background registration and
+file/backup protection; it contains no school data.

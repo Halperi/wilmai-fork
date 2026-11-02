@@ -22,7 +22,10 @@ if (isDesktopApp) setUpDesktopWindow();
 if (isMobileApp) {
   document.documentElement.classList.add("mobile", appPlatform);
   const save = () => { void flushPersisted().catch(() => {}); };
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") save();
+    else if (getState().secureStorage.ready) { void runJev(); runLuna(); }
+  });
   window.addEventListener("pagehide", save);
 }
 if (isNativeApp) document.addEventListener("click", (e) => {
@@ -34,7 +37,10 @@ if (isNativeApp) document.addEventListener("click", (e) => {
     window.location.hash = href;
     return;
   }
-  if (!isExternalHttpsLink(link.href, window.location.href)) return;
+  if (!isExternalHttpsLink(link.href, window.location.href)) {
+    if (!href.startsWith("#")) e.preventDefault();
+    return;
+  }
   e.preventDefault();
   void openUrl(link.href);
 });

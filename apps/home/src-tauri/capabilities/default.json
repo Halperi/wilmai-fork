@@ -18,7 +18,33 @@
           "url": "https://*"
         }
       ]
-    }
+    },
+    "allow-wilma-send",
+    "allow-jev-call",
+    "allow-openai-call",
+    "allow-openai-reach",
+    "allow-ollama-call",
+    "allow-local-ai-status",
+    "allow-local-ai-install",
+    "allow-local-ai-cancel",
+    "allow-local-ai-stop",
+    "allow-local-ai-remove",
+    "allow-save-report",
+    "allow-clear-reports",
+    "allow-secret-get",
+    "allow-shared-session-get",
+    "allow-shared-session-set",
+    "allow-cli-logins",
+    "allow-cli-login-secret",
+    "allow-update-manifest",
+    "allow-app-edition",
+    "allow-restart-after-update",
+    "allow-prepare-app-update",
+    "allow-resume-after-failed-update",
+    "allow-tray-labels",
+    "allow-tray-title",
+    "allow-show-main",
+    "allow-notify"
   ],
   "platforms": [
     "macOS",

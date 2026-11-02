@@ -1,3 +1,4 @@
+import { TomorrowSummary } from "./TomorrowSummary";
 /*
  * Today: what a parent looks at in the morning or the evening before.
  *
@@ -76,6 +77,7 @@ export function Today({ feed }: { feed: FeedItem[] }) {
 
   return (
     <main className="page today">
+      <TomorrowSummary />
       <AIBudgetWarning />
       <OpenAIBlocked where="today" />
       <div className="hello">

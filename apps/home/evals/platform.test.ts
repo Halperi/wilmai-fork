@@ -14,7 +14,7 @@ test("mobile browsers stay web; Tauri targets distinguish phone from desktop", (
 
 test("native links keep routes in the app and open only external HTTPS destinations", () => {
   const origin = "https://tauri.localhost/";
-  for (const href of ["#/inbox/message%3A123", "/", `${origin}#/settings`, "http://school.inschool.fi/", "javascript:void(0)"]) {
+  for (const href of ["#/inbox/message%3A123", "/", `${origin}#/settings`, "http://school.inschool.fi/", "javascript:void(0)", "https://user:secret@school.inschool.fi/", "https://[invalid"]) {
     assert.equal(isExternalHttpsLink(href, origin), false, href);
   }
   assert.equal(isExternalHttpsLink("https://school.inschool.fi/", origin), true);

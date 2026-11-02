@@ -24,10 +24,11 @@ import { listen } from "@tauri-apps/api/event";
 import { getState, setState, subscribe } from "./store";
 import { buildFeed, isNeedsYou, needsYou, type FeedItem } from "./feed";
 import { addDays, dateOf, deadlineDay, shortDate } from "./dates";
-import { isDesktopApp, onWindows } from "../wilma/transport";
+import { isDesktopApp, isMobileApp, onWindows } from "../wilma/transport";
 import type { LocalState, Snapshot } from "./model";
 import { firstSyncOf, loginOfItem, logins } from "./logins";
 import { t } from "../i18n";
+import { startSchoolNotifications, testSchoolNotification } from "./mobile-notifications";
 
 /** New items notify for this long after they arrive. */
 const FRESH_MS = 2 * 86_400_000;
@@ -158,6 +159,7 @@ function schedule() {
 
 /** A test notification from Settings (the first one may make macOS ask whether the app may notify). */
 export function testNotification(): Promise<unknown> {
+  if (isMobileApp) return testSchoolNotification();
   return invoke("notify", { title: "WilmAI Home", body: t("Notifications work. This is how something that needs you will show."), key: null });
 }
 
@@ -178,6 +180,7 @@ export function showWindow(): void {
  * a clicked notification opening its item. `tick` checks Wilma if it's time; `checkNow` checks at once; `open` opens an item.
  */
 export function startNotifications(tick: () => void, checkNow: () => void, open: (key: string) => void): () => void {
+  if (isMobileApp) return startSchoolNotifications(open);
   if (!isDesktopApp) return () => {};
   const stops = [subscribe(schedule)];
   const listening = [
@@ -194,7 +197,7 @@ export function startNotifications(tick: () => void, checkNow: () => void, open:
   };
 }
 
-export const notificationsAvailable = isDesktopApp;
+export const notificationsAvailable = isDesktopApp || isMobileApp;
 
 /** The first time a Windows user closes the window, where the app went: Windows apps usually quit then. */
 function tellWhereItWent(): void {

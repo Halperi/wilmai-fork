@@ -7,6 +7,9 @@
 
 #[cfg(target_os = "ios")]
 mod ios_vault;
+mod navigation;
+#[cfg(all(target_os = "ios", debug_assertions))]
+mod ios_notification_smoke;
 #[cfg(desktop)]
 mod shell;
 #[cfg(desktop)]
@@ -112,14 +115,21 @@ struct WireResponse {
     body: String,
 }
 
+fn known_wilma_url(url: &reqwest::Url) -> bool {
+    url.scheme() == "https" && url.port_or_known_default() == Some(443)
+        && url.username().is_empty() && url.password().is_none()
+        && url.host_str().is_some_and(|host| wilma_hosts().contains(host))
+}
+
 /// One request to a Wilma from the tenant list, redirects not followed.
 #[tauri::command]
 async fn wilma_send(wire: WireRequest) -> Result<WireResponse, String> {
     let url = reqwest::Url::parse(&wire.url).map_err(|_| "Bad URL".to_string())?;
     let host = url.host_str().unwrap_or_default().to_owned();
-    if url.scheme() != "https" || !wilma_hosts().contains(&host) {
+    if !known_wilma_url(&url) {
         return Err(format!("Not a known Wilma: {host}"));
     }
+    if !matches!(wire.method.as_str(), "GET" | "POST") { return Err("Unsupported Wilma method".into()); }
     let mut request = if wire.method == "POST" {
         http().post(url.clone()).body(wire.body.unwrap_or_default())
     } else {
@@ -135,7 +145,7 @@ async fn wilma_send(wire: WireRequest) -> Result<WireResponse, String> {
     for (name, value) in passed_headers(&wire.headers) {
         request = request.header(name, value);
     }
-    let response = request.send().await.map_err(|e| format!("Couldn't reach Wilma: {}", error_chain(&e)))?;
+    let response = request.send().await.map_err(|e| format!("Couldn't reach Wilma: {}", error_chain(&e.without_url())))?;
     let headers = response.headers();
     let text = |name| headers.get(name).and_then(|v: &reqwest::header::HeaderValue| v.to_str().ok()).map(str::to_owned);
     let location = text(LOCATION);
@@ -146,7 +156,7 @@ async fn wilma_send(wire: WireRequest) -> Result<WireResponse, String> {
         .filter_map(|v| v.to_str().ok().map(str::to_owned))
         .collect();
     let status = response.status().as_u16();
-    let body = response.text().await.map_err(|e| format!("Wilma's answer was cut off: {}", error_chain(&e)))?;
+    let body = response.text().await.map_err(|e| format!("Wilma's answer was cut off: {}", error_chain(&e.without_url())))?;
     Ok(WireResponse { status, url: url.to_string(), location, set_cookie, content_type, body })
 }
 
@@ -235,7 +245,7 @@ async fn openai_call(key: String, path: String, body: serde_json::Value) -> Resu
         .json(&body)
         .send()
         .await
-        .map_err(|e| format!("Couldn't reach OpenAI: {}", error_chain(&e)))?;
+        .map_err(|e| format!("Couldn't reach OpenAI: {}", error_chain(&e.without_url())))?;
     let status = response.status().as_u16();
     let retry_after = response.headers().get(RETRY_AFTER).and_then(|v| v.to_str().ok()).map(str::to_owned);
     let openai = from_openai(response.headers());
@@ -345,12 +355,19 @@ async fn secret_get(name: String) -> Result<Option<String>, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let context = tauri::generate_context!();
-    let builder = tauri::Builder::default();
+    let dev_origin = if tauri::is_dev() { context.config().build.dev_url.clone() } else { None };
+    let builder = tauri::Builder::default().plugin(tauri::plugin::Builder::<tauri::Wry, ()>::new("app-navigation")
+        .on_navigation(move |_webview, url| navigation::allowed(url, dev_origin.as_ref()))
+        .build());
     // Windows starts a second copy when the app is opened again from the Start menu (its window only hides on close)
     // or a notification is clicked in the notification centre: that copy hands over and quits, and this one shows.
     #[cfg(windows)]
     let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| shell::show(app)));
     let builder = builder.plugin(tauri_plugin_opener::init());
+    #[cfg(mobile)]
+    let builder = builder.plugin(tauri_plugin_notification::init());
+    #[cfg(target_os = "ios")]
+    let builder = builder.plugin(tauri_plugin_background_refresh::init());
     // The updater deserializes a required public key during startup. Development
     // packages use the manual checker until real signing credentials are configured.
     #[cfg(desktop)]
@@ -363,6 +380,8 @@ pub fn run() {
         .setup(|app| {
             #[cfg(all(target_os = "ios", debug_assertions))]
             if std::env::var("WILMAI_KEYCHAIN_SMOKE").as_deref() == Ok("1") { ios_vault::smoke_test(app.handle()); }
+            #[cfg(all(target_os = "ios", debug_assertions))]
+            if std::env::var("WILMAI_NOTIFICATION_SMOKE").as_deref() == Ok("1") { ios_notification_smoke::run(app.handle().clone()); }
             #[cfg(desktop)] {
                 use tauri::Manager;
                 let dir = app.path().app_data_dir()?.join("local-ai");
@@ -746,6 +765,15 @@ async fn update_manifest() -> Result<Option<Release>, String> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn wilma_native_origin_requires_https_default_port_and_no_userinfo() {
+        let host = super::wilma_hosts().iter().next().unwrap();
+        assert!(super::known_wilma_url(&reqwest::Url::parse(&format!("https://{host}/")).unwrap()));
+        for url in [format!("http://{host}/"), format!("https://{host}:8443/"), format!("https://user:secret@{host}/"), "https://evil.invalid/".into()] {
+            assert!(!super::known_wilma_url(&reqwest::Url::parse(&url).unwrap()), "{url}");
+        }
+    }
+
     use super::*;
 
     #[test]

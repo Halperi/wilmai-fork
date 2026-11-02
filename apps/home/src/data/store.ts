@@ -41,6 +41,7 @@ export interface JevStatus {
 }
 
 export interface AppState {
+  schoolNotificationError?: string | null;
   /** iOS blocks use until its Keychain is open and migrations/writes have succeeded. */
   secureStorage: { ready: boolean; error: string | null };
   /** Signed out: not every Wilma of the family is signed in, and the Wilmas page shows (data/logins.ts). */

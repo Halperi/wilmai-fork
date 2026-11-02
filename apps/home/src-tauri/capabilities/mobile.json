@@ -17,6 +17,20 @@
           "url": "https://*"
         }
       ]
-    }
+    },
+    "notification:allow-is-permission-granted",
+    "notification:allow-check-permissions",
+    "notification:allow-request-permission",
+    "notification:allow-show",
+    "notification:allow-get-pending",
+    "notification:allow-cancel",
+    "notification:allow-remove-active",
+    "notification:allow-register-listener",
+    "notification:allow-remove-listener",
+    "allow-wilma-send",
+    "allow-jev-call",
+    "allow-openai-call",
+    "allow-openai-reach",
+    "allow-app-edition"
   ]
 }

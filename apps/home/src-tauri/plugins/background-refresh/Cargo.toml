@@ -1,0 +1,11 @@
+[package]
+name = "tauri-plugin-background-refresh"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+rust-version = "1.90"
+links = "tauri-plugin-background-refresh"
+[dependencies]
+tauri = "2"
+[build-dependencies]
+tauri-plugin = { version = "2", features = ["build"] }
