@@ -24,7 +24,7 @@
     "replay": "tsx evals/replay.ts",
     "calibrate": "tsx evals/calibrate.ts",
     "home:feed": "tsx scripts/home-feed.ts",
-    "test:mobile": "tsx --test evals/mobile-ui.test.ts evals/platform.test.ts evals/mobile-bridge.test.ts evals/ios-vault.test.ts evals/ios-storage.test.ts evals/ios-upgrade.test.ts evals/school-notifications.test.ts evals/mobile-notifications.test.ts evals/native-policy.test.ts evals/android-storage.test.ts evals/android-notifications.test.ts",
+    "test:mobile": "tsx --test evals/swipe-back.test.ts evals/mobile-ui.test.ts evals/platform.test.ts evals/mobile-bridge.test.ts evals/ios-vault.test.ts evals/ios-storage.test.ts evals/ios-upgrade.test.ts evals/school-notifications.test.ts evals/mobile-notifications.test.ts evals/native-policy.test.ts evals/android-storage.test.ts evals/android-notifications.test.ts",
     "ios:init": "pnpm ios:icons && tauri ios init",
     "ios:dev": "tauri ios dev",
     "ios:build": "tsc --noEmit && tauri ios build --target aarch64-sim --debug --no-sign",

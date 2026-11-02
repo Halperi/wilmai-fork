@@ -6,6 +6,7 @@ import { Icon, ItemRow } from "./bits";
 import { go, hrefFor, setSegment, tSense, useChildFilter, useSegment, type Segment } from "./shared";
 import { toggleDoneWithUndo } from "./done";
 import { Reader } from "./Reader";
+import { useSwipeBack } from "./useSwipeBack";
 import { NewMessage } from "./NewMessage";
 import { t, tx } from "../i18n";
 import { intelligenceOn, type ItemTranslation } from "../data/model";
@@ -174,6 +175,8 @@ export function Inbox({ feed, query, itemKey }: { feed: FeedItem[]; query: strin
   // "new" or "new:<child>": writing a new message instead of reading.
   const composing = itemKey === "new" || Boolean(itemKey?.startsWith("new:"));
   const current = itemKey && !composing ? feed.find((i) => i.key === itemKey) ?? null : null;
+  const reader = useRef<HTMLDivElement>(null);
+  useSwipeBack(reader, () => go("inbox"), Boolean(current || composing));
 
   /**
    * Done (or back to open) from the reader, like archiving in a mail app: the
@@ -268,7 +271,7 @@ export function Inbox({ feed, query, itemKey }: { feed: FeedItem[]; query: strin
         )}
       </div>
       <div className="inbox-split" {...split.handle} />
-      <div className="reader-wrap">
+      <div ref={reader} className="reader-wrap">
         {composing ? (
           <NewMessage
             key={itemKey}

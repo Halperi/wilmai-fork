@@ -59,3 +59,17 @@ ilmoitusten toimitusta tai puhelimen oikeaa Wilma-kirjautumista.
 `evals/logins.test.ts` kattaa taustapäivityksen istunnon päättymisen ja
 koulujen eristyksen. `evals/school-notifications.test.ts` varmistaa,
 että valinnainen tunti ei pidennä ilmoituskoosteen koulupäivää.
+
+## Takaisin pyyhkäisemällä
+
+Mobiilissa viestin lukija, uuden viestin näkymä ja suljettavat tietopaneelit
+palaavat samalla toiminnolla kuin takaisin-nuoli, kun vasemmasta reunasta
+pyyhkäistään oikealle. Aloitusalue on sisältönäkymän vasemmat 32 CSS-pikseliä,
+vaadittu matka 72 pikseliä. Ele ei seuraa selaushistoriaa eikä vaihda tiliä.
+Nuoli säilyy. Androidin järjestelmän takaisin-ele säilyy ennallaan.
+
+Pystyvieritys, usean sormen eleet, tekstin valinta, kirjoitus- ja säätökentät,
+painikkeet, linkit sekä vaakavieritettävät elementit ohittavat eleen.
+Päällimmäinen tietopaneeli käsittelee eleen ennen alla olevaa viestiä.
+Kirjoitetun viestin luonnos säilyy alkuperäisen luonnostallennuksen kautta.
+Työpöydällä kosketuskuuntelijoita ei asenneta.
