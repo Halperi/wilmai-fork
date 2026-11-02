@@ -4,7 +4,8 @@ import { appPlatform } from "../platform";
 import type { SavedSession } from "./store";
 
 export const usesSecureVault = appPlatform === "ios" || appPlatform === "android";
-export const INSTALLATION_KEY = appPlatform === "android" ? "wilmai.androidInstallation" : "wilmai.secureInstallation";
+// Persisted iOS identity is a compatibility contract: changing this can trigger Keychain deletion.
+export const INSTALLATION_KEY = appPlatform === "android" ? "wilmai.androidInstallation" : "wilmai.iosInstallation";
 export interface Credentials {
   jevKey: string;
   openaiKey: string;
