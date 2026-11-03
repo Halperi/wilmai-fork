@@ -72,8 +72,10 @@ export function App() {
       } else void keepAlive(); // out of sight: one small read, so Wilma doesn't end the session for being idle
     };
     const onTime = () => maybe();
+    const onReturn = () => maybe(isMobileApp);
     const t = setInterval(onTime, 10 * 60_000);
-    document.addEventListener("visibilitychange", onTime);
+    document.addEventListener("visibilitychange", onReturn);
+    if (isMobileApp) window.addEventListener("online", onReturn);
     // "Check Wilma now" in the menu bar: signed out, the window opens on the sign-in page.
     const checkNow = () => (getState().phase === "signed-out" ? showWindow() : maybe(true));
     const stop = startNotifications(onTime, checkNow, (key) => {
@@ -87,10 +89,20 @@ export function App() {
     });
     return () => {
       clearInterval(t);
-      document.removeEventListener("visibilitychange", onTime);
+      document.removeEventListener("visibilitychange", onReturn);
+      if (isMobileApp) window.removeEventListener("online", onReturn);
       stop();
     };
   }, []);
+  // Foreground phones retry a temporary network failure at its deadline, respecting Wilma's session-race pause.
+  const rejoinAt = useApp((s) => Math.min(...Object.values(s.loginStatus).flatMap((status) => status.rejoinAt ? [status.rejoinAt] : [])));
+  useEffect(() => {
+    if (!isMobileApp || phase !== "signed-out" || !Number.isFinite(rejoinAt)) return;
+    const timer = setTimeout(() => {
+      if (document.visibilityState === "visible" && getState().secureStorage.ready) void getBack();
+    }, Math.max(0, rejoinAt - Date.now()));
+    return () => clearTimeout(timer);
+  }, [phase, rejoinAt]);
   // OpenAI unreachable (luna/client.ts): when the pause is over, one quick check. Still blocked starts a new pause.
   const blockedAt = useApp((s) => s.openaiBlocked?.at ?? null);
   useEffect(() => {

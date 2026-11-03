@@ -16,6 +16,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import type { LessonNote } from "@wilma-client/src/core";
 import { markOpened, useApp, useViewer } from "../data/store";
 import { loadYearNotes, isDemo } from "../data/engine";
+import { knownNotes } from "../data/note-history";
 import { wilmaPage } from "../data/logins";
 import { needsYou, noteGroups, type FeedItem, type NoteGroup } from "../data/feed";
 import { NOTE_KINDS, NOTE_KIND_LABEL, noteKind, useNoteKinds, type NoteKind } from "../data/notes";
@@ -95,7 +96,7 @@ export function Notes({ feed, itemKey }: { feed: FeedItem[]; itemKey: string | n
   }, [childKey]);
 
   const notesOf = (c: Child): LessonNote[] => {
-    const all = snap.perChild[c.number]?.yearNotes?.notes ?? snap.perChild[c.number]?.notes ?? [];
+    const all = knownNotes(snap.perChild[c.number]);
     return since ? all.filter((n) => n.date >= since) : all;
   };
   const year = children.every((c) => snap.perChild[c.number]?.yearNotes) || isDemo();

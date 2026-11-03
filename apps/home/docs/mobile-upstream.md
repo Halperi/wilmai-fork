@@ -73,3 +73,22 @@ painikkeet, linkit sekä vaakavieritettävät elementit ohittavat eleen.
 Päällimmäinen tietopaneeli käsittelee eleen ennen alla olevaa viestiä.
 Kirjoitetun viestin luonnos säilyy alkuperäisen luonnostallennuksen kautta.
 Työpöydällä kosketuskuuntelijoita ei asenneta.
+
+## Palautuminen tauolta ja merkintöjen ajantasaisuus
+
+Puhelin tarkistaa istunnon heti palatessaan etualalle tai saadessaan
+verkkoyhteyden takaisin. Jos prosessi käynnistyy ilman tallennettua istuntoa,
+kirjautumisen palautumista yritetään heti. Tämä noudattaa aiempaa
+kirjautumistavan valintaa: "Pysy kirjautuneena" sallii automaattisen
+kirjautumisen, yhden painalluksen tila ei. Käsin tehtyä uloskirjautumista ei
+kumota. Tilapäinen verkko- tai palvelinvirhe säilyttää tunnukset ja sallii
+uusintayrityksen aikaisintaan 30 sekunnin päästä, puhelimen ollessa etualalla.
+Väärä salasana ja puuttuva kaksivaiheinen vahvistus odottavat käyttäjää.
+Wilman toisen käytön aiheuttaman istuntokilpailun pidempi tauko säilyy.
+
+Merkinnät-näkymä yhdistää vanhemman lukuvuosivälimuistin uusimman
+synkronoinnin tietoihin. Tuoreen jakson poistuneet tai korjatut merkinnät
+korvaavat vanhat, vanhempi historia säilyy. Uudempi koko vuoden haku on
+vuorostaan ensisijainen. Välimuisteja ei yhdistetä lasten tai tilien välillä.
+Aikaväli määritellään yhteisessä `noteSyncRange`-funktiossa, jota käyttävät
+sekä synkronointi että näkymän tietojen valinta.
