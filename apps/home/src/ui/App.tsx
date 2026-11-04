@@ -72,7 +72,15 @@ export function App() {
       } else void keepAlive(); // out of sight: one small read, so Wilma doesn't end the session for being idle
     };
     const onTime = () => maybe();
-    const onReturn = () => maybe(isMobileApp);
+    const onReturn = () => {
+      // A save racing the phone lock may fail while protected data is unavailable.
+      // Restore the latest dirty values on return, then restart an interrupted startup.
+      if (isMobileApp && document.visibilityState === "visible" && !getState().secureStorage.ready && getState().secureStorage.error) {
+        void loadSecrets().then(() => flushPersisted()).then(() => window.location.reload()).catch(() => {});
+        return;
+      }
+      maybe(isMobileApp);
+    };
     const t = setInterval(onTime, 10 * 60_000);
     document.addEventListener("visibilitychange", onReturn);
     if (isMobileApp) window.addEventListener("online", onReturn);

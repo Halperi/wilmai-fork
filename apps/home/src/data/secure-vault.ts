@@ -2,9 +2,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import { appPlatform } from "../platform";
 import type { SavedSession } from "./store";
+import type { Settings } from "./model";
 
 export const usesSecureVault = appPlatform === "ios" || appPlatform === "android";
-// Persisted iOS identity is a compatibility contract: changing this can trigger Keychain deletion.
+// Keep the shipped browser identity for migration; iOS also pins it in its native app container.
 export const INSTALLATION_KEY = appPlatform === "android" ? "wilmai.androidInstallation" : "wilmai.iosInstallation";
 export interface Credentials {
   jevKey: string;
@@ -15,6 +16,7 @@ export interface Credentials {
 export interface VaultData {
   version: 1;
   credentials: Credentials;
+  preferences?: Omit<Settings, keyof Credentials>;
   session: SavedSession | null;
   linkedSessions: Record<string, SavedSession>;
 }
@@ -29,7 +31,7 @@ const session = (v: unknown): v is SavedSession => object(v) && typeof v.state =
   && typeof v.account.baseUrl === "string" && typeof v.account.username === "string";
 function parseVault(raw: string): VaultData {
   const v: unknown = JSON.parse(raw);
-  if (!object(v) || v.version !== 1 || !object(v.credentials)) throw new Error("Invalid secure storage format");
+  if (!object(v) || v.version !== 1 || !object(v.credentials) || (v.preferences !== undefined && !object(v.preferences))) throw new Error("Invalid secure storage format");
   const credentials = v.credentials;
   if (!object(credentials.passwords)
     || !["jevKey", "openaiKey", "wilmaPassword"].every((k) => typeof credentials[k] === "string")
@@ -82,17 +84,32 @@ export const secureVault = new SecureVault({
   save: (installation, data) => invoke<void>(appPlatform === "android" ? "plugin:android-device|vault_save" : "ios_vault_save", { installation, data }),
 });
 
-/** A new app installation must not recover credentials left in Keychain after uninstall. */
+/** Generate without persisting: a failed native open must not manufacture a browser identity. */
+function newInstallation(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+const validInstallation = (id: string | null): id is string => Boolean(id && /^[a-f0-9-]{36}$/i.test(id));
+
+/** Android's existing app-data identity; retained for compatibility with the shipped iOS migration. */
 export function secureInstallation(): string {
-  let id = localStorage.getItem(INSTALLATION_KEY);
-  if (!id || !/^[a-f0-9-]{36}$/i.test(id)) {
-    // getRandomValues also works on WKWebView's custom app scheme; randomUUID requires a secure context.
-    const bytes = crypto.getRandomValues(new Uint8Array(16));
-    bytes[6] = (bytes[6] & 0x0f) | 0x40;
-    bytes[8] = (bytes[8] & 0x3f) | 0x80;
-    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-    id = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-    localStorage.setItem(INSTALLATION_KEY, id);
-  }
+  const saved = localStorage.getItem(INSTALLATION_KEY);
+  if (validInstallation(saved)) return saved;
+  const id = newInstallation();
+  localStorage.setItem(INSTALLATION_KEY, id);
+  return id;
+}
+
+/** Browser storage loss is not an uninstall. Resolve iOS identity natively before opening any secrets. */
+export async function openSecureInstallation(): Promise<string> {
+  if (appPlatform !== "ios") return secureInstallation();
+  const saved = localStorage.getItem(INSTALLATION_KEY);
+  const legacy = validInstallation(saved) ? saved : null;
+  const id = await invoke<string>("ios_vault_identity", { legacy, proposed: legacy ?? newInstallation() });
+  if (!validInstallation(id)) throw new Error("Invalid native installation identifier");
+  localStorage.setItem(INSTALLATION_KEY, id);
   return id;
 }

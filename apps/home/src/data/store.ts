@@ -14,7 +14,7 @@
 import { useSyncExternalStore } from "react";
 import { clear, del, get, set } from "idb-keyval";
 import { oldKeychain } from "../wilma/transport";
-import { emptyVault, secureInstallation, secureVault, INSTALLATION_KEY, usesSecureVault } from "./secure-vault";
+import { emptyVault, openSecureInstallation, secureVault, INSTALLATION_KEY, usesSecureVault } from "./secure-vault";
 import { t } from "../i18n";
 import { DEFAULT_SETTINGS, keepsPassword, viewerOf, type AccountInfo, type Child, type ChildLook, type ItemTranslation, type JevRecord, type LocalState, type LunaRecord, type Settings, type Snapshot, type UsageBucket, type Viewer } from "./model";
 import { normalizeAIBudget } from "./ai-budget";
@@ -134,10 +134,10 @@ function passwordsOf(json: string | null): Record<string, string> {
   }
 }
 
-function loadSettings(readSecrets = !usesSecureVault): Settings {
+function loadSettings(readSecrets = !usesSecureVault, preferences?: Partial<Settings>): Settings {
   try {
     // An older browser setup kept the key in the settings as it was; it moves out on the next save.
-    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings>;
+    const saved = preferences ?? JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings>;
     // The app reads with GPT-6 Luna (another model was a choice during the experiment; the eval suite still tries others).
     const loaded: Settings = {
       ...DEFAULT_SETTINGS,
@@ -369,7 +369,7 @@ function saveSettings() {
   const { jevKey, openaiKey, wilmaPassword, passwords, ...rest } = state.settings;
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(rest));
   if (usesSecureVault) {
-    secureVault.update((v) => ({ ...v, credentials: { jevKey, openaiKey,
+    secureVault.update((v) => ({ ...v, preferences: rest, credentials: { jevKey, openaiKey,
       wilmaPassword: keepsPassword(rest) ? wilmaPassword : "",
       passwords: keepsPassword(rest) ? passwords : {} } }));
     void persistSecureVault();
@@ -398,7 +398,7 @@ function persistSecureVault(): Promise<void> {
 let openingSecureVault: Promise<void> | null = null;
 async function openSecureVault(): Promise<void> {
   try {
-    await secureVault.load(secureInstallation());
+    await secureVault.load(await openSecureInstallation());
     if (!secureVault.data) {
       const legacy = loadSettings(true);
       const [saved, linked] = await Promise.all([get<SavedSession>("session"), get<Record<string, SavedSession>>("linkedSessions")]);
@@ -410,14 +410,17 @@ async function openSecureVault(): Promise<void> {
           return upgraded && accountKey(upgraded.account) === key ? [[key, upgraded]] : [];
         })) }));
     }
-    if (!keepsPassword(state.settings)) secureVault.update((v) => ({ ...v, credentials: { ...v.credentials, wilmaPassword: "", passwords: {} } }));
+    // Native preferences are committed with the secrets. Do not let missing/stale WebKit defaults clear them.
+    const restored = loadSettings(false, secureVault.data!.preferences ?? state.settings);
+    const { jevKey: _j, openaiKey: _o, wilmaPassword: _w, passwords: _p, ...preferences } = restored;
+    secureVault.update((v) => ({ ...v, preferences, credentials: keepsPassword(restored)
+      ? v.credentials : { ...v.credentials, wilmaPassword: "", passwords: {} } }));
     await persistSecureVault();
     // Only remove plaintext/base64 browser copies after a confirmed native vault write/read.
     await Promise.all([del("session"), del("linkedSessions")]);
     for (const key of [JEV_KEY, OPENAI_KEY, WILMA_PASSWORD, PASSWORDS]) localStorage.removeItem(key);
-    const { jevKey: _j, openaiKey: _o, wilmaPassword: _w, passwords: _p, ...preferences } = state.settings;
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(preferences));
-    state = { ...state, settings: { ...state.settings, ...secureVault.data!.credentials } };
+    state = { ...state, settings: { ...restored, ...secureVault.data!.credentials } };
     setState({ secureStorage: { ready: true, error: null } });
   } catch (error) { storageFailure(); throw error; }
 }

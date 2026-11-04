@@ -92,3 +92,30 @@ korvaavat vanhat, vanhempi historia säilyy. Uudempi koko vuoden haku on
 vuorostaan ensisijainen. Välimuisteja ei yhdistetä lasten tai tilien välillä.
 Aikaväli määritellään yhteisessä `noteSyncRange`-funktiossa, jota käyttävät
 sekä synkronointi että näkymän tietojen valinta.
+
+
+### iOS storage recovery (2026-11-04)
+
+The reported loss of passwords, OpenAI selection and API key after a normal pause
+is consistent with WebKit storage being unavailable/reset; the exact device event
+has not been observed. The old reinstall guard could delete the Keychain record
+when a browser-only installation ID changed. That destructive read is removed.
+
+- Resolve the shipped `wilmai.iosInstallation` against an atomic native
+  `ios-installation.v1` marker before opening the vault. Native read errors fail
+  closed. Losing WebKit storage alone cannot change an enrolled installation.
+- Keep the shipped Keychain record for its matching original installation,
+  including compatibility with older native builds. Fresh installations use
+  separate records scoped by their own identity. A new installation cannot
+  inherit previous logins; a mismatched read never deletes the old record.
+- Save mobile preferences with the credentials and restore them before applying
+  password-retention preferences. This prevents reset browser defaults from
+  clearing native credentials or changing the chosen AI provider.
+- On returning to a visible phone, retry protected-storage failures before
+  reloading an interrupted startup. Dirty newer writes remain authoritative.
+- Explicit reset clears both preference and credential copies. No recovery can
+  reconstruct a key that an older build already deleted; re-entry may be needed
+  once after installing this fix.
+
+Tests use synthetic accounts and keys only. Never inspect a user's Keychain or
+export their app container to diagnose this problem.
