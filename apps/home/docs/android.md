@@ -158,3 +158,33 @@ ja natiivi WebView-asetus seuraa APK:n debug-lippua. Nämä ovat tuotantoversion
 suojaukset; varsinaisen OnePlussan porttia ei ole tutkittu.
 
 Toteutuksen lähde: [Chromiumin userdebug-käytäntö](https://chromium.googlesource.com/chromium/src/%2B/3546854f59..2e285ebae2).
+
+
+### Tallennuksen palautus 4.11.2026
+
+Androidissa oli sama tuhoava asennustunnisteen poikkeamakäsittely kuin aiemmassa
+iOS-versiossa: muuttunut WebView-tunniste saattoi poistaa salatun säilön.
+
+- Asennustunniste ratkaistaan nyt ensin natiivisti todennetusta salatusta
+  säilöstä. Tyhjä tai vanhentunut WebView-tunniste ei vaihda sitä.
+- Väärällä tunnisteella tehty luku tai kirjoitus pysähtyy muuttamatta tiedostoa.
+  Myös kirjoitus todentaa aiemman salatun tietueen ensin, joten vioittunutta
+  säilöä tai kadonnutta avainta ei korvata hiljaisesti.
+- Mobiiliasetukset, kuten OpenAI-valinta ja kirjautumisen säilyttäminen,
+  varmistetaan samaan säilöön tunnusten kanssa. Ne palautetaan ennen kuin
+  salasanan säilyttämisasetusta sovelletaan. Epäonnistunut tallennus voidaan
+  uusia sovellukseen palatessa säilyttäen uusimmat odottavat muutokset.
+- Androidin noBackup-tiedosto ja Keystore-avain kuuluvat sovelluksen omaan
+  asennukseen. Sovelluksen tietojen poisto tai poistaminen on eri asia kuin
+  WebView-muistin menetys eikä palauta aiemman asennuksen tunnuksia.
+
+APK-päivitys tehdään samalla pakettitunnisteella ja yksityisellä allekirjoitusavaimella
+nykyisen sovelluksen päälle. Tavallinen päivitys ei vaadi tietojen poistamista.
+Korjaus ei pysty palauttamaan vanhan version jo hävittämää API-avainta.
+
+
+Korjauksen paikalliset regressiotestit: 161 Home-testiä läpäisi ja yksi ohitettiin;
+kaikki 62 mobiilitestiä läpäisivät. Kuusi eristettyä Android 14:n oikeaa
+Keystore-testiä läpäisi: satunnainen IV ja säilötunnisteen palautus prosessin
+uudelleenkäynnistyksen jälkeen, väärän tunnisteen häviötön hylkäys, peukalointi,
+kadonnut avain, tyhjä uudelleenasennus sekä aiemman tunnisteen käyttöönotto.

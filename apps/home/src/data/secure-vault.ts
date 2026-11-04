@@ -5,7 +5,7 @@ import type { SavedSession } from "./store";
 import type { Settings } from "./model";
 
 export const usesSecureVault = appPlatform === "ios" || appPlatform === "android";
-// Keep the shipped browser identity for migration; iOS also pins it in its native app container.
+// Keep the shipped browser keys for migration; both phones resolve their identity natively.
 export const INSTALLATION_KEY = appPlatform === "android" ? "wilmai.androidInstallation" : "wilmai.iosInstallation";
 export interface Credentials {
   jevKey: string;
@@ -103,12 +103,13 @@ export function secureInstallation(): string {
   return id;
 }
 
-/** Browser storage loss is not an uninstall. Resolve iOS identity natively before opening any secrets. */
+/** Browser storage loss is not an uninstall. Resolve phone identity natively before opening any secrets. */
 export async function openSecureInstallation(): Promise<string> {
-  if (appPlatform !== "ios") return secureInstallation();
+  if (!usesSecureVault) return secureInstallation();
   const saved = localStorage.getItem(INSTALLATION_KEY);
   const legacy = validInstallation(saved) ? saved : null;
-  const id = await invoke<string>("ios_vault_identity", { legacy, proposed: legacy ?? newInstallation() });
+  const command = appPlatform === "android" ? "plugin:android-device|vault_identity" : "ios_vault_identity";
+  const id = await invoke<string>(command, { legacy, proposed: legacy ?? newInstallation() });
   if (!validInstallation(id)) throw new Error("Invalid native installation identifier");
   localStorage.setItem(INSTALLATION_KEY, id);
   return id;
