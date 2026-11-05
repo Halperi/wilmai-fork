@@ -19,9 +19,9 @@ test("native entry points have explicit local-window permissions and mobile cann
       permissions.push(...capability.permissions.filter((p: unknown) => typeof p === "string"));
     }
   }
-  for (const denied of ["allow-save-report", "allow-clear-reports", "allow-cli-login-secret", "allow-shared-session-get", "allow-secret-get", "allow-ollama-call", "updater:default", "notification:default"])
+  for (const denied of ["allow-save-report", "allow-clear-reports", "allow-cli-login-secret", "allow-shared-session-get", "allow-secret-get", "allow-ollama-call", "updater:default", "notification:default", "core:webview:allow-print"])
     assert.ok(!permissions.includes(denied), `mobile must not receive ${denied}`);
-  for (const required of ["allow-wilma-send", "allow-ios-vault-load", "allow-ios-vault-save"]) assert.ok(permissions.includes(required));
+  for (const required of ["allow-wilma-send", "allow-ios-vault-identity", "allow-ios-vault-load", "allow-ios-vault-save"]) assert.ok(permissions.includes(required));
   const csp = JSON.parse(readFileSync(`${native}tauri.conf.json`, "utf8")).app.security.csp;
   assert.ok(csp.includes("frame-src 'none'") && csp.includes("form-action 'none'"));
   assert.ok(!csp.includes("'unsafe-eval'"));

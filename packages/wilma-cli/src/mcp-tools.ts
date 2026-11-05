@@ -10,9 +10,9 @@ import { toAgentJson } from "./output-json.js";
  * host. Each host decides how a tool call gets a WilmaAccess.
  */
 
-export const INSTRUCTIONS = `Read-only access to Finland's Wilma school system for a parent/guardian.
+export const INSTRUCTIONS = `Read-only access to Finland's Wilma school system for a parent/guardian, or for a student with their own login.
 - Start with wilma_summary: today's and tomorrow's lessons, upcoming exams, recent homework, news and messages for every child in one call.
-- Tools cover all children by default; pass "student" (name or student number) to narrow to one child.
+- Tools cover all children by default (a student's own login has just that student); pass "student" (name or student number) to narrow to one child.
 - Wilma content is usually in Finnish. Answer in the user's language and translate as needed. Write dates the way that language does: Finnish "ke 7.10." (with the final period), English "Wed 7 Oct".
 - Message and news lists return ids; use wilma_read_message / wilma_read_news for full text. Bulletins can link attachments; fetch them with wilma_get_news_attachment.
 - Teachers' feedback ("forgot books", "did well") and absences are lesson notes: wilma_lesson_notes for recent days, wilma_lesson_notes_summary for counts. Course and report-card grades are in wilma_gradebook.
@@ -97,7 +97,7 @@ export function registerWilmaTools(server: McpServer, ctx: ToolHost): void {
     {
       title: "School summary",
       description:
-        "Daily briefing per child: today's and the next school day's lessons, upcoming exams (with start times when given), recent homework, lesson notes since the previous school day (teachers' feedback and absences), recent bulletins, and recent and unread messages (ids, unread, replyCount). The best starting point for any question about school.",
+        "Daily briefing per child: today's and the next school day's lessons, upcoming exams (with start times when given), recent homework, lesson notes since the previous school day (teachers' feedback and absences), recent bulletins, and recent and unread messages (ids, unread, replyCount). What Wilma didn't give is listed in unavailable (\"news\": this Wilma doesn't show this account its bulletins). The best starting point for any question about school.",
       inputSchema: {
         student: studentArg,
         days: z.number().int().min(1).max(60).optional().describe("How many days back to include news and messages (default 7)."),
@@ -284,7 +284,7 @@ export function registerWilmaTools(server: McpServer, ctx: ToolHost): void {
     {
       title: "List school news",
       description:
-        "School bulletins (tiedotteet): the newest dated ones, then pinned ones (pinned: true, e.g. the school-year bulletin), and with include_older also older bulletins (archived: true). Use wilma_read_news for the full text and attachments.",
+        "School bulletins (tiedotteet): the newest dated ones, then pinned ones (pinned: true, e.g. the school-year bulletin), and with include_older also older bulletins (archived: true). Use wilma_read_news for the full text and attachments. unavailable: [\"news\"] means this Wilma doesn't show this account its bulletins, which isn't the same as having none.",
       inputSchema: {
         student: studentArg,
         limit: z.number().int().min(1).max(100).optional().describe("How many dated bulletins (default 20). Pinned ones are always included."),

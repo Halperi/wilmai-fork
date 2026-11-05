@@ -33,7 +33,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm install --ignore-workspace --frozen-lockfile
         working-directory: apps/home
-      - run: pnpm typecheck && TZ=UTC pnpm test:mobile
+      - run: pnpm typecheck && TZ=UTC pnpm exec tsx --test evals/*.test.ts
         working-directory: apps/home
       - run: brew install xcodegen libimobiledevice cocoapods
       - run: pnpm ios:init --ci && pnpm ios:build --ci

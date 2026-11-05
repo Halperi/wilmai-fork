@@ -8,6 +8,8 @@
  */
 import {
   AuthenticationError,
+  APIError,
+  NetworkError,
   SessionEndedError,
   WilmaClient,
   addExamTimes,
@@ -21,7 +23,7 @@ import {
   type ScheduleLesson,
 } from "@wilma-client/src/core";
 import * as write from "@wilma-client/src/write";
-import { bridgeCall, clearReports, isDesktopApp, savedLoginSecret, sharedKeyFor, sharedSessionFor, wilmaTransport } from "../wilma/transport";
+import { BridgeError, bridgeCall, clearReports, isDesktopApp, savedLoginSecret, sharedKeyFor, sharedSessionFor, wilmaTransport } from "../wilma/transport";
 import { totpCallback } from "../wilma/totp";
 import { recordSession, sessionCookieOf } from "./history";
 import { addDays, clock, dateOf, daysBetween, mondayOf, today } from "./dates";
@@ -53,8 +55,10 @@ import { aboutShown, accountOf, familyChild, familyChildren, familyId, loginOf, 
 import { demoContacts, demoSnapshot } from "../demo/demo";
 import { runJev } from "../jev/runner";
 import { runLuna } from "../luna/events";
+import { runTranslations } from "./translations";
 import { t } from "../i18n";
 import { retainedScheduleWeeks } from "./schedule";
+import { noteSyncRange } from "./note-history";
 import { TENANTS } from "./tenants";
 import { SignInAttempt, SignInCancelledError } from "./sign-in-attempt";
 
@@ -281,6 +285,8 @@ export async function resume(saved: SavedSession | null) {
   await restoreSessions(saved);
   setState({ phase: "signed-out" });
   settle();
+  // A killed phone process can leave a family and password but no live saved session.
+  if (getState().phase !== "ready") await getBack();
   if (getState().phase !== "ready") return;
   void runJev();
   void runLuna();
@@ -784,7 +790,14 @@ function getBackLogin(slot: number): Promise<boolean> {
       // Cancelled (signed out, or the parent signing in themself): nothing to say about it.
       if (err instanceof SignInCancelledError || !signing.current) return false;
       const why = err instanceof Error ? err.message : String(err);
-      if (scope === accountScope()) setStatus(slot, { live: false, why: t("Signing in again didn't work: {why}", { why }), rejoinAt: null, failed: why });
+      const retryable = err instanceof NetworkError
+        || (err instanceof BridgeError && (err.status === 0 || err.status >= 500))
+        || (err instanceof APIError && err.status >= 500);
+      if (scope === accountScope()) setStatus(slot, {
+        live: false, why: t("Signing in again didn't work: {why}", { why }),
+        rejoinAt: retryable ? Date.now() + 30_000 : null,
+        failed: retryable ? null : why,
+      });
       return false;
     }
   })().finally(() => gettingBack.delete(slot));
@@ -910,6 +923,8 @@ export async function signInDemo() {
   await flushPersisted();
   void runJev();
   void runLuna();
+  // Its translations into English, when that's chosen (demo/translations.ts): they come with it, without AI.
+  void runTranslations();
 }
 
 /** Back from the sample family to the Wilma page: the family signed in here last, or an empty page. */
@@ -1247,9 +1262,10 @@ async function runSync(background = false) {
                 limit(() => c.messages.list("inbox")),
                 // What the family sent and nobody has answered yet is only in the Sent folder.
                 limit(() => c.messages.list("outbox")),
-                limit(() => c.news.list()),
+                // A Wilma that doesn't show a guardian its bulletins (Helsinki's answers 403): none, and the rest is read.
+                limit(async () => (await c.news.listIfShown()) ?? []),
                 // The weeks ahead too: a teacher may note a make-up exam on a coming lesson (for the calendar).
-                limit(() => c.attendance.list({ from: addDays(now, -20), to: addDays(now, 60) })),
+                limit(() => c.attendance.list(noteSyncRange(now))),
                 // Start times are a bonus; upcoming exams themselves come with the overview.
                 limit(() => c.exams.calendarOrEmpty()),
                 limit(() => c.invitations.list().catch((err) => (err instanceof SessionEndedError ? Promise.reject(err) : []))),
@@ -1306,40 +1322,39 @@ async function runSync(background = false) {
       };
     });
 
-    if (!background) {
     // A bounded phone refresh lists changes only: no read-status changes or cloud AI in the background.
-    // Details: recent bulletins, and messages Wilma already shows as read (or all, if allowed).
-    const s = getState().snapshot!;
-    // Opening unread messages ahead (Wilma then shows them as read) is for the AI: without one, they wait for the parent.
-    const allowUnread = getState().settings.backgroundRead && intelligenceOn(getState().settings);
-    const wasRead = (id: number) => lists.has(loginOfId(id));
-    const news = Object.values(s.news)
-      .filter((n) => wasRead(n.id) && !n.detail && (n.pinned || (n.published && daysBetween(dateOf(n.published), now) <= 45)))
-      .sort((a, b) => (b.published?.getTime() ?? 0) - (a.published?.getTime() ?? 0))
-      .slice(0, 20);
-    // A thread read before its opening message's own time was kept is read once more, for that time.
-    const messages = Object.values(s.messages)
-      .filter((m) => wasRead(m.id) && (!m.thread || (m.thread.replies.length > 0 && !m.thread.sentAt)) && (allowUnread || !m.unreadInWilma) && daysBetween(dateOf(m.sentAt), now) <= 120)
-      .sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime())
-      .slice(0, 30);
-    if (news.length || messages.length) step(t("Reading new messages and bulletins"));
-    // One that doesn't load (a slow or busy network) doesn't fail the check: it's tried again next time. None loading is worth saying.
-    const missed: unknown[] = [];
-    const detail = (id: number, load: () => Promise<void>) => {
-      const slot = loginOfId(id);
-      return limits.get(slot)!(load).catch((err) => {
-        if (!sessionGone(err)) return void missed.push(err);
-        failed.set(slot, err);
-      });
-    };
-    await Promise.all([...news.map((n) => detail(n.id, () => loadNews(n.id))), ...messages.map((m) => detail(m.id, () => loadThread(m.id)))]);
-    if (missed.length && missed.length === news.length + messages.length) throw missed[0];
-
+    if (!background) {
+      // Details: recent bulletins, and messages Wilma already shows as read (or all, if allowed).
+      const s = getState().snapshot!;
+      // Opening unread messages ahead (Wilma then shows them as read) is for the AI: without one, they wait for the parent.
+      const allowUnread = getState().settings.backgroundRead && intelligenceOn(getState().settings);
+      const wasRead = (id: number) => lists.has(loginOfId(id));
+      const news = Object.values(s.news)
+        .filter((n) => wasRead(n.id) && !n.detail && (n.pinned || (n.published && daysBetween(dateOf(n.published), now) <= 45)))
+        .sort((a, b) => (b.published?.getTime() ?? 0) - (a.published?.getTime() ?? 0))
+        .slice(0, 20);
+      // A thread read before its opening message's own time was kept is read once more, for that time.
+      const messages = Object.values(s.messages)
+        .filter((m) => wasRead(m.id) && (!m.thread || (m.thread.replies.length > 0 && !m.thread.sentAt)) && (allowUnread || !m.unreadInWilma) && daysBetween(dateOf(m.sentAt), now) <= 120)
+        .sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime())
+        .slice(0, 30);
+      if (news.length || messages.length) step(t("Reading new messages and bulletins"));
+      // One that doesn't load (a slow or busy network) doesn't fail the check: it's tried again next time. None loading is worth saying.
+      const missed: unknown[] = [];
+      const detail = (id: number, load: () => Promise<void>) => {
+        const slot = loginOfId(id);
+        return limits.get(slot)!(load).catch((err) => {
+          if (!sessionGone(err)) return void missed.push(err);
+          failed.set(slot, err);
+        });
+      };
+      await Promise.all([...news.map((n) => detail(n.id, () => loadNews(n.id))), ...messages.map((m) => detail(m.id, () => loadThread(m.id)))]);
+      if (missed.length && missed.length === news.length + messages.length) throw missed[0];
+    }
     if (!current()) return;
     // A Wilma whose session ended waits for signing in again (the Wilmas page); what the others read stands.
     for (const [slot, err] of failed) if (sessionGone(err) && sessionOf(slot) === reading.get(slot)) handleError(err, slot);
     for (const slot of lists.keys()) if (!failed.has(slot)) keep(slot);
-    }
     if (lists.size) patch((x) => ({ ...x, syncedAt: new Date() }));
     // A Wilma that couldn't be read (a slow network, not an ended session) is said in the sync line, by its school when there are more.
     const [slot, unread] = [...failed].find(([, err]) => !sessionGone(err)) ?? [0, null];
@@ -1650,23 +1665,25 @@ export function messageApi(child: string) {
   return {
     prepare: async (recipient: MessageRecipient): Promise<write.MessageForm> => {
       if (isDemo()) {
-        return { kind: "message", recipients: [recipient.name], form: { action: "", fields: [], buttons: [], selects: [], textareas: [] }, subjectField: "Subject", bodyField: "BodyText" };
+        // Wilma's form as it comes: the "recipients see each other's replies" box there and not ticked.
+        return { kind: "message", recipients: [recipient.name], form: { action: "", fields: [], buttons: [], selects: [], textareas: [] }, subjectField: "Subject", bodyField: "BodyText", collatedReplies: false };
       }
       return write.prepareMessage(kid(child), recipient);
     },
-    send: async (form: write.MessageForm, subject: string, text: string): Promise<void> => {
+    /** `collatedReplies`: the recipients see each other's replies (when Wilma's form has the box). */
+    send: async (form: write.MessageForm, subject: string, text: string, collatedReplies?: boolean): Promise<void> => {
       if (isDemo()) {
         // Nothing is sent; the message shows as sent, as a real one does.
         patchSnapshot((s) => {
           const id = Math.max(0, ...Object.keys(s.messages).map(Number)) + 1;
           const now = new Date();
-          const thread = { content: text, sentAt: now, recipients: form.recipients, replies: [], collated: false, fetchedAt: now };
+          const thread = { content: text, sentAt: now, recipients: form.recipients, replies: [], collated: Boolean(collatedReplies), fetchedAt: now };
           return { ...s, messages: { ...s.messages, [id]: { id, subject, sender: null, sentAt: now, unreadInWilma: false, replyCount: 0, children: [child], thread, sent: true } } };
         });
         return;
       }
       try {
-        await write.sendMessage(kid(child), form, { subject, text });
+        await write.sendMessage(kid(child), form, { subject, text, collatedReplies });
         keep(loginOfChild(child));
         // Sent: it shows in the inbox now, not only once someone answers. A failure here doesn't undo the sending.
         void loadSent(child).catch(() => {});

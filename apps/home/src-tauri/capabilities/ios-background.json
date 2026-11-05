@@ -16,6 +16,7 @@
     "background-refresh:allow-complete",
     "background-refresh:allow-register-listener",
     "background-refresh:allow-remove-listener",
+    "allow-ios-vault-identity",
     "allow-ios-vault-load",
     "allow-ios-vault-save"
   ]

@@ -1,7 +1,7 @@
 {
   "name": "wilmai-home",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -20,11 +20,11 @@
     "release:build": "tsx scripts/release-home.ts",
     "release:downloads": "tsx scripts/home-downloads.ts",
     "test:release": "tsx --test evals/home-release.test.ts evals/updates.test.ts",
-    "test:ai": "tsx --test evals/platform.test.ts evals/mobile-bridge.test.ts evals/local-ai.test.ts evals/local-setup.test.ts evals/local-runtime.test.ts evals/ai-budget.test.ts evals/note-exams.test.ts evals/note-kinds.test.ts evals/openai-blocked.test.ts evals/own-messages.test.ts evals/schedule-change.test.ts evals/account-storage.test.ts evals/logins.test.ts evals/drafts.test.ts evals/calendar-sync.test.ts evals/translate.test.ts evals/i18n.test.ts",
+    "test:ai": "tsx --test evals/platform.test.ts evals/mobile-bridge.test.ts evals/local-ai.test.ts evals/local-setup.test.ts evals/local-runtime.test.ts evals/ai-budget.test.ts evals/note-exams.test.ts evals/note-kinds.test.ts evals/openai-blocked.test.ts evals/own-messages.test.ts evals/schedule-change.test.ts evals/school-days.test.ts evals/luna-links.test.ts evals/account-storage.test.ts evals/logins.test.ts evals/drafts.test.ts evals/calendar-sync.test.ts evals/translate.test.ts evals/outgoing.test.ts evals/i18n.test.ts evals/demo-english.test.ts",
     "replay": "tsx evals/replay.ts",
     "calibrate": "tsx evals/calibrate.ts",
     "home:feed": "tsx scripts/home-feed.ts",
-    "test:mobile": "tsx --test evals/platform.test.ts evals/mobile-bridge.test.ts evals/ios-vault.test.ts evals/ios-storage.test.ts evals/ios-upgrade.test.ts evals/school-notifications.test.ts evals/mobile-notifications.test.ts evals/native-policy.test.ts evals/android-storage.test.ts evals/android-notifications.test.ts",
+    "test:mobile": "tsx --test evals/logins.test.ts evals/note-history.test.ts evals/swipe-back.test.ts evals/mobile-ui.test.ts evals/platform.test.ts evals/mobile-bridge.test.ts evals/ios-vault.test.ts evals/ios-storage.test.ts evals/ios-upgrade.test.ts evals/ios-recovery.test.ts evals/storage-recovery.test.ts evals/school-notifications.test.ts evals/mobile-notifications.test.ts evals/native-policy.test.ts evals/android-storage.test.ts evals/android-recovery.test.ts evals/android-notifications.test.ts",
     "ios:init": "pnpm ios:icons && tauri ios init",
     "ios:dev": "tauri ios dev",
     "ios:build": "tsc --noEmit && tauri ios build --target aarch64-sim --debug --no-sign",

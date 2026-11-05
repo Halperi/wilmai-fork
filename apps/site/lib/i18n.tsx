@@ -41,6 +41,8 @@ export interface AssistantScene {
 export interface AssistantTourText {
   /** What the window shows, for screen readers. */
   label: string;
+  /** The empty message box under the conversation. */
+  ask: string;
   sections: string;
   paused: string;
   play: string;
@@ -133,6 +135,7 @@ const en: Dictionary = {
     tour: {
       label:
         "An assistant answering a made-up family's questions from Wilma: tomorrow's school day for each child, what needs doing this week, the next exams, and this week's bulletins in a few lines.",
+      ask: "Ask anything",
       sections: "Parts of the tour",
       paused: "Paused",
       play: "Play the tour",
@@ -364,6 +367,15 @@ const en: Dictionary = {
         )
       },
       {
+        q: "Can students use it too?",
+        a: (
+          <p>
+            Yes. A student can log in with their own Wilma account, and the assistant then sees
+            what the student sees: their own lessons, homework, exams, grades and messages.
+          </p>
+        )
+      },
+      {
         q: "What if my school changes?",
         a: (
           <p>
@@ -417,6 +429,7 @@ const fi: Dictionary = {
     tour: {
       label:
         "Avustaja vastaa kuvitteellisen perheen kysymyksiin Wilmasta: kunkin lapsen huominen koulupäivä, mitä tällä viikolla pitää tehdä, seuraavat kokeet ja viikon tiedotteet muutamalla rivillä.",
+      ask: "Kysy mitä vain",
       sections: "Esittelyn osat",
       paused: "Tauko",
       play: "Jatka esittelyä",
@@ -646,6 +659,15 @@ const fi: Dictionary = {
           <p>
             Täsmälleen samat, jotka näet itse huoltajana Wilman sovelluksessa,
             omilla tunnuksillasi haettuna. Ei mitään ylimääräistä.
+          </p>
+        )
+      },
+      {
+        q: "Voiko oppilas käyttää sitä itse?",
+        a: (
+          <p>
+            Voi. Oppilas voi kirjautua omilla Wilma-tunnuksillaan, jolloin avustaja näkee
+            saman kuin oppilas: omat tunnit, läksyt, kokeet, arvosanat ja viestit.
           </p>
         )
       },

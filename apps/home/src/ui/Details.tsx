@@ -10,6 +10,7 @@ import { useContext, useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { DOCK_QUERY, DetailsHost, useMedia } from "./shared";
 import { Icon } from "./bits";
+import { useSwipeBack } from "./useSwipeBack";
 import { t } from "../i18n";
 
 export function DetailsPanel({
@@ -27,6 +28,8 @@ export function DetailsPanel({
   const { host, change } = useContext(DetailsHost);
   const docked = useMedia(DOCK_QUERY);
   const closeButton = useRef<HTMLButtonElement>(null);
+  const sheet = useRef<HTMLElement>(null);
+  useSwipeBack(sheet, onClose, !docked);
 
   // The shell makes room while a docked panel shows.
   useEffect(() => {
@@ -68,7 +71,7 @@ export function DetailsPanel({
   return createPortal(
     <div className="details-layer">
       <div className="details-backdrop" onClick={onClose} />
-      <aside className="details details-sheet" role="dialog" aria-modal="true" aria-label={typeof title === "string" ? title : t("Details")}>
+      <aside ref={sheet} className="details details-sheet" role="dialog" aria-modal="true" aria-label={typeof title === "string" ? title : t("Details")}>
         {body}
       </aside>
     </div>,

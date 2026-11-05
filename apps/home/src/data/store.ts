@@ -14,9 +14,10 @@
 import { useSyncExternalStore } from "react";
 import { clear, del, get, set } from "idb-keyval";
 import { oldKeychain } from "../wilma/transport";
-import { emptyVault, secureInstallation, secureVault, INSTALLATION_KEY, usesSecureVault } from "./secure-vault";
+import { emptyVault, openSecureInstallation, secureVault, INSTALLATION_KEY, usesSecureVault } from "./secure-vault";
 import { t } from "../i18n";
-import { DEFAULT_SETTINGS, keepsPassword, viewerOf, type AccountInfo, type ItemTranslation, type JevRecord, type LocalState, type LunaRecord, type Settings, type Snapshot, type UsageBucket, type Viewer } from "./model";
+import { storageFault } from "./storage-recovery";
+import { DEFAULT_SETTINGS, keepsPassword, viewerOf, type AccountInfo, type Child, type ChildLook, type ItemTranslation, type JevRecord, type LocalState, type LunaRecord, type Settings, type Snapshot, type UsageBucket, type Viewer } from "./model";
 import { normalizeAIBudget } from "./ai-budget";
 import type { CalEvent } from "./calendar";
 
@@ -43,7 +44,7 @@ export interface JevStatus {
 export interface AppState {
   schoolNotificationError?: string | null;
   /** Mobile blocks use until its native vault is open and migrations/writes have succeeded. */
-  secureStorage: { ready: boolean; error: string | null };
+  secureStorage: { ready: boolean; error: string | null; retryable?: boolean; code?: string };
   /** Signed out: not every Wilma of the family is signed in, and the Wilmas page shows (data/logins.ts). */
   phase: "loading" | "signed-out" | "ready";
   snapshot: Snapshot | null;
@@ -134,10 +135,10 @@ function passwordsOf(json: string | null): Record<string, string> {
   }
 }
 
-function loadSettings(readSecrets = !usesSecureVault): Settings {
+function loadSettings(readSecrets = !usesSecureVault, preferences?: Partial<Settings>): Settings {
   try {
     // An older browser setup kept the key in the settings as it was; it moves out on the next save.
-    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings>;
+    const saved = preferences ?? JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings>;
     // The app reads with GPT-6 Luna (another model was a choice during the experiment; the eval suite still tries others).
     const loaded: Settings = {
       ...DEFAULT_SETTINGS,
@@ -194,8 +195,37 @@ export function setState(patch: Partial<AppState> | ((s: AppState) => Partial<Ap
   const next = typeof patch === "function" ? patch(state) : patch;
   if ("snapshot" in next && accountKey(next.snapshot?.account) !== accountKey(state.snapshot?.account)) accountGeneration += 1;
   state = { ...state, ...next };
+  // Each child as the family set them up (Settings → Children), whenever the children or the settings change.
+  if (("snapshot" in next || "local" in next) && state.snapshot) {
+    const children = dressChildren(state.snapshot.children, state.local.looks);
+    if (children !== state.snapshot.children) state = { ...state, snapshot: { ...state.snapshot, children } };
+  }
   for (const listener of listeners) listener();
   schedulePersist(next);
+}
+
+/** The children with their chosen colour, nickname and emoji (the same list when nothing changes). */
+export function dressChildren(children: Child[], looks: LocalState["looks"]): Child[] {
+  let changed = false;
+  const dressed = children.map((c) => {
+    const look = looks?.[c.number];
+    const base = c.base ?? c.color;
+    const emoji = look?.emoji || undefined;
+    const next: Child = { ...c, base, color: look?.color ?? base, nick: look?.nickname?.trim() || undefined, emoji, emojiTabs: (emoji && look?.emojiTabs) || undefined };
+    if (next.color === c.color && next.base === c.base && next.nick === c.nick && next.emoji === c.emoji && next.emojiTabs === c.emojiTabs) return c;
+    changed = true;
+    return next;
+  });
+  return changed ? dressed : children;
+}
+
+/** Change how a child shows (a field undefined: back to the default). */
+export function setChildLook(child: string, look: Partial<ChildLook>) {
+  setState((s) => {
+    const merged: ChildLook = { ...s.local.looks?.[child], ...look };
+    for (const key of Object.keys(merged) as (keyof ChildLook)[]) if (merged[key] === undefined || merged[key] === "") delete merged[key];
+    return { local: { ...s.local, looks: { ...s.local.looks, [child]: merged } } };
+  });
 }
 
 /** Called after every change (outside React: notifications). */
@@ -340,7 +370,7 @@ function saveSettings() {
   const { jevKey, openaiKey, wilmaPassword, passwords, ...rest } = state.settings;
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(rest));
   if (usesSecureVault) {
-    secureVault.update((v) => ({ ...v, credentials: { jevKey, openaiKey,
+    secureVault.update((v) => ({ ...v, preferences: rest, credentials: { jevKey, openaiKey,
       wilmaPassword: keepsPassword(rest) ? wilmaPassword : "",
       passwords: keepsPassword(rest) ? passwords : {} } }));
     void persistSecureVault();
@@ -358,18 +388,25 @@ function saveSettings() {
 }
 
 /** Keep failure visible; a fire-and-forget caller must not create an unhandled rejection. */
-function storageFailure() {
-  setState({ secureStorage: { ready: false, error: t("Secure storage is unavailable. Unlock your phone and try again.") } });
+function storageFailure(error: unknown) {
+  setState({ secureStorage: { ...storageFault(error), ready: false, error: t("Secure storage is unavailable. Unlock your phone and try again.") } });
 }
 function persistSecureVault(): Promise<void> {
-  const pending = secureVault.flush().catch((error: unknown) => { storageFailure(); throw error; });
+  const pending = secureVault.flush().catch((error: unknown) => { storageFailure(error); throw error; });
   void pending.catch(() => {});
   return pending;
 }
 let openingSecureVault: Promise<void> | null = null;
+let secretsHydrated = false;
 async function openSecureVault(): Promise<void> {
   try {
-    await secureVault.load(secureInstallation());
+    if (secretsHydrated) {
+      // Already running: only drain pending changes. Do not re-enroll, re-import browser data or replace live settings.
+      await persistSecureVault();
+      setState({ secureStorage: { ready: true, error: null } });
+      return;
+    }
+    await secureVault.load(await openSecureInstallation());
     if (!secureVault.data) {
       const legacy = loadSettings(true);
       const [saved, linked] = await Promise.all([get<SavedSession>("session"), get<Record<string, SavedSession>>("linkedSessions")]);
@@ -381,16 +418,20 @@ async function openSecureVault(): Promise<void> {
           return upgraded && accountKey(upgraded.account) === key ? [[key, upgraded]] : [];
         })) }));
     }
-    if (!keepsPassword(state.settings)) secureVault.update((v) => ({ ...v, credentials: { ...v.credentials, wilmaPassword: "", passwords: {} } }));
+    // Native preferences are committed with the secrets. Do not let missing/stale WebKit defaults clear them.
+    const restored = loadSettings(false, secureVault.data!.preferences ?? state.settings);
+    const { jevKey: _j, openaiKey: _o, wilmaPassword: _w, passwords: _p, ...preferences } = restored;
+    secureVault.update((v) => ({ ...v, preferences, credentials: keepsPassword(restored)
+      ? v.credentials : { ...v.credentials, wilmaPassword: "", passwords: {} } }));
     await persistSecureVault();
     // Only remove plaintext/base64 browser copies after a confirmed native vault write/read.
     await Promise.all([del("session"), del("linkedSessions")]);
     for (const key of [JEV_KEY, OPENAI_KEY, WILMA_PASSWORD, PASSWORDS]) localStorage.removeItem(key);
-    const { jevKey: _j, openaiKey: _o, wilmaPassword: _w, passwords: _p, ...preferences } = state.settings;
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(preferences));
-    state = { ...state, settings: { ...state.settings, ...secureVault.data!.credentials } };
+    state = { ...state, settings: { ...restored, ...secureVault.data!.credentials } };
+    secretsHydrated = true;
     setState({ secureStorage: { ready: true, error: null } });
-  } catch (error) { storageFailure(); throw error; }
+  } catch (error) { storageFailure(error); throw error; }
 }
 
 /**
@@ -598,6 +639,29 @@ export function setCalendarKind(kind: string, on: boolean) {
   setState((s) => {
     const calendar = s.local.calendar ?? { decisions: {}, kinds: {} };
     return { local: { ...s.local, calendar: { ...calendar, kinds: { ...calendar.kinds, [kind]: on } } } };
+  });
+}
+
+/** Count a subject in a child's school hours again, or leave it out (only in this app). */
+export function setLeftOut(child: string, subject: string, out: boolean) {
+  setState((s) => {
+    const leftOut = { ...s.local.leftOut };
+    const subjects = (leftOut[child] ?? []).filter((x) => x !== subject);
+    if (out) subjects.push(subject);
+    if (subjects.length) leftOut[child] = subjects;
+    else delete leftOut[child];
+    return { local: { ...s.local, leftOut } };
+  });
+}
+
+/** Whether a subject is PE, as the parent says (null: back to the AI's reading, or the name's). */
+export function setPE(subject: string, value: boolean | null) {
+  setState((s) => {
+    const pe = { ...s.local.pe };
+    const { set: _, ...rest } = pe[subject] ?? {};
+    if (value === null) pe[subject] = rest;
+    else pe[subject] = { ...rest, set: value };
+    return { local: { ...s.local, pe } };
   });
 }
 

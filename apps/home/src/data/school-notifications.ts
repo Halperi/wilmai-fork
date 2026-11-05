@@ -2,7 +2,7 @@
 import type { AppState } from "./store";
 import { buildFeed } from "./feed";
 import { calendarEvents } from "./calendar";
-import { dayTimes, knownLessons } from "./schedule";
+import { dayLessons, dayTimes, knownLessons } from "./schedule";
 import { addDays, dateOf, shortDate } from "./dates";
 import { intelligenceOn } from "./model";
 import { loginOfId } from "./logins";
@@ -85,11 +85,11 @@ export function tomorrowDigest(state: AppState, day: string): TomorrowDigest | n
   const lines: string[] = [];
   for (const child of snap.children) {
     const data = snap.perChild[child.number];
-    const times = dayTimes(knownLessons(data)).get(day);
+    const times = dayTimes(dayLessons(knownLessons(data), state.local.leftOut?.[child.number])).get(day);
     if (times) lines.push(t("{name}: school {start}–{end}", { name: child.first, start: times.start, end: times.end }));
   }
   const hasAI = intelligenceOn(state.settings);
-  const events = calendarEvents(snap, buildFeed(state), state.local.calendar, { from: day, until: day, children: [] }, hasAI ? state.luna : {});
+  const events = calendarEvents(snap, buildFeed(state), state.local.calendar, { from: day, until: day, children: [], leftOut: state.local.leftOut }, hasAI ? state.luna : {});
   for (const event of events.filter((e) => e.sure)) {
     const names = event.children.map((n) => snap.children.find((c) => c.number === n)?.first).filter(Boolean).join(", ");
     lines.push(text(`${names ? `${names}: ` : ""}${event.start ? `${event.start} ` : ""}${event.title}${event.detail ? ` · ${event.detail}` : ""}`));

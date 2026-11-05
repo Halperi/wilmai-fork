@@ -16,6 +16,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import type { LessonNote } from "@wilma-client/src/core";
 import { markOpened, useApp, useViewer } from "../data/store";
 import { loadYearNotes, isDemo } from "../data/engine";
+import { knownNotes } from "../data/note-history";
 import { wilmaPage } from "../data/logins";
 import { needsYou, noteGroups, type FeedItem, type NoteGroup } from "../data/feed";
 import { NOTE_KINDS, NOTE_KIND_LABEL, noteKind, useNoteKinds, type NoteKind } from "../data/notes";
@@ -95,7 +96,7 @@ export function Notes({ feed, itemKey }: { feed: FeedItem[]; itemKey: string | n
   }, [childKey]);
 
   const notesOf = (c: Child): LessonNote[] => {
-    const all = snap.perChild[c.number]?.yearNotes?.notes ?? snap.perChild[c.number]?.notes ?? [];
+    const all = knownNotes(snap.perChild[c.number]);
     return since ? all.filter((n) => n.date >= since) : all;
   };
   const year = children.every((c) => snap.perChild[c.number]?.yearNotes) || isDemo();
@@ -301,7 +302,7 @@ function NoteMatrix({ matrix, kinds, filter, many, onPick }: { matrix: Matrix; k
   const max = Object.fromEntries(kinds.map((k) => [k, Math.max(1, ...subjects.map((s) => s.counts[k]))])) as Record<NoteKind, number>;
   const mine = filter.child === child.number || !filter.child;
   return (
-    <section className={`card note-matrix c${child.color % 5}`} style={{ ["--kinds" as string]: kinds.length }} aria-label={t("Notes by subject and kind")}>
+    <section className={`card note-matrix c${child.color % 16}`} style={{ ["--kinds" as string]: kinds.length }} aria-label={t("Notes by subject and kind")}>
       <div className="nm-head">
         {many ? <Tab child={child} full /> : null}
         <span className="nm-total">{plural(total, "{n} note", "{n} notes")}</span>

@@ -7,6 +7,8 @@
 
 #[cfg(target_os = "ios")]
 mod ios_vault;
+#[cfg(any(target_os = "ios", test))]
+mod vault_identity;
 mod navigation;
 #[cfg(all(target_os = "ios", debug_assertions))]
 mod ios_notification_smoke;
@@ -407,6 +409,8 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            #[cfg(target_os = "ios")]
+            ios_vault::ios_vault_identity,
             #[cfg(target_os = "ios")]
             ios_vault::ios_vault_load,
             #[cfg(target_os = "ios")]

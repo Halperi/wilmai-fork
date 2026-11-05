@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.3.2 (2026-11-02)
+
+_Releases: wilma-cli 2.3.2, wilma-client 1.9.0; the `wilma` skill and plugin 2.3.2; WilmAI in the MCP Registry as `ai.wilm/wilma`._
+
+**In short:** WilmAI is in the official MCP Registry, and students can use it with their own Wilma login.
+
+### Added
+
+- **The MCP Registry.** The CLI's MCP server (`npx @wilm-ai/wilma-cli mcp`) is listed in the official MCP Registry as `ai.wilm/wilma`, so assistants and apps that look there find it. wilm.ai proves the name (`/.well-known/mcp-registry-auth`), and the CLI's `package.json` names it (`mcpName`).
+- client 1.9.0: **a message to several recipients.** `composeToAll()` joins recipients' compose links into one, as Wilma's own "message all teachers" links are made. `prepareMessage()` says whether Wilma's form has its "recipients see each other's replies" box (`collatedReplies`) and how it's set, and `sendMessage()` can tick or clear it. A form's checkboxes, ticked or not, are in `WilmaForm.checkboxes`. WilmAI Home 0.3.0 uses these.
+
+### Changed
+
+- **Students can use WilmAI too.** The npm, Claude Desktop, plugin and marketplace descriptions, the READMEs, `wilma login` help and the `wilma` skill say a student can use their own Wilma login; parents stay first. The MCP instructions tell the assistant a login may be a student's own, and the login page lists "Found on this login" instead of "Children found".
+
+## 2.3.1 (2026-11-01)
+
+_Releases: wilma-cli 2.3.1, wilma-client 1.8.0._
+
+**In short:** the summary works on a Wilma that doesn't show a guardian its bulletins, such as Helsinki's.
+
+### Fixed
+
+- **A Wilma that refuses its bulletins page.** Helsinki's Wilma answers a guardian's bulletins page with 403, and the summary (`wilma summary`, `wilma_summary`) failed for that child. Bulletins are now optional there, as meeting invitations and lesson notes already were: the summary lists `news` under `unavailable` and reads the rest, and `wilma news` and `wilma_list_news` return no bulletins with `unavailable: ["news"]` ("This Wilma doesn't show bulletins to this account.") instead of an error. client 1.8.0: the new `news.listIfShown()` returns null there. Reported, with the same fix for WilmAI Home, by rockaholiciam in #22.
+
 ## 2.3.0 (2026-10-24)
 
 _Releases: wilma-cli 2.3.0, wilma-client 1.7.1; the `wilma` skill and plugin 2.3.0 (2026-10-27)._

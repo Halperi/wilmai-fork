@@ -3,13 +3,13 @@
  * anonymised pages (wilma-client's real-page fixtures), so every id collides unless the app keeps them apart. The app
  * shows only when every Wilma is signed in; otherwise the Wilmas page.
  */
-import "./shim.ts";
+import { setNow } from "./shim.ts";
 import "fake-indexeddb/auto";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { accountKey, activateAccount, forgetPasswordsIfAsked, getState, knownFamilies, passwordOf, savedLinkedSessions, updateSettings } from "../src/data/store.ts";
-import { addWilma, changeLogin, forgetThisFamily, getBack, leaveDemo, openMessage, removeWilma, resetApp, setChildShown, signInAll, signInDemo, signInWithPassword, signOut, signOutWilma, syncNow } from "../src/data/engine.ts";
+import { addWilma, changeLogin, forgetThisFamily, getBack, leaveDemo, openMessage, removeWilma, resetApp, setChildShown, resume, signInAll, signInDemo, signInWithPassword, signOut, signOutWilma, syncNow } from "../src/data/engine.ts";
 import { familyChild, familyChildren, familyId, loginOfChild, loginOfId, logins, screenFor, slotFor, wilmaIdOf, wilmaNumber, wilmaPage } from "../src/data/logins.ts";
 import { buildFeed } from "../src/data/feed.ts";
 import { DEFAULT_SETTINGS, type AccountInfo } from "../src/data/model.ts";
@@ -24,6 +24,9 @@ interface Fake {
   alive: string | null;
   sid: number;
   requests: string[];
+  /** Answers a guardian's bulletins page with 403, as Helsinki's Wilma does. */
+  refusesNews?: boolean;
+  loginUnavailable?: boolean;
 }
 
 /** A fake Wilma per host: one live session per account, a front page with Wilma's logout form, the fixtures' pages. */
@@ -40,6 +43,7 @@ function fakeWilmas(fakes: Record<string, Fake>) {
     if (!fake) return { error: "Unknown Wilma", status: 502 };
     const where = url.pathname + url.search;
     fake.requests.push(`${wire.method} ${where}`);
+    if (url.pathname === "/login" && fake.loginUnavailable) return { error: "Synthetic network unavailable", status: 502 };
     const sid = /Wilma2SID=([^;]+)/.exec(wire.cookie ?? "")?.[1] ?? null;
     if (url.pathname === "/login" && wire.method === "GET") return answer(wire.url, 200, '<input type="hidden" name="SESSIONID" value="s">');
     if (url.pathname === "/login") {
@@ -65,7 +69,7 @@ function fakeWilmas(fakes: Record<string, Fake>) {
     if (page === "/messages/list/outbox") return answer(wire.url, 200, '{"Messages":[]}', { contentType: "application/json" });
     if (page === "/messages/list/appointments") return json("appointments-list.json");
     if (/^\/messages\/\d+$/.test(page)) return json("message-thread.json");
-    if (page === "/news") return answer(wire.url, 200, fixture("news-list.html"));
+    if (page === "/news") return fake.refusesNews ? answer(wire.url, 403, "Forbidden") : answer(wire.url, 200, fixture("news-list.html"));
     if (/^\/news\/\d+$/.test(page)) return answer(wire.url, 200, fixture("news-detail.html"));
     if (page === "/attendance/view") return answer(wire.url, 200, fixture("attendance.html"));
     if (page.startsWith("/exams/calendar")) return answer(wire.url, 200, fixture("exams-calendar.html"));
@@ -118,7 +122,8 @@ test("two screens: the app once every Wilma is signed in, otherwise the Wilma pa
   assert.equal(screenFor("signed-out", "password", "today"), "wilmas", "a Wilma not signed in");
   assert.equal(screenFor("ready", "password", "wilmas"), "wilmas", "opened from the app");
   assert.equal(screenFor("ready", "password", "today"), "app");
-  assert.equal(screenFor("ready", "demo", "wilmas"), "app", "the sample family has no Wilmas");
+  assert.equal(screenFor("ready", "demo", "today"), "app");
+  assert.equal(screenFor("ready", "demo", "wilmas"), "wilmas", "the sample family's two schools, to look at");
 });
 
 test("two Wilmas with the same numbers read side by side, and the app shows only while both are signed in", async () => {
@@ -549,4 +554,121 @@ test("the app doesn't sign a Wilma in by itself while the parent is signing it i
     overrideBridge(null);
     await resetApp();
   }
+});
+
+test("a Wilma that doesn't show a guardian its bulletins still has everything else read", async () => {
+  await resetApp();
+  updateSettings({ ...DEFAULT_SETTINGS });
+  const fakes = family();
+  fakes.south.refusesNews = true;
+  try {
+    await signInWithPassword(NORTH, "parent", "fictional-north", undefined, false, "guardian");
+    await addWilma(SOUTH, "parent", "fictional-south");
+    await syncNow();
+    const snap = getState().snapshot!;
+    assert.equal(getState().sync.error, null, "no 'Couldn't read' for the Wilma that refused /news");
+    const fromSouth = <T,>(items: Record<number, T>) => Object.keys(items).filter((id) => loginOfId(Number(id)) === 1).length;
+    assert.ok(fromSouth(snap.messages) > 0, "its messages are read");
+    assert.equal(fromSouth(snap.news), 0, "and it has no bulletins");
+    assert.ok(Object.keys(snap.news).length > 0, "the other Wilma's bulletins are there");
+    assert.ok(snap.perChild[familyChild(1, "1234")]?.overview, "its front page is read");
+  } finally {
+    overrideBridge(null);
+    await resetApp();
+  }
+});
+
+
+test("phone background refresh keeps login isolation and detects an ended session without opening details", async () => {
+  await resetApp();
+  updateSettings({ ...DEFAULT_SETTINGS, staySignedIn: false });
+  const { north, south } = family();
+  try {
+    await signInWithPassword(NORTH, "parent", "fictional-north", undefined, false, "guardian");
+    await addWilma(SOUTH, "parent", "fictional-south");
+    await syncNow();
+    const before = Object.keys(getState().snapshot!.messages).length;
+    north.requests.length = south.requests.length = 0;
+    await syncNow(false, { background: true });
+    assert.ok([...north.requests, ...south.requests].every((r) => !/\/(messages|news)\/\d+/.test(r)), "background listing never opens message or bulletin details");
+    south.alive = null;
+    await syncNow(false, { background: true });
+    assert.equal(getState().loginStatus[0]?.live, true);
+    assert.equal(getState().loginStatus[1]?.live, false);
+    assert.equal(getState().phase, "signed-out");
+    assert.equal(Object.keys(getState().snapshot!.messages).length, before, "one expired login keeps both schools' cached messages");
+  } finally {
+    overrideBridge(null);
+    await signOut();
+  }
+});
+
+
+test("restart restores a remembered login immediately when the saved session is missing", async () => {
+  await resetApp(); updateSettings({ ...DEFAULT_SETTINGS, staySignedIn: true });
+  const { north } = family();
+  try {
+    await signInWithPassword(NORTH, "parent", "fictional-north", undefined, false, "guardian");
+    await syncNow();
+    await signInDemo(); await leaveDemo(); // Drop in-memory sessions without the parent's deliberate sign-out.
+    const before = north.sid;
+    await resume(null);
+    assert.equal(getState().phase, "ready");
+    assert.equal(north.sid, before + 1);
+  } finally { overrideBridge(null); await resetApp(); }
+});
+
+test("a temporary network failure retries with the saved password instead of disabling automatic login", async () => {
+  const clock = Date.now();
+  await resetApp(); updateSettings({ ...DEFAULT_SETTINGS, staySignedIn: true });
+  const { north, south } = family();
+  try {
+    await signInWithPassword(NORTH, "parent", "fictional-north", undefined, false, "guardian");
+    await addWilma(SOUTH, "parent", "fictional-south"); await syncNow();
+    south.loginUnavailable = true; south.alive = null;
+    await syncNow(); await getBack();
+    const status = getState().loginStatus[1];
+    assert.equal(status?.failed, null, "offline is not a refused password");
+    assert.ok(status?.rejoinAt && status.rejoinAt > Date.now(), "wait between network retries");
+    assert.equal(passwordOf(logins(getState().snapshot!)[1].account), "fictional-south");
+    const requests = south.requests.length;
+    await getBack(); assert.equal(south.requests.length, requests, "no retry before its deadline");
+    south.loginUnavailable = false;
+    setNow(status!.rejoinAt! + 1);
+    const firstSid = north.sid;
+    assert.equal(await getBack(), true);
+    assert.equal(north.sid, firstSid, "the other school's active session stays untouched");
+  } finally { setNow(clock); overrideBridge(null); await resetApp(); }
+});
+
+test("restoring a missing session respects one-click mode and deliberate sign-out", async () => {
+  await resetApp(); updateSettings({ ...DEFAULT_SETTINGS, staySignedIn: false });
+  const { north } = family();
+  try {
+    await signInWithPassword(NORTH, "parent", "fictional-north", undefined, false, "guardian");
+    await syncNow(); await signInDemo(); await leaveDemo();
+    const sid = north.sid;
+    await resume(null);
+    assert.equal(getState().phase, "signed-out");
+    assert.equal(north.sid, sid, "one-click mode does not enable automatic sign-in");
+    updateSettings({ staySignedIn: true });
+    await signOut(); await resume(null);
+    assert.equal(getState().phase, "signed-out");
+    assert.equal(north.sid, sid, "the parent's sign-out is not undone");
+  } finally { overrideBridge(null); await resetApp(); }
+});
+
+test("a refused password is still permanent and must not be retried on a timer", async () => {
+  await resetApp(); updateSettings({ ...DEFAULT_SETTINGS, staySignedIn: true });
+  const { north } = family();
+  try {
+    await signInWithPassword(NORTH, "parent", "fictional-north", undefined, false, "guardian");
+    await syncNow(); north.password = "changed-in-wilma"; north.alive = null;
+    await syncNow(); await getBack();
+    assert.ok(getState().loginStatus[0]?.failed);
+    assert.equal(getState().loginStatus[0]?.rejoinAt, null);
+    assert.ok(!passwordOf(getState().snapshot!.account));
+    const requests = north.requests.length;
+    await getBack(); assert.equal(north.requests.length, requests);
+  } finally { overrideBridge(null); await resetApp(); }
 });

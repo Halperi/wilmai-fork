@@ -19,7 +19,8 @@ const original = {
 };
 let envelope: { installation: string; data: string } | null = { installation: originalId, data: JSON.stringify(original) };
 const reads: string[] = [];
-const native = { invoke: async (command: string, args: { installation: string; data: string }) => {
+const native = { invoke: async (command: string, args: { installation: string; data: string; legacy?: string; proposed: string }) => {
+  if (command === "ios_vault_identity") return args.legacy ?? args.proposed;
   if (command === "ios_vault_load") {
     reads.push(args.installation);
     // Model the native reinstall guard: a different installation deletes the old envelope.
@@ -46,7 +47,7 @@ test("upgrading the shipped iOS app opens the existing vault without losing cred
   assert.equal(localStorage.getItem(originalKey), originalId);
   assert.equal(localStorage.getItem("wilmai.secureInstallation"), null);
   assert.equal(store.getState().secureStorage.ready, true);
-  assert.deepEqual(JSON.parse(envelope!.data), original);
+  assert.deepEqual(JSON.parse(envelope!.data), { ...original, preferences: JSON.parse(localStorage.getItem("wilmai.settings")!) });
   assert.equal(store.getState().settings.jevKey, original.credentials.jevKey);
   assert.equal(store.getState().settings.openaiKey, original.credentials.openaiKey);
   assert.equal(store.passwordOf(account), "synthetic-password-a");

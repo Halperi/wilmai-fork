@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { flushPersisted, loadSecrets, accountKey, accountStorageKey, getState, useApp } from "../data/store";
+import { accountKey, accountStorageKey, getState, useApp } from "../data/store";
 import { intelligenceProvider } from "../data/model";
 import { OPENAI_PAUSE_MS } from "../luna/client";
 import { checkOpenAIAgain } from "../luna/events";
@@ -8,6 +8,7 @@ import { getBack, keepAlive, leaveDemo, syncNow, isDemo } from "../data/engine";
 import { logins, schoolOf } from "../data/logins";
 import { isDesktopApp, isMobileApp } from "../wilma/transport";
 import { usesSecureVault } from "../data/secure-vault";
+import { retryMobileStorage, startMobileStorageRecovery, STORAGE_RECOVERED } from "../data/mobile-storage";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { notificationsAvailable, showWindow, startNotifications, trayLabels } from "../data/notify";
 import { addDays, today, weekday } from "../data/dates";
@@ -72,8 +73,11 @@ export function App() {
       } else void keepAlive(); // out of sight: one small read, so Wilma doesn't end the session for being idle
     };
     const onTime = () => maybe();
+    const onReturn = () => maybe(isMobileApp);
     const t = setInterval(onTime, 10 * 60_000);
-    document.addEventListener("visibilitychange", onTime);
+    document.addEventListener("visibilitychange", onReturn);
+    window.addEventListener(STORAGE_RECOVERED, onReturn);
+    if (isMobileApp) window.addEventListener("online", onReturn);
     // "Check Wilma now" in the menu bar: signed out, the window opens on the sign-in page.
     const checkNow = () => (getState().phase === "signed-out" ? showWindow() : maybe(true));
     const stop = startNotifications(onTime, checkNow, (key) => {
@@ -87,10 +91,22 @@ export function App() {
     });
     return () => {
       clearInterval(t);
-      document.removeEventListener("visibilitychange", onTime);
+      document.removeEventListener("visibilitychange", onReturn);
+      window.removeEventListener(STORAGE_RECOVERED, onReturn);
+      if (isMobileApp) window.removeEventListener("online", onReturn);
       stop();
     };
   }, []);
+  useEffect(() => startMobileStorageRecovery(), []);
+  // Foreground phones retry a temporary network failure at its deadline, respecting Wilma's session-race pause.
+  const rejoinAt = useApp((s) => Math.min(...Object.values(s.loginStatus).flatMap((status) => status.rejoinAt ? [status.rejoinAt] : [])));
+  useEffect(() => {
+    if (!isMobileApp || phase !== "signed-out" || !Number.isFinite(rejoinAt)) return;
+    const timer = setTimeout(() => {
+      if (document.visibilityState === "visible" && getState().secureStorage.ready) void getBack();
+    }, Math.max(0, rejoinAt - Date.now()));
+    return () => clearTimeout(timer);
+  }, [phase, rejoinAt]);
   // OpenAI unreachable (luna/client.ts): when the pause is over, one quick check. Still blocked starts a new pause.
   const blockedAt = useApp((s) => s.openaiBlocked?.at ?? null);
   useEffect(() => {
@@ -107,8 +123,9 @@ export function App() {
       {secureStorage.error ? <>
         <p>{t("Your latest changes may not have been saved. Retry before closing the app.")}</p>
         <button className="btn btn-primary" onClick={() => {
-          void loadSecrets().then(() => flushPersisted()).then(() => window.location.reload()).catch(() => {});
+          void retryMobileStorage().catch(() => {});
         }}>{t("Try again")}</button>
+        {secureStorage.code ? <p className="help">{t("Storage error code: {code}", { code: secureStorage.code })}</p> : null}
       </> : null}
     </main>
   );
@@ -178,7 +195,7 @@ function Syncer() {
       ) : null}
       <span className={`txt${sync.error ? " err" : ""}`}>{text}</span>
       {!demo ? (
-        <button className="btn btn-quiet btn-sm" onClick={() => void syncNow()} disabled={sync.running} title={t("Check Wilma now")}>
+        <button className="btn btn-quiet btn-sm" onClick={() => void syncNow()} disabled={sync.running} title={`${text} · ${t("Check Wilma now")}`}>
           <Icon name="refresh" className={`icon${sync.running ? " spin" : ""}`} />
           <span className="sr-only">{t("Check Wilma now")}</span>
         </button>
@@ -404,7 +421,8 @@ function Shell() {
           </div>
         </nav>
         <div className="main">
-          <header className="topbar">
+          {/* Three or more children: in a narrow window the sync text gives way, so the children and search fit (styles.css). */}
+          <header className={`topbar${snap.children.length > 2 ? " many-kids" : ""}`}>
             {snap.children.length > 1 ? (
               <div className="kids" role="group" aria-label={t("Show children")}>
                 <button className="kid-seg all" aria-pressed={live.length === 0} onClick={() => setSelected([])} title={t("Everyone (0)")}>
@@ -413,16 +431,17 @@ function Shell() {
                 {snap.children.map((c, i) => (
                   <button
                     key={c.number}
-                    className={`kid-seg c${c.color % 5}`}
+                    className={`kid-seg c${c.color % 16}`}
                     aria-pressed={live.includes(c.number)}
                     onClick={(e) => pickKid(c.number, e.metaKey || e.ctrlKey || e.shiftKey)}
                     title={
                       live.length === 1 && live[0] === c.number
                         ? t("Back to everyone ({key})", { key: String(i + 1) })
-                        : t("Show only {name} ({key}). ⌘-click to add or remove.", { name: c.first, key: String(i + 1) })
+                        : t("Show only {name} ({key}). ⌘-click to add or remove.", { name: c.nick ?? c.first, key: String(i + 1) })
                     }
                   >
-                    {c.first}
+                    {c.emoji ? <span className="kid-emoji">{c.emoji}</span> : null}
+                    {c.nick ?? c.first}
                   </button>
                 ))}
               </div>
