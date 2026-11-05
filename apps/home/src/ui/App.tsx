@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { flushPersisted, loadSecrets, accountKey, accountStorageKey, getState, useApp } from "../data/store";
+import { accountKey, accountStorageKey, getState, useApp } from "../data/store";
 import { intelligenceProvider } from "../data/model";
 import { OPENAI_PAUSE_MS } from "../luna/client";
 import { checkOpenAIAgain } from "../luna/events";
@@ -8,6 +8,7 @@ import { getBack, keepAlive, leaveDemo, syncNow, isDemo } from "../data/engine";
 import { logins, schoolOf } from "../data/logins";
 import { isDesktopApp, isMobileApp } from "../wilma/transport";
 import { usesSecureVault } from "../data/secure-vault";
+import { retryMobileStorage, startMobileStorageRecovery, STORAGE_RECOVERED } from "../data/mobile-storage";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { notificationsAvailable, showWindow, startNotifications, trayLabels } from "../data/notify";
 import { addDays, today, weekday } from "../data/dates";
@@ -72,17 +73,10 @@ export function App() {
       } else void keepAlive(); // out of sight: one small read, so Wilma doesn't end the session for being idle
     };
     const onTime = () => maybe();
-    const onReturn = () => {
-      // A save racing the phone lock may fail while protected data is unavailable.
-      // Restore the latest dirty values on return, then restart an interrupted startup.
-      if (isMobileApp && document.visibilityState === "visible" && !getState().secureStorage.ready && getState().secureStorage.error) {
-        void loadSecrets().then(() => flushPersisted()).then(() => window.location.reload()).catch(() => {});
-        return;
-      }
-      maybe(isMobileApp);
-    };
+    const onReturn = () => maybe(isMobileApp);
     const t = setInterval(onTime, 10 * 60_000);
     document.addEventListener("visibilitychange", onReturn);
+    window.addEventListener(STORAGE_RECOVERED, onReturn);
     if (isMobileApp) window.addEventListener("online", onReturn);
     // "Check Wilma now" in the menu bar: signed out, the window opens on the sign-in page.
     const checkNow = () => (getState().phase === "signed-out" ? showWindow() : maybe(true));
@@ -98,10 +92,12 @@ export function App() {
     return () => {
       clearInterval(t);
       document.removeEventListener("visibilitychange", onReturn);
+      window.removeEventListener(STORAGE_RECOVERED, onReturn);
       if (isMobileApp) window.removeEventListener("online", onReturn);
       stop();
     };
   }, []);
+  useEffect(() => startMobileStorageRecovery(), []);
   // Foreground phones retry a temporary network failure at its deadline, respecting Wilma's session-race pause.
   const rejoinAt = useApp((s) => Math.min(...Object.values(s.loginStatus).flatMap((status) => status.rejoinAt ? [status.rejoinAt] : [])));
   useEffect(() => {
@@ -127,8 +123,9 @@ export function App() {
       {secureStorage.error ? <>
         <p>{t("Your latest changes may not have been saved. Retry before closing the app.")}</p>
         <button className="btn btn-primary" onClick={() => {
-          void loadSecrets().then(() => flushPersisted()).then(() => window.location.reload()).catch(() => {});
+          void retryMobileStorage().catch(() => {});
         }}>{t("Try again")}</button>
+        {secureStorage.code ? <p className="help">{t("Storage error code: {code}", { code: secureStorage.code })}</p> : null}
       </> : null}
     </main>
   );

@@ -7,9 +7,9 @@ import { get, set } from "idb-keyval";
 // A packaged WKWebView may expose getRandomValues without secure-context randomUUID.
 Object.defineProperty(globalThis, "crypto", { value: { getRandomValues: crypto.getRandomValues.bind(crypto) } });
 let raw: string | null = null;
-let failRead = true, failWrite = false;
+let failRead = true, failWrite = false, identityCalls = 0;
 const native = { invoke: async (command: string, args: { installation: string; data: string; legacy?: string; proposed: string }) => {
-  if (command === "ios_vault_identity") return args.legacy ?? args.proposed;
+  if (command === "ios_vault_identity") { identityCalls++; return args.legacy ?? args.proposed; }
   if (command === "ios_vault_load") { if (failRead) throw new Error("synthetic locked Keychain"); return raw; }
   if (command === "ios_vault_save") { if (failWrite) throw new Error("synthetic locked Keychain"); raw = args.data; return; }
   throw new Error(`Unexpected command ${command}`);
@@ -62,8 +62,13 @@ test("ongoing writes have no plaintext fallback and retry saves the newest value
   assert.equal(store.getState().secureStorage.ready, false);
   assert.equal(localStorage.getItem("wilmai.openaiKey"), null);
   assert.equal(JSON.parse(raw!).credentials.openaiKey, "synthetic-legacy-openai");
-  failWrite = false;
+  failWrite = false; failRead = true;
+  const before = identityCalls;
+  store.setState({ phase: "ready" });
   await store.loadSecrets();
+  assert.equal(identityCalls, before, "runtime retry drains pending writes without repeating identity enrollment");
+  assert.equal(store.getState().phase, "ready", "storage recovery does not sign out a live engine");
+  failRead = false;
   assert.equal(JSON.parse(raw!).credentials.openaiKey, "synthetic-new-openai");
   assert.equal(store.getState().secureStorage.error, null);
 });

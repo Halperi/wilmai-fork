@@ -371,6 +371,7 @@ export const FI_FORMS: Record<string, string> = {
   "It reads the same Wilma you already use, and it runs on this device.": "Se lukee samaa Wilmaa, jota jo käytät, ja toimii tällä laitteella.",
   "*Your password goes only to your school's Wilma.* Kept on this device, scrambled but not encrypted.": "*Salasanasi menee vain koulusi Wilmaan.* Säilytetään tällä laitteella peitettynä, ei salattuna.",
   "Kept in this app's data, scrambled but not encrypted.": "Säilytetään tämän sovelluksen tiedoissa peitettynä, ei salattuna.",
+  "Storage error code: {code}": "Tallennusvirheen koodi: {code}",
   // iOS secure storage
   "Secure storage": "Turvallinen tallennus",
   "Opening secure storage…": "Avataan turvallista tallennusta…",

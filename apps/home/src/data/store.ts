@@ -16,6 +16,7 @@ import { clear, del, get, set } from "idb-keyval";
 import { oldKeychain } from "../wilma/transport";
 import { emptyVault, openSecureInstallation, secureVault, INSTALLATION_KEY, usesSecureVault } from "./secure-vault";
 import { t } from "../i18n";
+import { storageFault } from "./storage-recovery";
 import { DEFAULT_SETTINGS, keepsPassword, viewerOf, type AccountInfo, type Child, type ChildLook, type ItemTranslation, type JevRecord, type LocalState, type LunaRecord, type Settings, type Snapshot, type UsageBucket, type Viewer } from "./model";
 import { normalizeAIBudget } from "./ai-budget";
 import type { CalEvent } from "./calendar";
@@ -43,7 +44,7 @@ export interface JevStatus {
 export interface AppState {
   schoolNotificationError?: string | null;
   /** Mobile blocks use until its native vault is open and migrations/writes have succeeded. */
-  secureStorage: { ready: boolean; error: string | null };
+  secureStorage: { ready: boolean; error: string | null; retryable?: boolean; code?: string };
   /** Signed out: not every Wilma of the family is signed in, and the Wilmas page shows (data/logins.ts). */
   phase: "loading" | "signed-out" | "ready";
   snapshot: Snapshot | null;
@@ -387,17 +388,24 @@ function saveSettings() {
 }
 
 /** Keep failure visible; a fire-and-forget caller must not create an unhandled rejection. */
-function storageFailure() {
-  setState({ secureStorage: { ready: false, error: t("Secure storage is unavailable. Unlock your phone and try again.") } });
+function storageFailure(error: unknown) {
+  setState({ secureStorage: { ...storageFault(error), ready: false, error: t("Secure storage is unavailable. Unlock your phone and try again.") } });
 }
 function persistSecureVault(): Promise<void> {
-  const pending = secureVault.flush().catch((error: unknown) => { storageFailure(); throw error; });
+  const pending = secureVault.flush().catch((error: unknown) => { storageFailure(error); throw error; });
   void pending.catch(() => {});
   return pending;
 }
 let openingSecureVault: Promise<void> | null = null;
+let secretsHydrated = false;
 async function openSecureVault(): Promise<void> {
   try {
+    if (secretsHydrated) {
+      // Already running: only drain pending changes. Do not re-enroll, re-import browser data or replace live settings.
+      await persistSecureVault();
+      setState({ secureStorage: { ready: true, error: null } });
+      return;
+    }
     await secureVault.load(await openSecureInstallation());
     if (!secureVault.data) {
       const legacy = loadSettings(true);
@@ -421,8 +429,9 @@ async function openSecureVault(): Promise<void> {
     for (const key of [JEV_KEY, OPENAI_KEY, WILMA_PASSWORD, PASSWORDS]) localStorage.removeItem(key);
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(preferences));
     state = { ...state, settings: { ...restored, ...secureVault.data!.credentials } };
+    secretsHydrated = true;
     setState({ secureStorage: { ready: true, error: null } });
-  } catch (error) { storageFailure(); throw error; }
+  } catch (error) { storageFailure(error); throw error; }
 }
 
 /**

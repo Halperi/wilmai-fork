@@ -40,12 +40,20 @@ final class BackgroundRefreshPlugin: Plugin {
   private var token: String?
   private var timeout: DispatchWorkItem?
   private var observer: NSObjectProtocol?
+  private var storageObservers: [NSObjectProtocol] = []
   private var registered = false
   private var relay: NotificationRelay?
   private var privacy: PrivacyGuard?
 
   override func load(webview: WKWebView) {
     privacy = PrivacyGuard(webview: webview)
+    // Visibility can precede protected-data availability. Wake JS when UIKit really unlocks it,
+    // and again on activation if the notification arrived before the JS listener was ready.
+    for name in [UIApplication.protectedDataDidBecomeAvailableNotification, UIApplication.didBecomeActiveNotification] {
+      storageObservers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+        try? self?.trigger("storageAvailable", data: ["available": UIApplication.shared.isProtectedDataAvailable])
+      })
+    }
     let center = UNUserNotificationCenter.current()
     let relay = NotificationRelay(original: center.delegate)
     self.relay = relay
@@ -97,7 +105,7 @@ final class BackgroundRefreshPlugin: Plugin {
     invoke.resolve(["registered": registered, "available": UIApplication.shared.backgroundRefreshStatus == .available])
   }
   @objc func privacyStatus(_ invoke: Invoke) {
-    invoke.resolve(["backupExcluded": privacy?.backupExcluded ?? false, "protectedFiles": privacy?.protectedFiles ?? false, "backgroundRegistered": registered])
+    invoke.resolve(["backupExcluded": privacy?.backupExcluded ?? false, "protectedFiles": privacy?.protectedFiles ?? false, "backgroundRegistered": registered, "protectedDataAvailable": UIApplication.shared.isProtectedDataAvailable, "active": UIApplication.shared.applicationState == .active])
   }
   @objc func pendingIds(_ invoke: Invoke) {
     UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
@@ -120,7 +128,10 @@ final class BackgroundRefreshPlugin: Plugin {
     finish(args.token, success: args.success)
     invoke.resolve()
   }
-  deinit { if let observer { NotificationCenter.default.removeObserver(observer) } }
+  deinit {
+    if let observer { NotificationCenter.default.removeObserver(observer) }
+    for item in storageObservers { NotificationCenter.default.removeObserver(item) }
+  }
 }
 
 @_cdecl("init_plugin_background_refresh")
