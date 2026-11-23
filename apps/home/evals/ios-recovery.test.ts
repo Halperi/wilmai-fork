@@ -54,6 +54,10 @@ test("native identity and preferences restore after WebKit storage loss without 
   assert.equal((await store.savedSession())?.state, "synthetic-cookie");
   assert.equal(JSON.parse(localStorage.getItem("wilmai.settings")!).aiProvider, "openai");
   assert.equal(JSON.parse(raw).credentials.openaiKey, "synthetic-api-key");
+  const { session } = await store.loadPersisted();
+  assert.deepEqual(store.getState().snapshot?.account, account, "normal startup must restore the school too, not only the password");
+  assert.deepEqual(session?.account, account);
+  assert.equal(JSON.parse(raw).families.active, key);
 });
 
 test("preference changes and explicit reset update the native copy too", async () => {

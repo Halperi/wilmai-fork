@@ -218,3 +218,24 @@ Synthetic iPhone-size browser checks cover runtime recovery with two delayed
 Keychain failures and no reload/login/lost pending data, one cold-start restart,
 and no automatic loop or overwrite for a corrupt vault. Real personal data is
 not used in these tests.
+
+## Account recovery after WebView cache loss (2026-11-23)
+
+An empty IndexedDB cache previously made startup discard the account selection
+even when its native passwords and sessions were intact. The encrypted phone
+vault now also keeps each family's account membership, stable login slots,
+listed/hidden children, viewer choice and explicit sign-out flags. Startup can
+rebuild the account selection and resume saved sessions without the message or
+AI cache. An unavailable database blocks startup for retry instead of being
+treated as a new installation. Retry budgets also survive intermediate storage
+status changes during recovery.
+
+Existing vaults migrate from cached membership, saved session identities or
+valid password-map identities. If only old password-map identities remain,
+unknown family relationships are kept separate and require a sign-in action.
+Explicit sign-out overrides even a stale saved session, and removing a Wilma or
+resetting the app removes the native membership too. Previously deleted secrets
+cannot be reconstructed. Keychain access protection and signing identity are
+unchanged. Regression checks cover normal startup, cache read failure, empty
+WebView storage, separate families, sign-out, removal and reset on both phone
+platforms using synthetic data.

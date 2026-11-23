@@ -1,6 +1,6 @@
 import { addPluginListener, invoke, type PluginListener } from "@tauri-apps/api/core";
 import { appPlatform, isMobileApp } from "../platform";
-import { flushPersisted, getState, loadSecrets, subscribe } from "./store";
+import { flushPersisted, getState, loadPersisted, loadSecrets, subscribe } from "./store";
 import { StorageRecovery } from "./storage-recovery";
 
 export const STORAGE_RECOVERED = "wilmai-storage-recovered";
@@ -9,6 +9,8 @@ let recovering: Promise<void> | null = null;
 export function retryMobileStorage(): Promise<void> {
   recovering ??= (async () => {
     await loadSecrets();
+    // A cache read can fail while Keychain is already open. Confirm it succeeds before restarting startup.
+    if (getState().phase === "loading") await loadPersisted();
     await flushPersisted();
     if (getState().phase === "loading") window.location.reload();
     else window.dispatchEvent(new Event(STORAGE_RECOVERED));
@@ -35,6 +37,7 @@ export function startMobileStorageRecovery(): () => void {
   const changed = () => {
     const next = blocked(), began = next && !wasBlocked;
     wasBlocked = next;
+    if (recovering) return; // Intermediate ready/error updates must not reset this attempt's retry budget.
     if (began) recovery.wake();
     else if (!next) recovery.pause();
   };

@@ -303,7 +303,8 @@ async function restoreSessions(first: SavedSession | null) {
   const scope = accountScope();
   const others = await savedLinkedSessions();
   await Promise.all(
-    logins(snap).map(async ({ slot, account }) => {
+    logins(snap).map(async ({ slot, account, signedOut }) => {
+      if (signedOut) return setStatus(slot, { live: false, why: t("You signed out."), rejoinAt: null, failed: null });
       if (sessions.has(slot)) return;
       const attempt = beginSignIn(slot, "app");
       const kept = slot ? others[accountKey(account)!] : first && accountKey(first.account) === accountKey(account) ? first : null;

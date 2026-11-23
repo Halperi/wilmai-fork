@@ -91,8 +91,10 @@ async function start() {
     updateSettings({ aiProvider: "off", ...(settings.localAI ? { localAI: { ...settings.localAI, setupPending: false } } : {}) });
   }
   if (usesSecureVault) {
-    const { session } = await loadPersisted();
-    void resume(session);
+    try {
+      const { session } = await loadPersisted();
+      void resume(session);
+    } catch { return; } // The storage gate retries a temporarily unavailable cache too.
     void runJev(); runLuna();
     return;
   }

@@ -2,7 +2,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { appPlatform } from "../platform";
 import type { SavedSession } from "./store";
-import type { Settings } from "./model";
+import type { Settings, Snapshot, Viewer } from "./model";
 
 export const usesSecureVault = appPlatform === "ios" || appPlatform === "android";
 // Keep the shipped browser keys for migration; both phones resolve their identity natively.
@@ -19,7 +19,10 @@ export interface VaultData {
   preferences?: Omit<Settings, keyof Credentials>;
   session: SavedSession | null;
   linkedSessions: Record<string, SavedSession>;
+  /** Account membership survives a WebView cache reset independently of school-content caches. */
+  families?: { active: string | null; entries: Record<string, SavedFamily> };
 }
+export type SavedFamily = Pick<Snapshot, "account" | "logins" | "lastSlot" | "firstSyncAt"> & { viewAs?: Viewer };
 export const emptyCredentials = (): Credentials => ({ jevKey: "", openaiKey: "", wilmaPassword: "", passwords: {} });
 export const emptyVault = (): VaultData => ({ version: 1, credentials: emptyCredentials(), session: null, linkedSessions: {} });
 interface Bridge {
@@ -29,9 +32,32 @@ interface Bridge {
 const object = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
 const session = (v: unknown): v is SavedSession => object(v) && typeof v.state === "string" && object(v.account)
   && typeof v.account.baseUrl === "string" && typeof v.account.username === "string";
+function validFamilies(value: unknown): boolean {
+  if (!object(value) || !(value.active === null || typeof value.active === "string") || !object(value.entries)) return false;
+  if (value.active !== null && !Object.hasOwn(value.entries, value.active as string)) return false;
+  const account = (v: unknown) => object(v) && typeof v.baseUrl === "string" && typeof v.username === "string"
+    && (v.via === "password" || v.via === "cli");
+  return Object.entries(value.entries).every(([key, family]) => {
+    if (!object(family) || !account(family.account) || !Array.isArray(family.logins) || !family.logins.length) return false;
+    const a = family.account as Record<string, string>;
+    if (key !== JSON.stringify([a.baseUrl.replace(/\/$/, "").toLowerCase(), a.username.trim().toLowerCase()])) return false;
+    if (family.viewAs !== undefined && family.viewAs !== "guardian" && family.viewAs !== "student") return false;
+    if (family.lastSlot !== undefined && (!Number.isSafeInteger(family.lastSlot) || (family.lastSlot as number) < 0)) return false;
+    if (family.firstSyncAt !== undefined && (typeof family.firstSyncAt !== "number" || !Number.isFinite(family.firstSyncAt))) return false;
+    const slots = new Set<number>();
+    return family.logins.every((login) => {
+      if (!object(login) || !Number.isSafeInteger(login.slot) || (login.slot as number) < 0 || slots.has(login.slot as number) || !account(login.account)) return false;
+      slots.add(login.slot as number);
+      return (login.signedOut === undefined || typeof login.signedOut === "boolean")
+        && (login.students === undefined || Array.isArray(login.students) && login.students.every((s) => object(s) && typeof s.number === "string" && typeof s.name === "string"))
+        && (login.hidden === undefined || Array.isArray(login.hidden) && login.hidden.every((s) => typeof s === "string"));
+    });
+  });
+}
 function parseVault(raw: string): VaultData {
   const v: unknown = JSON.parse(raw);
-  if (!object(v) || v.version !== 1 || !object(v.credentials) || (v.preferences !== undefined && !object(v.preferences))) throw new Error("Invalid secure storage format");
+  if (!object(v) || v.version !== 1 || !object(v.credentials) || (v.preferences !== undefined && !object(v.preferences))
+    || (v.families !== undefined && !validFamilies(v.families))) throw new Error("Invalid secure storage format");
   const credentials = v.credentials;
   if (!object(credentials.passwords)
     || !["jevKey", "openaiKey", "wilmaPassword"].every((k) => typeof credentials[k] === "string")

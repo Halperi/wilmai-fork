@@ -56,3 +56,24 @@ test("corrupt or unsupported Keychain data is rejected without overwriting it", 
     assert.equal(writes, 0);
   }
 });
+
+test("invalid native family membership is rejected without overwriting its secrets", async () => {
+  const account = { baseUrl: "https://school.inschool.fi", username: "parent", tenantName: null, via: "password" };
+  const key = JSON.stringify([account.baseUrl, account.username]);
+  const family = { account, logins: [{ slot: 0, account }] };
+  for (const families of [
+    { active: "missing", entries: { [key]: family } },
+    { active: key, entries: { [key]: { ...family, logins: [{ slot: 0, account }, { slot: 0, account }] } } },
+    { active: null, entries: { "wrong-account-key": family } },
+    { active: key, entries: { [key]: { ...family, logins: [] } } },
+  ]) {
+    let writes = 0;
+    const vault = new IosVault({ load: async () => JSON.stringify({ ...emptyVault(), families }), save: async () => { writes++; } });
+    await assert.rejects(vault.load(installation), /Invalid secure storage format/);
+    assert.equal(writes, 0);
+  }
+  const valid = { ...emptyVault(), families: { active: key, entries: { [key]: family } } };
+  const vault = new IosVault({ load: async () => JSON.stringify(valid), save: async () => {} });
+  await vault.load(installation);
+  assert.deepEqual(vault.data, valid, "a fresh vault instance reads the persisted membership");
+});
