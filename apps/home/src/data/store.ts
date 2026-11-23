@@ -326,7 +326,7 @@ function restoreMobileFamilies() {
     const members = (snap: Snapshot | SavedFamily) => logins({ ...snap, children: [] }).map((l) => [l.slot, accountKey(l.account)]);
     const same = cached?.snapshot && JSON.stringify(members(cached.snapshot)) === JSON.stringify(members(family));
     const { viewAs, ...header } = family;
-    const snapshot = { ...(same ? cached.snapshot! : emptySnapshot(family.account)), ...header, children: familyChildren(family.logins!) };
+    const snapshot = { ...(same ? cached.snapshot! : emptySnapshot(family.account)), ...header, children: dressChildren(familyChildren(family.logins!), same ? cached.local.looks : undefined) };
     const local: LocalState = { ...(same ? cached.local : { opened: {}, done: {} }) };
     if (viewAs) local.viewAs = viewAs;
     else delete local.viewAs;

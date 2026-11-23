@@ -18,7 +18,7 @@ const original: VaultData = {
   session: { account, state: cookie(account) },
   linkedSessions: { [key(linked)]: { account: linked, state: cookie(linked) } },
   families: { active: key(account), entries: {
-    [key(account)]: { account, logins: [{ slot: 0, account }, { slot: 3, account: linked, hidden: ["7@3"] }], lastSlot: 5, viewAs: "guardian" },
+    [key(account)]: { account, logins: [{ slot: 0, account, students: [{ number: "7", name: "Synthetic child" }] }, { slot: 3, account: linked, hidden: ["7@3"] }], lastSlot: 5, viewAs: "guardian" },
     [key(separate)]: { account: separate, logins: [{ slot: 0, account: separate, signedOut: true }] },
   } },
 };
@@ -66,6 +66,11 @@ test(`${platform}: empty WebView storage restores both Wilmas, their slots and r
   assert.equal(store.passwordOf(account), "north-password");
   assert.equal(store.passwordOf(linked), "south-password");
   assert.equal(store.getState().settings.openaiKey, "synthetic-api-key");
+  store.setChildLook("7", { nickname: "Synthetic nickname", color: 4 });
+  await store.flushPersisted();
+  await store.loadPersisted();
+  assert.equal(store.getState().snapshot?.children[0].nick, "Synthetic nickname", "restoring membership preserves cached child appearance");
+  assert.equal(store.getState().snapshot?.children[0].color, 4);
   await engine.resume(session);
   await engine.syncNow();
   assert.equal(store.getState().phase, "ready");
