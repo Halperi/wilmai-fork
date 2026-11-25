@@ -1,6 +1,7 @@
 fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
+            "ios_vault_identity",
             "ios_vault_load",
             "ios_vault_save",
             "wilma_send",

@@ -11,7 +11,7 @@
  *   signs it out, deleting this family's data from this computer, and resetting the app.
  */
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { accountKey, forgetPasswordsIfAsked, getState, passwordOf, setViewAs, updateSettings, useApp } from "../data/store";
+import { accountKey, forgetPasswordsIfAsked, getState, knownFamilies, passwordOf, setViewAs, updateSettings, useApp } from "../data/store";
 import { SignInAgainError, addWilma, changeLogin, type Attempt, forgetThisFamily, loginKept, removeWilma, resetApp, setChildShown, signInAll, signInDemo, signInWithPassword, signOutWilma } from "../data/engine";
 import { SignInCancelledError } from "../data/sign-in-attempt";
 import { logins, sameWilma, schoolOf } from "../data/logins";
@@ -22,7 +22,7 @@ import { UpdatesCard } from "./Update";
 import { LanguageChoice, ThemeChoice } from "./Settings";
 import { Icon } from "./bits";
 import { go } from "./shared";
-import { isDesktopApp } from "../wilma/transport";
+import { isDesktopApp, isMobileApp } from "../wilma/transport";
 import { t } from "../i18n";
 import { runJev } from "../jev/runner";
 import { runLuna } from "../luna/events";
@@ -53,11 +53,13 @@ export function Wilmas() {
   const status = useApp((s) => s.loginStatus);
   const local = useApp((s) => s.local);
   useApp((s) => s.settings); // remembered passwords show as they change
-  const family = snap && snap.account.via !== "demo" ? snap : null;
-  const all = family ? logins(family) : [];
+  // The sample family's Wilmas show as signed in, to look at: nothing here signs in or out of them.
+  const demo = snap?.account.via === "demo";
+  const family = snap && !demo ? snap : null;
+  const all = family ? logins(family) : demo ? logins(snap!) : [];
   const [chosen, setChosen] = useState<Viewer>("guardian");
   const who: Viewer = family ? viewerOf(family.account, local) : chosen;
-  const [news, setNews] = useState<Draft[]>(() => (family ? [] : [newDraft()]));
+  const [news, setNews] = useState<Draft[]>(() => (family || demo ? [] : [newDraft()]));
   const [typed, setTyped] = useState<Record<number, string>>({});
   const [changes, setChanges] = useState<Record<number, Change>>({});
   const [asks, setAsks] = useState<Record<string, Ask>>({});
@@ -65,13 +67,17 @@ export function Wilmas() {
   const [note, setNote] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
   const settings = useApp((s) => s.settings);
-  const out = all.filter((l) => !status[l.slot]?.live);
+  const out = demo ? [] : all.filter((l) => !status[l.slot]?.live);
   const ready = news.filter(complete);
-  const open = Boolean(family) && !out.length && !ready.length;
+  const saved = isMobileApp && family && who === "guardian"
+    ? [...new Map(knownFamilies().flatMap((f) => f.logins.map((l) => [accountKey(l.account), l.account] as const))).values()]
+      .filter((a) => a.via === "password" && !all.some((l) => sameWilma(l.account.baseUrl, a.baseUrl)) && !news.some((d) => d.tenant && sameWilma(d.tenant.url, a.baseUrl)))
+    : [];
+  const open = (Boolean(family) || demo) && !out.length && !ready.length;
   // A first setup (or a family forgotten here) starts with one Wilma to fill in, and the recommended choice unless one
   // was made before.
   useEffect(() => {
-    if (family) return;
+    if (family || demo) return;
     setNews((list) => (list.length ? list : [newDraft()]));
     if (getState().settings.staySignedIn === undefined) updateSettings({ staySignedIn: true, rememberPassword: true });
   }, [family]);
@@ -195,6 +201,7 @@ export function Wilmas() {
                 <WilmaRow
                   key={login.slot}
                   login={login}
+                  demo={demo}
                   many={all.length > 1}
                   kids={who === "guardian"}
                   ask={asks[`s${login.slot}`]}
@@ -219,6 +226,15 @@ export function Wilmas() {
                 />
               ))}
             </div>
+            {saved.length ? <section className="saved-wilmas">
+              <h3>{t("Saved Wilma accounts")}</h3>
+              {saved.map((account) => <button key={accountKey(account)} type="button" className="btn" onClick={() => setNews((list) => [...list, {
+                ...newDraft(), tenant: tenantOf(account), username: account.username, password: passwordOf(account),
+              }])}>
+                <Icon name="user" />
+                <span>{t("Add {school}", { school: schoolOf(account) })}<small>{account.username}</small></span>
+              </button>)}
+            </section> : null}
             {note ? <div className="notice err">{note}</div> : null}
             <button className="btn btn-primary wilmas-go" type="submit" disabled={busy}>
               {busy ? t("Signing in…") : open ? t("Open WilmAI Home") : t("Sign in")}
@@ -367,15 +383,16 @@ function ResetApp({ onDone }: { onDone: () => void }) {
  * form filled in with its school, username and (dots for) the password when it's kept, as a browser fills one, so Sign
  * in is all it takes; any of them can be changed (another user or school, `changeLogin`). No children until it's in.
  */
-function WilmaRow({ login, many, kids, ask, typed, onType, change, onChange, taken, onAsk }: { login: Login; many: boolean; kids: boolean; ask: Ask | undefined; typed: string; onType: (value: string) => void; change: Change | undefined; onChange: (change: Change | null) => void; taken: (url: string) => boolean; onAsk: (ask: Ask | null) => void }) {
+function WilmaRow({ login, demo, many, kids, ask, typed, onType, change, onChange, taken, onAsk }: { login: Login; demo: boolean; many: boolean; kids: boolean; ask: Ask | undefined; typed: string; onType: (value: string) => void; change: Change | undefined; onChange: (change: Change | null) => void; taken: (url: string) => boolean; onAsk: (ask: Ask | null) => void }) {
   const snap = useApp((s) => s.snapshot)!;
   const status = useApp((s) => s.loginStatus[login.slot]);
-  const live = Boolean(status?.live);
+  // The sample family's are signed in, to look at (no Sign out, Remove or unticking).
+  const live = demo || Boolean(status?.live);
   const school = schoolOf(login.account);
   const students = login.students ?? [];
   const hidden = new Set(login.hidden ?? []);
   const twice = students.filter((s, i) => students.findIndex((x) => x.name === s.name) !== i).map((s) => s.name.split(" ")[0]);
-  const remove = many ? (
+  const remove = many && !demo ? (
     <Confirm
       label={t("Remove from the app")}
       question={t("Remove {school} from the app? Its children and what was read from it leave the app, and its Wilma session ends.", { school })}
@@ -417,9 +434,11 @@ function WilmaRow({ login, many, kids, ask, typed, onType, change, onChange, tak
             {login.account.username} · <span className="wilma-on">{t("Signed in")}</span>
           </small>
         </div>
-        <button type="button" className="btn btn-quiet btn-sm" onClick={() => void signOutWilma(login.slot)}>
-          {t("Sign out")}
-        </button>
+        {demo ? null : (
+          <button type="button" className="btn btn-quiet btn-sm" onClick={() => void signOutWilma(login.slot)}>
+            {t("Sign out")}
+          </button>
+        )}
       </div>
       {kids && students.length ? (
         <div className="wilma-kids" role="group" aria-label={t("Children to show from {school}", { school })}>
@@ -427,7 +446,7 @@ function WilmaRow({ login, many, kids, ask, typed, onType, change, onChange, tak
             const cls = snap.perChild[s.number]?.className?.value;
             return (
               <label key={s.number} className="remember">
-                <input type="checkbox" checked={!hidden.has(s.number)} onChange={(e) => setChildShown(s.number, e.target.checked)} />
+                <input type="checkbox" checked={!hidden.has(s.number)} disabled={demo} onChange={(e) => setChildShown(s.number, e.target.checked)} />
                 <span>{cls ? `${s.name} · ${cls}` : s.name}</span>
               </label>
             );

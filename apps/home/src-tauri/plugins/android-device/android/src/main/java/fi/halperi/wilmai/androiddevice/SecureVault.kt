@@ -42,8 +42,8 @@ internal class SecureVault(private val context: Context, suffix: String = "") {
     private fun installation(value: String) {
         require(Regex("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}").matches(value))
     }
-    @Synchronized fun load(installation: String): String? {
-        unlocked(); installation(installation)
+    /** Authenticate the existing envelope before using its identity or replacing any data. */
+    private fun envelope(): JSONObject? {
         if (!hasRecord()) return null
         val bytes = file.openRead().use { input ->
             val value = ByteArray(maxBytes + 65); var count = 0
@@ -60,13 +60,26 @@ internal class SecureVault(private val context: Context, suffix: String = "") {
         cipher.updateAAD(aad)
         val envelope = JSONObject(String(cipher.doFinal(bytes.copyOfRange(13, bytes.size)), Charsets.UTF_8))
         require(envelope.getInt("version") == 1)
-        if (envelope.getString("installation") != installation) { file.delete(); return null }
-        return envelope.getString("data")
+        installation(envelope.getString("installation"))
+        return envelope
+    }
+    /** App-private noBackup data and its Keystore key are removed on uninstall, unlike WebView storage. */
+    @Synchronized fun identity(legacy: String?, proposed: String): String {
+        unlocked(); installation(proposed); legacy?.let { installation(it) }
+        return envelope()?.getString("installation") ?: legacy ?: proposed
+    }
+    @Synchronized fun load(installation: String): String? {
+        unlocked(); installation(installation)
+        val existing = envelope() ?: return null
+        check(existing.getString("installation") == installation) { "Installation identity mismatch; existing vault preserved" }
+        return existing.getString("data")
     }
     @Synchronized fun save(installation: String, data: String) {
         unlocked(); installation(installation)
         require(data.toByteArray(Charsets.UTF_8).size <= maxBytes)
         require(JSONObject(data).getInt("version") == 1)
+        val existing = envelope()
+        check(existing == null || existing.getString("installation") == installation) { "Installation identity mismatch; existing vault preserved" }
         val clear = JSONObject().put("version", 1).put("installation", installation).put("data", data)
             .toString().toByteArray(Charsets.UTF_8)
         require(clear.size <= maxBytes)

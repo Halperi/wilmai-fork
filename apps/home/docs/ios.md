@@ -182,3 +182,60 @@ restart in an iPhone 18 Pro simulator. Live Wilma login/message sending and the 
 still need user verification. The native notification test verifies permission,
 submission, pending-request listing/cancellation, background registration and
 file/backup protection; it contains no school data.
+
+
+## Protected-storage return recovery (2026-11-05)
+
+The reported screen is the secure-storage gate, not evidence that Wilma has
+ended a session. Earlier code tried once on WebView visibility and reloaded
+the whole frontend on success. Visibility may precede UIKit protected-data
+availability, leaving the first retry unsuccessful with no later visibility event.
+The incident's original OSStatus was not recorded, so its precise native error
+cannot be established from that screenshot alone.
+
+The background-refresh plugin now publishes `storageAvailable` on UIKit's
+protected-data-available and did-become-active events. Its existing local-only
+privacy status also reports protected-data availability and active state. Phone
+recovery checks these before retrying, coalesces concurrent wake-ups, pauses
+when hidden and permits at most eight attempts per wake-up (about 49 seconds
+of delays). A native event or user return can start another bounded attempt.
+Known permanent format/identity/entitlement errors are not automatically retried.
+Keychain remains WhenUnlockedThisDeviceOnly; no secret becomes accessible while
+protected data is locked and no plaintext fallback is added.
+
+Once credentials have been hydrated, recovery drains the latest dirty vault
+values without re-enrolling the installation, re-importing preferences, resetting
+the engine or reloading the page. An interrupted cold startup alone restarts
+startup after storage opens. The manual retry uses the same coalesced path.
+Diagnostics expose only an allowlisted code such as KEYCHAIN:-25308, never raw
+native error text, credentials, cookies or school content.
+
+Validation: Home typecheck; 166 passed, 1 skipped. Five new recovery tests cover
+early visibility/native unlock, a delayed Keychain retry, hidden/bounded/coalesced
+attempts and permanent-error classification. A store regression verifies that a
+runtime retry does not enroll the installation again or change the ready phase.
+Synthetic iPhone-size browser checks cover runtime recovery with two delayed
+Keychain failures and no reload/login/lost pending data, one cold-start restart,
+and no automatic loop or overwrite for a corrupt vault. Real personal data is
+not used in these tests.
+
+## Account recovery after WebView cache loss (2026-11-23)
+
+An empty IndexedDB cache previously made startup discard the account selection
+even when its native passwords and sessions were intact. The encrypted phone
+vault now also keeps each family's account membership, stable login slots,
+listed/hidden children, viewer choice and explicit sign-out flags. Startup can
+rebuild the account selection and resume saved sessions without the message or
+AI cache. An unavailable database blocks startup for retry instead of being
+treated as a new installation. Retry budgets also survive intermediate storage
+status changes during recovery.
+
+Existing vaults migrate from cached membership, saved session identities or
+valid password-map identities. If only old password-map identities remain,
+unknown family relationships are kept separate and require a sign-in action.
+Explicit sign-out overrides even a stale saved session, and removing a Wilma or
+resetting the app removes the native membership too. Previously deleted secrets
+cannot be reconstructed. Keychain access protection and signing identity are
+unchanged. Regression checks cover normal startup, cache read failure, empty
+WebView storage, separate families, sign-out, removal and reset on both phone
+platforms using synthetic data.

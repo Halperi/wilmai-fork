@@ -7,6 +7,7 @@ const calls: { command: string; args: Record<string, unknown> }[] = [];
 let fail = false, release: (() => void) | null = null, pause: Promise<void> | null = null;
 const native = { invoke: async (command: string, args: Record<string, unknown> = {}) => {
   calls.push({ command, args });
+  if (command === "ios_vault_identity") return args.legacy ?? args.proposed;
   if (command === "ios_vault_load") return null;
   if (command === "ios_vault_save") return;
   if (command.endsWith("check_permissions")) return { permissionState: "granted" };

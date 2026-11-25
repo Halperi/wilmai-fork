@@ -14,9 +14,11 @@
 import { useSyncExternalStore } from "react";
 import { clear, del, get, set } from "idb-keyval";
 import { oldKeychain } from "../wilma/transport";
-import { emptyVault, secureInstallation, secureVault, INSTALLATION_KEY, usesSecureVault } from "./secure-vault";
+import { emptyVault, openSecureInstallation, secureVault, INSTALLATION_KEY, usesSecureVault, type SavedFamily } from "./secure-vault";
+import { familyChildren, logins } from "./logins";
 import { t } from "../i18n";
-import { DEFAULT_SETTINGS, keepsPassword, viewerOf, type AccountInfo, type ItemTranslation, type JevRecord, type LocalState, type LunaRecord, type Settings, type Snapshot, type UsageBucket, type Viewer } from "./model";
+import { storageFault } from "./storage-recovery";
+import { DEFAULT_SETTINGS, emptySnapshot, keepsPassword, viewerOf, type AccountInfo, type Child, type ChildLook, type ItemTranslation, type JevRecord, type LocalState, type LunaRecord, type Settings, type Snapshot, type UsageBucket, type Viewer } from "./model";
 import { normalizeAIBudget } from "./ai-budget";
 import type { CalEvent } from "./calendar";
 
@@ -43,7 +45,7 @@ export interface JevStatus {
 export interface AppState {
   schoolNotificationError?: string | null;
   /** Mobile blocks use until its native vault is open and migrations/writes have succeeded. */
-  secureStorage: { ready: boolean; error: string | null };
+  secureStorage: { ready: boolean; error: string | null; retryable?: boolean; code?: string };
   /** Signed out: not every Wilma of the family is signed in, and the Wilmas page shows (data/logins.ts). */
   phase: "loading" | "signed-out" | "ready";
   snapshot: Snapshot | null;
@@ -134,10 +136,10 @@ function passwordsOf(json: string | null): Record<string, string> {
   }
 }
 
-function loadSettings(readSecrets = !usesSecureVault): Settings {
+function loadSettings(readSecrets = !usesSecureVault, preferences?: Partial<Settings>): Settings {
   try {
     // An older browser setup kept the key in the settings as it was; it moves out on the next save.
-    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings>;
+    const saved = preferences ?? JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings>;
     // The app reads with GPT-6 Luna (another model was a choice during the experiment; the eval suite still tries others).
     const loaded: Settings = {
       ...DEFAULT_SETTINGS,
@@ -194,8 +196,37 @@ export function setState(patch: Partial<AppState> | ((s: AppState) => Partial<Ap
   const next = typeof patch === "function" ? patch(state) : patch;
   if ("snapshot" in next && accountKey(next.snapshot?.account) !== accountKey(state.snapshot?.account)) accountGeneration += 1;
   state = { ...state, ...next };
+  // Each child as the family set them up (Settings → Children), whenever the children or the settings change.
+  if (("snapshot" in next || "local" in next) && state.snapshot) {
+    const children = dressChildren(state.snapshot.children, state.local.looks);
+    if (children !== state.snapshot.children) state = { ...state, snapshot: { ...state.snapshot, children } };
+  }
   for (const listener of listeners) listener();
   schedulePersist(next);
+}
+
+/** The children with their chosen colour, nickname and emoji (the same list when nothing changes). */
+export function dressChildren(children: Child[], looks: LocalState["looks"]): Child[] {
+  let changed = false;
+  const dressed = children.map((c) => {
+    const look = looks?.[c.number];
+    const base = c.base ?? c.color;
+    const emoji = look?.emoji || undefined;
+    const next: Child = { ...c, base, color: look?.color ?? base, nick: look?.nickname?.trim() || undefined, emoji, emojiTabs: (emoji && look?.emojiTabs) || undefined };
+    if (next.color === c.color && next.base === c.base && next.nick === c.nick && next.emoji === c.emoji && next.emojiTabs === c.emojiTabs) return c;
+    changed = true;
+    return next;
+  });
+  return changed ? dressed : children;
+}
+
+/** Change how a child shows (a field undefined: back to the default). */
+export function setChildLook(child: string, look: Partial<ChildLook>) {
+  setState((s) => {
+    const merged: ChildLook = { ...s.local.looks?.[child], ...look };
+    for (const key of Object.keys(merged) as (keyof ChildLook)[]) if (merged[key] === undefined || merged[key] === "") delete merged[key];
+    return { local: { ...s.local, looks: { ...s.local.looks, [child]: merged } } };
+  });
 }
 
 /** Called after every change (outside React: notifications). */
@@ -222,6 +253,7 @@ let accounts: Record<string, AccountCache> = {};
 let accountGeneration = 0;
 let resetGeneration = 0;
 let writes: Promise<void> = Promise.resolve();
+let persistedLoaded = false;
 
 /** School and username identify a cache; sample data has a separate identity. */
 export function accountKey(account?: AccountInfo): string | null {
@@ -239,6 +271,70 @@ function rememberAccount() {
   if (!key) return;
   const { snapshot, local, jev, jevBaseline, luna, translations } = state;
   accounts = { ...accounts, [key]: { snapshot, local, jev, jevBaseline, luna, translations } };
+}
+
+/** Persist membership together with the secrets, without copying message or AI caches into Keychain. */
+function saveMobileFamilies() {
+  if (!usesSecureVault || !persistedLoaded) return;
+  rememberAccount();
+  const entries = Object.fromEntries(Object.entries(accounts).flatMap(([key, cached]) => {
+    const snap = cached.snapshot;
+    if (!snap || snap.account.via === "demo") return [];
+    const family: SavedFamily = { account: snap.account, logins: logins(snap), lastSlot: snap.lastSlot, firstSyncAt: snap.firstSyncAt, viewAs: cached.local.viewAs };
+    return [[key, family]];
+  }));
+  const families = { active: state.snapshot?.account.via !== "demo" ? accountKey(state.snapshot?.account) : null, entries };
+  if (JSON.stringify(families) !== JSON.stringify(secureVault.data?.families)) {
+    secureVault.update((v) => ({ ...v, families }));
+    void persistSecureVault();
+  }
+}
+
+/** Upgrade older vaults whose account names exist only in their sessions or password-map keys. */
+function restoreLegacyMobileFamily() {
+  if (state.snapshot) return;
+  const vault = secureVault.data!;
+  const primary = vault.session?.account;
+  const candidates = [primary, ...Object.values(vault.linkedSessions).map((s) => s.account)];
+  for (const key of Object.keys(vault.credentials.passwords)) {
+    try {
+      const pair: unknown = JSON.parse(key);
+      if (!Array.isArray(pair) || pair.length !== 2 || !pair.every((v) => typeof v === "string" && v.trim())) continue;
+      const url = new URL(pair[0]);
+      if (url.protocol !== "https:" || url.username || url.password) continue;
+      candidates.push({ baseUrl: pair[0], username: pair[1], tenantName: null, via: "password" });
+    } catch { /* A malformed legacy password key cannot identify a login. */ }
+  }
+  for (const account of candidates) {
+    if (!account || account.via === "demo" || familyFor(account)) continue;
+    // Older vaults cannot establish which separate logins belonged together. Keep them separate.
+    const snapshot = { ...emptySnapshot(account), logins: [{ slot: 0, account, signedOut: accountKey(account) !== accountKey(primary) }] };
+    accounts[accountKey(account)!] = { snapshot, local: { opened: {}, done: {} }, jev: {}, jevBaseline: {}, luna: {}, translations: {} };
+  }
+  const active = (primary && familyFor(primary)) ?? Object.values(accounts).find((a) => a.snapshot && a.snapshot.account.via !== "demo")?.snapshot?.account;
+  if (active) state = { ...state, ...accounts[accountKey(active)!] };
+}
+
+function restoreMobileFamilies() {
+  if (!usesSecureVault) return;
+  const families = secureVault.data?.families;
+  if (!families) return restoreLegacyMobileFamily();
+  const previous = accounts;
+  accounts = {};
+  for (const [key, family] of Object.entries(families.entries)) {
+    const cached = previous[key];
+    const members = (snap: Snapshot | SavedFamily) => logins({ ...snap, children: [] }).map((l) => [l.slot, accountKey(l.account)]);
+    const same = cached?.snapshot && JSON.stringify(members(cached.snapshot)) === JSON.stringify(members(family));
+    const { viewAs, ...header } = family;
+    const snapshot = { ...(same ? cached.snapshot! : emptySnapshot(family.account)), ...header, children: dressChildren(familyChildren(family.logins!), same ? cached.local.looks : undefined) };
+    const local: LocalState = { ...(same ? cached.local : { opened: {}, done: {} }) };
+    if (viewAs) local.viewAs = viewAs;
+    else delete local.viewAs;
+    accounts[key] = { snapshot, local, jev: same ? cached.jev : {}, jevBaseline: same ? cached.jevBaseline : {}, luna: same ? cached.luna : {}, translations: same ? cached.translations : {} };
+  }
+  if (state.snapshot?.account.via === "demo") return;
+  const active = families.active ? accounts[families.active] : undefined;
+  state = { ...state, snapshot: null, local: { opened: {}, done: {} }, jev: {}, jevBaseline: {}, luna: {}, translations: {}, ...active };
 }
 
 /** Keep the current account and restore the next one's cache before syncing Wilma. */
@@ -318,6 +414,7 @@ export function forgetFamily(account: AccountInfo) {
     void persistSecureVault();
   }
   dirty.add("snapshot");
+  saveMobileFamilies();
   void flushPersisted();
 }
 
@@ -340,7 +437,7 @@ function saveSettings() {
   const { jevKey, openaiKey, wilmaPassword, passwords, ...rest } = state.settings;
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(rest));
   if (usesSecureVault) {
-    secureVault.update((v) => ({ ...v, credentials: { jevKey, openaiKey,
+    secureVault.update((v) => ({ ...v, preferences: rest, credentials: { jevKey, openaiKey,
       wilmaPassword: keepsPassword(rest) ? wilmaPassword : "",
       passwords: keepsPassword(rest) ? passwords : {} } }));
     void persistSecureVault();
@@ -358,18 +455,25 @@ function saveSettings() {
 }
 
 /** Keep failure visible; a fire-and-forget caller must not create an unhandled rejection. */
-function storageFailure() {
-  setState({ secureStorage: { ready: false, error: t("Secure storage is unavailable. Unlock your phone and try again.") } });
+function storageFailure(error: unknown) {
+  setState({ secureStorage: { ...storageFault(error), ready: false, error: t("Secure storage is unavailable. Unlock your phone and try again.") } });
 }
 function persistSecureVault(): Promise<void> {
-  const pending = secureVault.flush().catch((error: unknown) => { storageFailure(); throw error; });
+  const pending = secureVault.flush().catch((error: unknown) => { storageFailure(error); throw error; });
   void pending.catch(() => {});
   return pending;
 }
 let openingSecureVault: Promise<void> | null = null;
+let secretsHydrated = false;
 async function openSecureVault(): Promise<void> {
   try {
-    await secureVault.load(secureInstallation());
+    if (secretsHydrated) {
+      // Already running: only drain pending changes. Do not re-enroll, re-import browser data or replace live settings.
+      await persistSecureVault();
+      setState({ secureStorage: { ready: true, error: null } });
+      return;
+    }
+    await secureVault.load(await openSecureInstallation());
     if (!secureVault.data) {
       const legacy = loadSettings(true);
       const [saved, linked] = await Promise.all([get<SavedSession>("session"), get<Record<string, SavedSession>>("linkedSessions")]);
@@ -381,16 +485,20 @@ async function openSecureVault(): Promise<void> {
           return upgraded && accountKey(upgraded.account) === key ? [[key, upgraded]] : [];
         })) }));
     }
-    if (!keepsPassword(state.settings)) secureVault.update((v) => ({ ...v, credentials: { ...v.credentials, wilmaPassword: "", passwords: {} } }));
+    // Native preferences are committed with the secrets. Do not let missing/stale WebKit defaults clear them.
+    const restored = loadSettings(false, secureVault.data!.preferences ?? state.settings);
+    const { jevKey: _j, openaiKey: _o, wilmaPassword: _w, passwords: _p, ...preferences } = restored;
+    secureVault.update((v) => ({ ...v, preferences, credentials: keepsPassword(restored)
+      ? v.credentials : { ...v.credentials, wilmaPassword: "", passwords: {} } }));
     await persistSecureVault();
     // Only remove plaintext/base64 browser copies after a confirmed native vault write/read.
     await Promise.all([del("session"), del("linkedSessions")]);
     for (const key of [JEV_KEY, OPENAI_KEY, WILMA_PASSWORD, PASSWORDS]) localStorage.removeItem(key);
-    const { jevKey: _j, openaiKey: _o, wilmaPassword: _w, passwords: _p, ...preferences } = state.settings;
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(preferences));
-    state = { ...state, settings: { ...state.settings, ...secureVault.data!.credentials } };
+    state = { ...state, settings: { ...restored, ...secureVault.data!.credentials } };
+    secretsHydrated = true;
     setState({ secureStorage: { ready: true, error: null } });
-  } catch (error) { storageFailure(); throw error; }
+  } catch (error) { storageFailure(error); throw error; }
 }
 
 /**
@@ -416,6 +524,7 @@ export async function loadSecrets(): Promise<void> {
 
 function schedulePersist(patch: Partial<AppState>) {
   if ("settings" in patch) saveSettings();
+  if ("snapshot" in patch || "local" in patch) saveMobileFamilies();
   if ("snapshot" in patch) dirty.add("snapshot");
   if ("local" in patch) dirty.add("local");
   if ("jev" in patch) dirty.add("jev");
@@ -437,6 +546,7 @@ export function flushPersisted(): Promise<void> {
   const parts = [...dirty];
   dirty.clear();
   rememberAccount();
+  saveMobileFamilies();
   const values = parts.map((part) => [part, state[part]] as const);
   const savedAccounts = accounts;
   writes = writes.then(async () => {
@@ -462,7 +572,10 @@ export async function loadPersisted(): Promise<{ session: SavedSession | null }>
     get<Record<string, AccountCache>>("accounts"),
     get<Record<string, ItemTranslation>>("translations"),
     get<Record<string, string>>("phrases"),
-  ]).catch(() => [undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined] as const);
+  ]).catch((error: unknown) => {
+    if (usesSecureVault) { storageFailure(error); throw error; }
+    return [undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined] as const;
+  });
   state = {
     ...state,
     snapshot: snapshot ?? null,
@@ -476,6 +589,10 @@ export async function loadPersisted(): Promise<{ session: SavedSession | null }>
   };
   accounts = savedAccounts ?? {};
   rememberAccount(); // Migrate the existing installation without losing its AI results.
+  restoreMobileFamilies();
+  persistedLoaded = true;
+  saveMobileFamilies();
+  if (usesSecureVault) await persistSecureVault();
   migrateAccountStorage();
   // The one login's remembered password from before there were several Wilmas, kept by login from now on.
   if (state.settings.wilmaPassword && state.snapshot && state.snapshot.account.via !== "demo") rememberPasswordOf(state.snapshot.account, state.settings.wilmaPassword);
@@ -542,6 +659,7 @@ export function updateSettings(patch: Partial<Settings>) {
 /** Forget everything this app stored on this device. */
 export async function forgetEverything() {
   resetGeneration += 1;
+  persistedLoaded = false;
   if (timer) clearTimeout(timer);
   timer = null;
   dirty.clear();
@@ -552,6 +670,7 @@ export async function forgetEverything() {
   }
   await clear();
   accounts = {};
+  state = { ...state, snapshot: null, local: { opened: {}, done: {} } };
   for (let i = localStorage.length - 1; i >= 0; i -= 1) {
     const key = localStorage.key(i);
     if (key?.startsWith("wilmai.") && !(usesSecureVault && key === INSTALLATION_KEY)) localStorage.removeItem(key);
@@ -559,6 +678,7 @@ export async function forgetEverything() {
   // A reset must not import a key from an earlier version on the next launch.
   localStorage.setItem(MOVED_KEY, "1");
   setState({ settings: { ...DEFAULT_SETTINGS }, usage: {}, translations: {}, phrases: {} });
+  persistedLoaded = true;
   await flushPersisted();
 }
 
@@ -598,6 +718,29 @@ export function setCalendarKind(kind: string, on: boolean) {
   setState((s) => {
     const calendar = s.local.calendar ?? { decisions: {}, kinds: {} };
     return { local: { ...s.local, calendar: { ...calendar, kinds: { ...calendar.kinds, [kind]: on } } } };
+  });
+}
+
+/** Count a subject in a child's school hours again, or leave it out (only in this app). */
+export function setLeftOut(child: string, subject: string, out: boolean) {
+  setState((s) => {
+    const leftOut = { ...s.local.leftOut };
+    const subjects = (leftOut[child] ?? []).filter((x) => x !== subject);
+    if (out) subjects.push(subject);
+    if (subjects.length) leftOut[child] = subjects;
+    else delete leftOut[child];
+    return { local: { ...s.local, leftOut } };
+  });
+}
+
+/** Whether a subject is PE, as the parent says (null: back to the AI's reading, or the name's). */
+export function setPE(subject: string, value: boolean | null) {
+  setState((s) => {
+    const pe = { ...s.local.pe };
+    const { set: _, ...rest } = pe[subject] ?? {};
+    if (value === null) pe[subject] = rest;
+    else pe[subject] = { ...rest, set: value };
+    return { local: { ...s.local, pe } };
   });
 }
 

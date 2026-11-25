@@ -8,6 +8,7 @@
     "main"
   ],
   "permissions": [
+    "android-device:allow-vault-identity",
     "android-device:allow-vault-load",
     "android-device:allow-vault-save",
     "android-device:allow-configure",

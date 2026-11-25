@@ -82,9 +82,10 @@ export interface HomeCopy {
   };
   closing: { eyebrow: string; text: string; signature: string; button: string };
   /** The banner across the very top of the front page. `more` and `cta` are left out on phones. */
-  announce: { badge: string; text: string; more: string; cta: string };
-  /** The card about Home on the front page, after the setup guides. */
-  card: { eyebrow: string; text: string; link: string };
+  /** The strip across the top of the front page: what Home is, what it gives you (`detail`), and the way in. */
+  announce: { badge: string; text: string; more: string; detail: string; cta: string };
+  /** Home on the front page, after the setup guides: the app for those who'd rather not use an assistant. */
+  card: { eyebrow: string; text: string; points: string[]; download: string; link: string };
 }
 
 const en: HomeCopy = {
@@ -114,15 +115,19 @@ const en: HomeCopy = {
       pause: "Pause the tour",
       today: "Today",
       message: "Messages",
-      search: "Search",
+      translate: "Translation",
+      ai: "AI",
       week: "Week",
       grades: "Grades",
+      schools: "Schools",
       captions: {
-        today: ["Every child's day at a glance.", "Always know what needs you first."],
-        message: ["Messages, news and bulletins, all in one view.", "Reply right away, without opening Wilma."],
-        search: "Search everything at once.",
+        today: "Every child's day at a glance.",
+        message: ["Messages, news and bulletins, all in one view.", "Reply right away, without opening Wilma.", "Search everything at once."],
+        translate: "Messages in your language, the original a click away.",
+        ai: "With AI, what needs you comes first, and by when.",
         week: "Week and calendar views for the whole family.",
-        grades: "Grades and notes in one view, with averages and trends."
+        grades: "Grades and notes in one view, with averages and trends.",
+        schools: "Children at different schools, in one view."
       }
     }
   },
@@ -188,6 +193,7 @@ const en: HomeCopy = {
       "Into Finnish, Swedish, English, Ukrainian or Arabic.",
       "New messages arrive translated, and turning it on translates the last 30 days too.",
       "The original is always a click away.",
+      "What you write to the school can go in Finnish or Swedish, with the translation beside your words before you send.",
       "It uses the app's OpenAI choice: usually a fraction of a cent a message, within the monthly limit you set.",
       "The app itself is in Finnish, Swedish or English."
     ],
@@ -308,11 +314,11 @@ const en: HomeCopy = {
       },
       {
         q: "Can it translate messages?",
-        a: "Yes, if you choose OpenAI. Pick a language in Settings (Finnish, Swedish, English, Ukrainian or Arabic), and messages, bulletins and notes in another language are translated as they come in, titles too, with the original a click away. It usually costs a fraction of a cent a message. The app itself is in Finnish, Swedish or English."
+        a: "Yes, if you choose OpenAI. Pick a language in Settings (Finnish, Swedish, English, Ukrainian or Arabic), and messages, bulletins and notes in another language are translated as they come in, titles too, with the original a click away. It usually costs a fraction of a cent a message. It can also send what you write to the school in Finnish or Swedish: the translation shows beside your words, and only what's shown is sent. The app itself is in Finnish, Swedish or English."
       },
       {
         q: "What does OpenAI see?",
-        a: "Only if you choose OpenAI: one message, bulletin or note at a time, with your children's first names and classes so it can tell who it's about. With translations on, also the texts it translates. Your Wilma password never goes there. With local AI or no AI, nothing goes to an AI service."
+        a: "Only if you choose OpenAI: one message, bulletin or note at a time, with your children's first names and classes so it can tell who it's about. With translations on, also the texts it translates, and the messages you write when you translate them into Finnish or Swedish. Your Wilma password never goes there. With local AI or no AI, nothing goes to an AI service."
       },
       {
         q: "Where is my data?",
@@ -356,11 +362,24 @@ const en: HomeCopy = {
     signature: "— Antti",
     button: "Give feedback on GitHub"
   },
-  announce: { badge: "New", text: "WilmAI Home", more: ": a fast desktop Wilma app for students and parents", cta: "See the app" },
+  announce: {
+    badge: "New",
+    text: "WilmAI Home",
+    more: "a free Wilma app for your computer",
+    detail: "Every child's day, messages in your language, and AI if you want it. For Mac and Windows.",
+    cta: "See the app"
+  },
   card: {
-    eyebrow: "new: a desktop app",
-    text: "Rather have an app of your own? WilmAI Home is a fast, modern Wilma app for students and parents: everything in one view, a notification when something needs you, and AI if you want it. Free and open, now in beta, for Mac and Windows.",
-    link: "Meet WilmAI Home"
+    eyebrow: "or an app of your own",
+    text: "Don't use an AI assistant? WilmAI Home is a fast Wilma app for students and parents, on your own computer. It works without AI.",
+    points: [
+      "Every child's day, messages, exams and grades in one view.",
+      "Messages translated into your language, the original a click away.",
+      "AI that puts what needs you first, if you want it.",
+      "Children at different schools, together."
+    ],
+    download: "Download for Mac or Windows",
+    link: "See how it works"
   }
 };
 
@@ -391,15 +410,19 @@ const fi: HomeCopy = {
       pause: "Keskeytä esittely",
       today: "Tänään",
       message: "Viestit",
-      search: "Haku",
+      translate: "Käännös",
+      ai: "Tekoäly",
       week: "Viikko",
       grades: "Arvosanat",
+      schools: "Koulut",
       captions: {
-        today: ["Jokaisen lapsen päivä yhdellä silmäyksellä.", "Tiedät aina, mikä vaatii sinua ensin."],
-        message: ["Viestit ja tiedotteet samassa näkymässä.", "Vastaa heti, avaamatta Wilmaa."],
-        search: "Hae kaikesta kerralla.",
+        today: "Jokaisen lapsen päivä yhdellä silmäyksellä.",
+        message: ["Viestit ja tiedotteet samassa näkymässä.", "Vastaa heti, avaamatta Wilmaa.", "Hae kaikesta kerralla."],
+        translate: "Viestit omalla kielelläsi, alkuperäinen klikkauksen päässä.",
+        ai: "Tekoäly nostaa ensin sen, mikä vaatii sinua, ja mihin mennessä.",
         week: "Viikko- ja kalenterinäkymä koko perheelle.",
-        grades: "Arvosanat ja merkinnät keskiarvoineen."
+        grades: "Arvosanat ja merkinnät keskiarvoineen.",
+        schools: "Eri koulujen lapset samassa näkymässä."
       }
     }
   },
@@ -465,6 +488,7 @@ const fi: HomeCopy = {
       "Suomeksi, ruotsiksi, englanniksi, ukrainaksi tai arabiaksi.",
       "Uudet viestit tulevat valmiiksi käännettyinä, ja käyttöön ottaessa käännetään myös viimeiset 30 päivää.",
       "Alkuperäinen on aina klikkauksen päässä.",
+      "Koululle kirjoittamasi viesti voi lähteä suomeksi tai ruotsiksi, ja käännös näkyy sanojesi vieressä ennen lähettämistä.",
       "Käyttää sovelluksen OpenAI-vaihtoehtoa: yleensä sentin murto-osa viestiltä, asettamasi kuukausirajan sisällä.",
       "Itse sovellus on suomeksi, ruotsiksi tai englanniksi."
     ],
@@ -585,11 +609,11 @@ const fi: HomeCopy = {
       },
       {
         q: "Voiko se kääntää viestejä?",
-        a: "Kyllä, jos valitset OpenAI:n. Valitse asetuksista kieli (suomi, ruotsi, englanti, ukraina tai arabia), niin muunkieliset viestit, tiedotteet ja merkinnät käännetään sitä mukaa kuin ne tulevat, otsikoita myöten, ja alkuperäinen on klikkauksen päässä. Se maksaa yleensä sentin murto-osan viestiltä. Itse sovellus on suomeksi, ruotsiksi tai englanniksi."
+        a: "Kyllä, jos valitset OpenAI:n. Valitse asetuksista kieli (suomi, ruotsi, englanti, ukraina tai arabia), niin muunkieliset viestit, tiedotteet ja merkinnät käännetään sitä mukaa kuin ne tulevat, otsikoita myöten, ja alkuperäinen on klikkauksen päässä. Se maksaa yleensä sentin murto-osan viestiltä. Koululle kirjoittamasi viestin se voi myös lähettää suomeksi tai ruotsiksi: käännös näkyy sanojesi vieressä, ja vain se, mikä näkyy, lähetetään. Itse sovellus on suomeksi, ruotsiksi tai englanniksi."
       },
       {
         q: "Mitä OpenAI näkee?",
-        a: "Vain jos valitset OpenAI:n: yhden viestin, tiedotteen tai merkinnän kerrallaan sekä lasten etunimet ja luokat, jotta se tietää, ketä asia koskee. Kun käännökset ovat päällä, myös käännettävät tekstit. Wilma-salasanasi ei koskaan mene sinne. Paikallisella tekoälyllä tai ilman tekoälyä mitään ei lähetetä tekoälypalveluun."
+        a: "Vain jos valitset OpenAI:n: yhden viestin, tiedotteen tai merkinnän kerrallaan sekä lasten etunimet ja luokat, jotta se tietää, ketä asia koskee. Kun käännökset ovat päällä, myös käännettävät tekstit, ja kirjoittamasi viestit, kun käännät ne suomeksi tai ruotsiksi. Wilma-salasanasi ei koskaan mene sinne. Paikallisella tekoälyllä tai ilman tekoälyä mitään ei lähetetä tekoälypalveluun."
       },
       {
         q: "Missä tietoni ovat?",
@@ -633,11 +657,24 @@ const fi: HomeCopy = {
     signature: "— Antti",
     button: "Anna palautetta GitHubissa"
   },
-  announce: { badge: "Uutta", text: "WilmAI Home", more: ": nopea Wilma-työpöytäsovellus oppilaille ja vanhemmille", cta: "Katso sovellus" },
+  announce: {
+    badge: "Uutta",
+    text: "WilmAI Home",
+    more: "ilmainen Wilma-sovellus tietokoneellesi",
+    detail: "Jokaisen lapsen päivä, viestit omalla kielelläsi ja tekoäly, jos haluat. Macille ja Windowsille.",
+    cta: "Katso sovellus"
+  },
   card: {
-    eyebrow: "uutta: työpöytäsovellus",
-    text: "Haluaisitko mieluummin oman sovelluksen? WilmAI Home on nopea ja moderni Wilma-sovellus oppilaille ja vanhemmille: kaikki yhdessä näkymässä, ilmoitus, kun jokin vaatii sinua, ja tekoäly, jos haluat. Ilmainen ja avoin, nyt beetana, Macille ja Windowsille.",
-    link: "Tutustu WilmAI Homeen"
+    eyebrow: "tai oma sovellus",
+    text: "Etkö käytä tekoälyavustajaa? WilmAI Home on nopea Wilma-sovellus oppilaille ja vanhemmille omalle tietokoneellesi. Se toimii ilman tekoälyä.",
+    points: [
+      "Jokaisen lapsen päivä, viestit, kokeet ja arvosanat yhdessä näkymässä.",
+      "Viestit käännettyinä omalle kielellesi, alkuperäinen klikkauksen päässä.",
+      "Tekoäly nostaa ensin sen, mikä vaatii sinua, jos haluat.",
+      "Eri koulujen lapset yhdessä."
+    ],
+    download: "Lataa Macille tai Windowsille",
+    link: "Katso, miten se toimii"
   }
 };
 

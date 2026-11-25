@@ -8,7 +8,8 @@ import { get, set } from "idb-keyval";
 Object.defineProperty(globalThis, "crypto", { value: { getRandomValues: crypto.getRandomValues.bind(crypto) } });
 let raw: string | null = null;
 let failRead = true, failWrite = false;
-const native = { invoke: async (command: string, args: { installation: string; data: string }) => {
+const native = { invoke: async (command: string, args: { installation: string; data: string; legacy?: string; proposed: string }) => {
+  if (command === "plugin:android-device|vault_identity") return args.legacy ?? args.proposed;
   if (command === "plugin:android-device|vault_load") { if (failRead) throw new Error("synthetic locked Keystore"); return raw; }
   if (command === "plugin:android-device|vault_save") { if (failWrite) throw new Error("synthetic locked Keystore"); raw = args.data; return; }
   throw new Error(`Unexpected command ${command}`);

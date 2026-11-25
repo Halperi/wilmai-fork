@@ -71,6 +71,10 @@ class AndroidDevicePlugin(private val activity: Activity): Plugin(activity) {
     private fun secure(invoke: Invoke, action: () -> Unit) {
         io.execute { try { action() } catch (_: Exception) { invoke.reject("Android secure storage is unavailable") } }
     }
+    @Command fun vaultIdentity(invoke: Invoke) = secure(invoke) {
+        val args = invoke.getArgs()
+        invoke.resolveObject(vault.identity(args.opt("legacy") as? String, args.getString("proposed")))
+    }
     @Command fun vaultLoad(invoke: Invoke) = secure(invoke) {
         val data = vault.load(invoke.getArgs().getString("installation"))
         if (data == null) invoke.resolve() else invoke.resolveObject(data)

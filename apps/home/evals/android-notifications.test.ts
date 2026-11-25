@@ -7,6 +7,7 @@ const calls: { command: string; args: Record<string, any> }[] = [];
 const pending = new Set<number>();
 const native = { invoke: async (command: string, args: Record<string, any> = {}) => {
   calls.push({ command, args });
+  if (command.endsWith("vault_identity")) return args.legacy ?? args.proposed;
   if (command.endsWith("vault_load")) return null;
   if (command.endsWith("vault_save") || command.endsWith("configure") || command.endsWith("remove_active")) return;
   if (command.endsWith("check_permissions")) return { permissionState: "granted" };
