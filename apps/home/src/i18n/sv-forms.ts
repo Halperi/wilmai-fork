@@ -355,6 +355,8 @@ export const SV_FORMS: Record<string, string> = {
   "Password remembered: one click": "Lösenordet sparat: ett klick",
   "Back to signing in": "Tillbaka till inloggningen",
   "Wilma accounts": "Wilma-konton",
+  "Saved Wilma accounts": "Sparade Wilma-konton",
+  "Add {school}": "Lägg till {school}",
   "{n} Wilma": "{n} Wilma",
   "{n} Wilmas": "{n} Wilma",
   "The app stays signed in automatically.": "Appen förblir inloggad automatiskt.",

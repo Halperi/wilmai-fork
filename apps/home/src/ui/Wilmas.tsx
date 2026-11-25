@@ -11,7 +11,7 @@
  *   signs it out, deleting this family's data from this computer, and resetting the app.
  */
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { accountKey, forgetPasswordsIfAsked, getState, passwordOf, setViewAs, updateSettings, useApp } from "../data/store";
+import { accountKey, forgetPasswordsIfAsked, getState, knownFamilies, passwordOf, setViewAs, updateSettings, useApp } from "../data/store";
 import { SignInAgainError, addWilma, changeLogin, type Attempt, forgetThisFamily, loginKept, removeWilma, resetApp, setChildShown, signInAll, signInDemo, signInWithPassword, signOutWilma } from "../data/engine";
 import { SignInCancelledError } from "../data/sign-in-attempt";
 import { logins, sameWilma, schoolOf } from "../data/logins";
@@ -22,7 +22,7 @@ import { UpdatesCard } from "./Update";
 import { LanguageChoice, ThemeChoice } from "./Settings";
 import { Icon } from "./bits";
 import { go } from "./shared";
-import { isDesktopApp } from "../wilma/transport";
+import { isDesktopApp, isMobileApp } from "../wilma/transport";
 import { t } from "../i18n";
 import { runJev } from "../jev/runner";
 import { runLuna } from "../luna/events";
@@ -69,6 +69,10 @@ export function Wilmas() {
   const settings = useApp((s) => s.settings);
   const out = demo ? [] : all.filter((l) => !status[l.slot]?.live);
   const ready = news.filter(complete);
+  const saved = isMobileApp && family && who === "guardian"
+    ? [...new Map(knownFamilies().flatMap((f) => f.logins.map((l) => [accountKey(l.account), l.account] as const))).values()]
+      .filter((a) => a.via === "password" && !all.some((l) => sameWilma(l.account.baseUrl, a.baseUrl)) && !news.some((d) => d.tenant && sameWilma(d.tenant.url, a.baseUrl)))
+    : [];
   const open = (Boolean(family) || demo) && !out.length && !ready.length;
   // A first setup (or a family forgotten here) starts with one Wilma to fill in, and the recommended choice unless one
   // was made before.
@@ -222,6 +226,15 @@ export function Wilmas() {
                 />
               ))}
             </div>
+            {saved.length ? <section className="saved-wilmas">
+              <h3>{t("Saved Wilma accounts")}</h3>
+              {saved.map((account) => <button key={accountKey(account)} type="button" className="btn" onClick={() => setNews((list) => [...list, {
+                ...newDraft(), tenant: tenantOf(account), username: account.username, password: passwordOf(account),
+              }])}>
+                <Icon name="user" />
+                <span>{t("Add {school}", { school: schoolOf(account) })}<small>{account.username}</small></span>
+              </button>)}
+            </section> : null}
             {note ? <div className="notice err">{note}</div> : null}
             <button className="btn btn-primary wilmas-go" type="submit" disabled={busy}>
               {busy ? t("Signing in…") : open ? t("Open WilmAI Home") : t("Sign in")}

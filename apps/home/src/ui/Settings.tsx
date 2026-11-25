@@ -3,7 +3,8 @@ import { updateSettings, useApp } from "../data/store";
 import { UpdatesCard } from "./Update";
 import { APP_VERSION } from "../data/edition";
 import { SessionHistory } from "./SessionHistory";
-import { isDemo, syncNow } from "../data/engine";
+import { isDemo, leaveDemo, syncNow } from "../data/engine";
+import { go, hrefFor } from "./shared";
 import { AISettings } from "./AISettings";
 import { notificationsAvailable, testNotification } from "../data/notify";
 import { Icon } from "./bits";
@@ -68,6 +69,14 @@ export function Settings() {
   return (
     <main className="page settings">
       <h1>{t("Settings")}</h1>
+
+      {isMobileApp ? <section className="card">
+        {demo ? <button className="btn" onClick={() => { go("today"); void leaveDemo(); }}>
+          <Icon name="back" /> {t("Leave the sample family")}
+        </button> : <a className="btn" href={hrefFor("wilmas")}>
+          <Icon name="user" /> {t("Wilma accounts")}
+        </a>}
+      </section> : null}
 
       <AISettings />
 

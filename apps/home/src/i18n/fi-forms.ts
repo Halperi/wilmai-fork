@@ -355,6 +355,8 @@ export const FI_FORMS: Record<string, string> = {
   "Password remembered: one click": "Salasana muistetaan: yksi klikkaus",
   "Back to signing in": "Takaisin kirjautumiseen",
   "Wilma accounts": "Wilma-tunnukset",
+  "Saved Wilma accounts": "Tallennetut Wilma-tunnukset",
+  "Add {school}": "Lisää {school}",
   "{n} Wilma": "{n} Wilma",
   "{n} Wilmas": "{n} Wilmaa",
   "The app stays signed in automatically.": "Sovellus pysyy kirjautuneena automaattisesti.",
